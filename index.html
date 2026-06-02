@@ -46,8 +46,13 @@
         <aside class="status" aria-label="Morning progress">
           <p class="time">7:13 AM</p>
           <h2>The Morning Loop</h2>
+          <p class="state-label" id="stateLabel">State: clear morning</p>
           <p id="currentPrompt">The apartment is quiet. Find your glasses.</p>
           <ol id="taskList" class="task-list"></ol>
+          <div class="checklist-panel hidden" id="checklistPanel" aria-label="Large-print checklist">
+            <strong>Right now</strong>
+            <p id="checklistPrompt">Find glasses.</p>
+          </div>
           <div class="meter-row">
             <span>Recall</span>
             <div class="meter"><span id="recallMeter"></span></div>
@@ -61,6 +66,24 @@
         <section class="room-wrap">
           <div class="room" id="room" aria-label="Overhead apartment scene">
             <div class="floor-lines"></div>
+            <div class="decor rug" aria-hidden="true"></div>
+            <div class="decor window"></div>
+            <div class="decor morning-light" aria-hidden="true"></div>
+            <div class="decor lamp" aria-hidden="true"></div>
+            <div class="decor plant" aria-hidden="true"></div>
+            <div class="decor bookshelf" aria-hidden="true"></div>
+            <div class="decor blanket" aria-hidden="true"></div>
+            <div class="decor slippers" aria-hidden="true"></div>
+            <div class="decor calendar" aria-hidden="true">Tue 7:13</div>
+            <div class="decor photo-wall" aria-hidden="true"></div>
+            <div class="decor tea-tin" aria-hidden="true">tea</div>
+            <div class="decor letters" aria-hidden="true"></div>
+            <div class="decor pill-organizer" aria-hidden="true"></div>
+            <div class="decor clock" aria-hidden="true"></div>
+            <div class="decor radio" aria-hidden="true"></div>
+            <div class="visual-cue cue-labels" aria-hidden="true">labels placed</div>
+            <div class="visual-cue cue-checklist" aria-hidden="true">glasses -> tea -> medicine -> call</div>
+            <div class="visual-cue cue-voice" aria-hidden="true">"Take your time."</div>
             <button class="object bed" data-object="glasses"><span>glasses</span></button>
             <button class="object kettle" data-object="tea"><span>kettle</span></button>
             <button class="object bottle" data-object="medication"><span>medication</span></button>
@@ -76,9 +99,35 @@
         <aside class="journal" aria-label="Interaction journal">
           <h2>Journal</h2>
           <div id="journalLog" class="journal-log"></div>
-          <button class="ghost wide" id="supportCue">Place a support cue</button>
+          <button class="ghost wide" id="supportCue">Choose a support cue</button>
           <button class="ghost wide" id="learnMore">Reflection card</button>
         </aside>
+      </section>
+
+      <section class="support-modal hidden" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportTitle">
+        <div class="support-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">support cue</p>
+              <h2 id="supportTitle">What would help the room hold the next step?</h2>
+            </div>
+            <button class="icon-button" id="closeSupport" aria-label="Close support choices">x</button>
+          </div>
+          <div class="support-options">
+            <button type="button" data-support="label">
+              <strong>Add label</strong>
+              <span>Make key object names clearer.</span>
+            </button>
+            <button type="button" data-support="checklist">
+              <strong>Use checklist</strong>
+              <span>Show the next step in large print.</span>
+            </button>
+            <button type="button" data-support="voice">
+              <strong>Hear familiar voice</strong>
+              <span>Add a warm grounding prompt.</span>
+            </button>
+          </div>
+        </div>
       </section>
 
       <section class="reflection hidden" id="reflection" aria-live="polite">
@@ -95,6 +144,15 @@
           <p class="eyebrow">morning complete</p>
           <h2>Care is a kind of remembering.</h2>
           <p>You did not fix the morning. You made it softer: labels, pauses, a familiar voice, and room for dignity.</p>
+          <section class="ending-summary" aria-labelledby="endingSummaryTitle">
+            <h3 id="endingSummaryTitle">What this morning showed</h3>
+            <ul>
+              <li>Memory can fluctuate during ordinary routines.</li>
+              <li>Repeated habits can support orientation.</li>
+              <li>Labels, checklists, and familiar voices can reduce cognitive load.</li>
+              <li>Good care protects dignity, choice, and independence.</li>
+            </ul>
+          </section>
           <button class="primary" id="restart">Play Again</button>
         </div>
       </section>

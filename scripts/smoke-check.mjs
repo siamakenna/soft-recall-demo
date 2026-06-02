@@ -17,7 +17,7 @@ for (const id of ["startGame", "gameScreen", "room", "taskList"]) {
   if (!html.includes(id)) throw new Error(`Missing expected HTML id: ${id}`);
 }
 
-for (const token of ["window.softRecallTrailer", "interact", "placeSupportCue"]) {
+for (const token of ["window.softRecallTrailer", "interact", "useSupport"]) {
   if (!js.includes(token)) throw new Error(`Missing expected game token: ${token}`);
 }
 
