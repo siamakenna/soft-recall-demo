@@ -3,157 +3,194 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Soft Recall</title>
+    <title>Soft Recall: A Morning in Five Rooms</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="shell" id="app">
-      <section class="title-screen" id="titleScreen" aria-labelledby="gameTitle">
+      <section class="menu-screen" id="menuScreen" aria-labelledby="gameTitle">
         <div class="grain"></div>
-        <p class="eyebrow">a quiet memory prototype</p>
+        <p class="eyebrow">a quiet point-and-click narrative</p>
         <h1 id="gameTitle">Soft Recall</h1>
-        <p class="subtitle">A point-and-click morning routine where familiar things keep becoming almost familiar.</p>
-        <div class="title-actions">
-          <button class="primary" id="startGame">Begin Morning</button>
-          <button class="ghost" id="openSettings">Settings</button>
-        </div>
-      </section>
-
-      <section class="settings-panel hidden" id="settingsPanel" aria-label="Accessibility settings">
-        <div class="panel-header">
-          <h2>Settings</h2>
-          <button class="icon-button" id="closeSettings" aria-label="Close settings">x</button>
-        </div>
-        <label>
-          <input type="checkbox" id="reducedMotion">
-          Reduce visual drift
-        </label>
-        <label>
-          <input type="checkbox" id="plainLanguage">
-          Plain language reflection cards
-        </label>
-        <label>
-          <input type="checkbox" id="largeText">
-          Larger text
-        </label>
-        <label>
-          <input type="checkbox" id="highContrast">
-          Higher contrast
-        </label>
+        <p class="subtitle">A Morning in Five Rooms</p>
+        <p class="menu-copy">Move gently through an apartment where routine, memory, perception, and care shape the morning.</p>
+        <nav class="menu-actions" aria-label="Main menu">
+          <button class="primary" id="newGame">New Game</button>
+          <button class="ghost" id="continueGame">Continue</button>
+          <button class="ghost" id="openMemoryBookMenu">Memory Book</button>
+          <button class="ghost" id="openAccessibility">Accessibility</button>
+          <button class="ghost" id="openCredits">Credits</button>
+        </nav>
       </section>
 
       <section class="game-screen hidden" id="gameScreen" aria-label="Soft Recall game">
-        <aside class="status" aria-label="Morning progress">
+        <aside class="status-panel" aria-label="Morning status">
           <p class="time">7:13 AM</p>
-          <h2>The Morning Loop</h2>
-          <p class="state-label" id="stateLabel">State: clear morning</p>
-          <p id="currentPrompt">The apartment is quiet. Find your glasses.</p>
-          <ol id="taskList" class="task-list"></ol>
-          <div class="checklist-panel hidden" id="checklistPanel" aria-label="Large-print checklist">
-            <strong>Right now</strong>
-            <p id="checklistPrompt">Find glasses.</p>
+          <h2 id="roomTitle">Bedroom</h2>
+          <p class="room-state" id="clarityLabel">Grounding: clear</p>
+          <div class="clarity-meter" aria-label="Grounding level">
+            <span id="clarityMeter"></span>
           </div>
-          <div class="meter-row">
-            <span>Recall</span>
-            <div class="meter"><span id="recallMeter"></span></div>
-          </div>
-          <div class="meter-row">
-            <span>Support</span>
-            <div class="meter support"><span id="supportMeter"></span></div>
-          </div>
+          <p id="roomDescription" class="room-description"></p>
+
+          <section class="checklist-box" aria-labelledby="checklistTitle">
+            <h3 id="checklistTitle">Morning checklist</h3>
+            <ol id="checklist" class="checklist"></ol>
+          </section>
+
+          <section class="inventory-box" aria-labelledby="inventoryTitle">
+            <h3 id="inventoryTitle">Inventory</h3>
+            <div id="inventory" class="inventory" aria-live="polite"></div>
+          </section>
         </aside>
 
-        <section class="room-wrap">
-          <div class="room" id="room" aria-label="Overhead apartment scene">
-            <div class="floor-lines"></div>
-            <div class="decor rug" aria-hidden="true"></div>
-            <div class="decor window"></div>
-            <div class="decor morning-light" aria-hidden="true"></div>
-            <div class="decor lamp" aria-hidden="true"></div>
-            <div class="decor plant" aria-hidden="true"></div>
-            <div class="decor bookshelf" aria-hidden="true"></div>
-            <div class="decor blanket" aria-hidden="true"></div>
-            <div class="decor slippers" aria-hidden="true"></div>
-            <div class="decor calendar" aria-hidden="true">Tue 7:13</div>
-            <div class="decor photo-wall" aria-hidden="true"></div>
-            <div class="decor tea-tin" aria-hidden="true">tea</div>
-            <div class="decor letters" aria-hidden="true"></div>
-            <div class="decor pill-organizer" aria-hidden="true"></div>
-            <div class="decor clock" aria-hidden="true"></div>
-            <div class="decor radio" aria-hidden="true"></div>
-            <div class="visual-cue cue-labels" aria-hidden="true">labels placed</div>
-            <div class="visual-cue cue-checklist" aria-hidden="true">glasses -> tea -> medicine -> call</div>
-            <div class="visual-cue cue-voice" aria-hidden="true">"Take your time."</div>
-            <button class="object bed" data-object="glasses"><span>glasses</span></button>
-            <button class="object kettle" data-object="tea"><span>kettle</span></button>
-            <button class="object bottle" data-object="medication"><span>medication</span></button>
-            <button class="object photo" data-object="photo"><span>photo</span></button>
-            <button class="object phone" data-object="phone"><span>phone</span></button>
-            <button class="object door" data-object="door"><span>door</span></button>
-            <button class="object note" data-object="note"><span>note</span></button>
-            <div class="player" id="player" aria-hidden="true"></div>
+        <section class="play-area">
+          <nav class="room-map" id="roomMap" aria-label="Room navigation"></nav>
+          <div class="room-stage" id="roomStage" data-room="bedroom" data-clarity="clear">
+            <div id="decorLayer" class="decor-layer" aria-hidden="true"></div>
+            <div id="supportLayer" class="support-layer" aria-hidden="true"></div>
+            <div id="hotspotLayer" class="hotspot-layer"></div>
           </div>
-          <div class="caption" id="caption">Click objects in the room. Labels may change as recall softens.</div>
+          <p id="caption" class="caption" aria-live="polite">The apartment is quiet. Start with what helps you see.</p>
         </section>
 
-        <aside class="journal" aria-label="Interaction journal">
+        <aside class="journal-panel" aria-label="Journal and actions">
           <h2>Journal</h2>
-          <div id="journalLog" class="journal-log"></div>
-          <button class="ghost wide" id="supportCue">Choose a support cue</button>
-          <button class="ghost wide" id="learnMore">Reflection card</button>
+          <div id="journalLog" class="journal-log" aria-live="polite"></div>
+          <div class="side-actions">
+            <button class="ghost wide" id="openSupport">Place support</button>
+            <button class="ghost wide" id="openMemoryBookGame">Memory Book</button>
+            <button class="ghost wide" id="saveGame">Save</button>
+            <button class="ghost wide" id="returnMenu">Menu</button>
+          </div>
         </aside>
       </section>
 
-      <section class="support-modal hidden" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportTitle">
-        <div class="support-card">
+      <section class="modal hidden" id="accessibilityPanel" role="dialog" aria-modal="true" aria-labelledby="accessibilityTitle">
+        <div class="modal-card">
           <div class="panel-header">
             <div>
-              <p class="eyebrow">support cue</p>
-              <h2 id="supportTitle">What would help the room hold the next step?</h2>
+              <p class="eyebrow">settings</p>
+              <h2 id="accessibilityTitle">Accessibility</h2>
             </div>
-            <button class="icon-button" id="closeSupport" aria-label="Close support choices">x</button>
+            <button class="icon-button" data-close="accessibilityPanel" aria-label="Close accessibility settings">x</button>
           </div>
-          <div class="support-options">
-            <button type="button" data-support="label">
-              <strong>Add label</strong>
-              <span>Make key object names clearer.</span>
-            </button>
-            <button type="button" data-support="checklist">
-              <strong>Use checklist</strong>
-              <span>Show the next step in large print.</span>
-            </button>
-            <button type="button" data-support="voice">
-              <strong>Hear familiar voice</strong>
-              <span>Add a warm grounding prompt.</span>
-            </button>
+          <div class="settings-grid">
+            <label><input type="checkbox" id="largeText"> Larger text</label>
+            <label><input type="checkbox" id="highContrast"> Higher contrast</label>
+            <label><input type="checkbox" id="reducedMotion"> Reduced visual drift</label>
+            <label><input type="checkbox" id="plainLanguage"> Plain language reflections</label>
+            <label><input type="checkbox" id="muteSound"> Mute sound</label>
           </div>
         </div>
       </section>
 
-      <section class="reflection hidden" id="reflection" aria-live="polite">
-        <div class="reflection-card">
-          <p class="eyebrow">reflection</p>
-          <h2 id="reflectionTitle">What this represents</h2>
-          <p id="reflectionBody"></p>
-          <button class="primary" id="closeReflection">Return</button>
+      <section class="modal hidden" id="examineModal" role="dialog" aria-modal="true" aria-labelledby="examineTitle">
+        <div class="modal-card object-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">examine</p>
+              <h2 id="examineTitle">Object</h2>
+            </div>
+            <button class="icon-button" data-close="examineModal" aria-label="Close object details">x</button>
+          </div>
+          <p id="examineText"></p>
+          <div class="object-actions">
+            <button class="primary" id="objectAct">Interact</button>
+            <button class="ghost" id="objectExamineMore">Look closer</button>
+            <button class="ghost" data-close="examineModal">Back</button>
+          </div>
         </div>
       </section>
 
-      <section class="ending hidden" id="ending">
+      <section class="modal hidden" id="memoryPuzzleModal" role="dialog" aria-modal="true" aria-labelledby="memoryPuzzleTitle">
+        <div class="modal-card puzzle-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">memory reconstruction</p>
+              <h2 id="memoryPuzzleTitle">Assemble the photo memory</h2>
+            </div>
+            <button class="icon-button" data-close="memoryPuzzleModal" aria-label="Close memory reconstruction">x</button>
+          </div>
+          <p id="memoryPuzzlePrompt">Use the fragments gathered from the apartment to rebuild the photo gently.</p>
+          <div id="memoryPuzzleSlots" class="puzzle-slots"></div>
+          <p id="memoryPuzzleFeedback" class="puzzle-feedback" aria-live="polite"></p>
+          <div class="object-actions">
+            <button class="primary" id="submitMemoryPuzzle">Rebuild memory</button>
+            <button class="ghost" data-close="memoryPuzzleModal">Keep looking</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="modal hidden" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportTitle">
+        <div class="modal-card support-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">environmental support</p>
+              <h2 id="supportTitle">Where should the room hold a cue?</h2>
+            </div>
+            <button class="icon-button" data-close="supportModal" aria-label="Close support choices">x</button>
+          </div>
+          <div id="supportChoices" class="support-choices"></div>
+        </div>
+      </section>
+
+      <section class="modal hidden" id="phoneModal" role="dialog" aria-modal="true" aria-labelledby="phoneTitle">
+        <div class="modal-card">
+          <p class="eyebrow">phone call</p>
+          <h2 id="phoneTitle">A familiar voice answers.</h2>
+          <p id="phoneLine">"Morning. I can stay with you while you get ready."</p>
+          <div class="dialogue-options" id="phoneChoices"></div>
+        </div>
+      </section>
+
+      <section class="modal hidden" id="memoryBookModal" role="dialog" aria-modal="true" aria-labelledby="memoryBookTitle">
+        <div class="modal-card book-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">memory book</p>
+              <h2 id="memoryBookTitle">Collected fragments</h2>
+            </div>
+            <button class="icon-button" data-close="memoryBookModal" aria-label="Close memory book">x</button>
+          </div>
+          <div id="memoryEntries" class="memory-entries"></div>
+        </div>
+      </section>
+
+      <section class="modal hidden" id="creditsModal" role="dialog" aria-modal="true" aria-labelledby="creditsTitle">
+        <div class="modal-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">credits</p>
+              <h2 id="creditsTitle">Soft Recall</h2>
+            </div>
+            <button class="icon-button" data-close="creditsModal" aria-label="Close credits">x</button>
+          </div>
+          <p>Designed as a gentle neuroeducation prototype about routine, environmental support, and dignity-centered care.</p>
+          <p>Built with plain HTML, CSS, and JavaScript for GitHub Pages.</p>
+        </div>
+      </section>
+
+      <section class="ending hidden" id="endingScreen" aria-labelledby="endingTitle">
         <div class="ending-card">
-          <p class="eyebrow">morning complete</p>
-          <h2>Care is a kind of remembering.</h2>
-          <p>You did not fix the morning. You made it softer: labels, pauses, a familiar voice, and room for dignity.</p>
+          <p class="eyebrow">morning ending</p>
+          <h2 id="endingTitle"></h2>
+          <p id="endingText"></p>
           <section class="ending-summary" aria-labelledby="endingSummaryTitle">
             <h3 id="endingSummaryTitle">What this morning showed</h3>
-            <ul>
-              <li>Memory can fluctuate during ordinary routines.</li>
-              <li>Repeated habits can support orientation.</li>
-              <li>Labels, checklists, and familiar voices can reduce cognitive load.</li>
-              <li>Good care protects dignity, choice, and independence.</li>
-            </ul>
+            <ul id="endingPoints"></ul>
           </section>
-          <button class="primary" id="restart">Play Again</button>
+          <section class="reflection-box" aria-labelledby="reflectionTitle">
+            <h3 id="reflectionTitle">Optional reflection</h3>
+            <p>What helped most this morning?</p>
+            <textarea id="endingReflection" rows="3" placeholder="A cue, a room, a person, a pause..."></textarea>
+            <button class="ghost wide" id="saveReflection">Save reflection to Memory Book</button>
+          </section>
+          <div class="title-actions">
+            <button class="primary" id="endingRestart">New Game</button>
+            <button class="ghost" id="endingBook">Memory Book</button>
+            <button class="ghost" id="endingMenu">Menu</button>
+          </div>
         </div>
       </section>
     </main>

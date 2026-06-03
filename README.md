@@ -1,70 +1,63 @@
 # Soft Recall
 
-**Soft Recall** is a quiet point-and-click game prototype about routine, memory, perception, and care.
+**Soft Recall: A Morning in Five Rooms** is a quiet point-and-click narrative game about memory, routine, environmental support, and dignity-centered care.
 
-The player moves through a small morning routine: finding glasses, making tea, taking medication, looking at a photo, calling someone familiar, and leaving for an appointment. As recall softens, object labels and room cues become less certain. Support tools such as notes, labels, and calm prompts make the apartment easier to read again.
+Players move through a small apartment, gather essentials, reconstruct a photo memory from sensory clues, place environmental supports, and choose how much help they want during the morning.
 
-[Play Soft Recall](https://siamakenna.github.io/soft-recall-game/)
+## Play
 
-https://github.com/siamakenna/soft-recall-game/raw/main/media/soft-recall-trailer.mp4
+This project is built with plain HTML, CSS, and JavaScript, so it can run directly on GitHub Pages.
 
-## Prototype Focus
+Open `index.html` locally, or publish the repository through GitHub Pages.
 
-- Working title and interface: **Soft Recall**
-- Tone: minimal, intimate, cozy, and gently uncanny
-- Format: static browser prototype suitable for GitHub Pages
-- Core loop: explore, click, experience a shift, reflect, adapt the environment
-- Accessibility options: reduced visual drift, plain language reflection cards, larger text, and higher contrast
+## Features
 
-## Play Locally
+- Five-room point-and-click apartment
+- Object examine mode with separate “look closer” and “interact” choices
+- Memory reconstruction puzzle using sensory fragments
+- Reactive room visuals that change after tea, phone support, memory reconstruction, and readiness to leave
+- Environmental support placement system
+- Branching phone conversation with mid-game consequences
+- Multiple endings
+- Local save and continue
+- Persistent “morning records” after completed runs
+- Optional post-game reflection saved to the Memory Book
+- Unlockable care notes after an ending
+- Accessibility settings for larger text, higher contrast, reduced motion, plain language reflections, and muted sound
+- Lightweight procedural sound cues with no external audio files
 
-Open `index.html` in a browser, or serve the folder with a tiny local server:
+## Why this exists
+
+The game is designed as a gentle neuroeducation prototype. It frames memory support as something built into environments, relationships, routines, and choices rather than as a test of individual willpower.
+
+## Development
+
+Install dependencies only if you want to use the optional local server, smoke check, or trailer capture tools.
 
 ```bash
-python3 -m http.server 8080
-```
-
-Then visit `http://localhost:8080`.
-
-This repo also includes a small Node server:
-
-```bash
+npm install
 npm start
-```
-
-Then visit `http://localhost:4173`.
-
-If `npm` is unavailable in Codex desktop, use the bundled Node runtime:
-
-```bash
-~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/serve.mjs
-```
-
-## Trailer Direction
-
-A 30-second profile trailer should show:
-
-1. Title screen: **Soft Recall**
-2. The first few clicks of the morning routine
-3. Object labels becoming softer or less certain
-4. A support cue being placed
-5. The final line: “Care is a kind of remembering.”
-
-The trailer should feel quiet and observational rather than flashy.
-
-Generate the trailer with:
-
-```bash
+npm run check
 npm run capture:trailer
 ```
 
-Codex desktop fallback:
+The core game does not require a build step.
 
-```bash
-~/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node scripts/capture-trailer.mjs
+## File structure
+
+```txt
+index.html          Main game interface
+styles.css          Visual design, accessibility modes, and responsive layout
+game.js             Game data, state, rendering, interactions, endings, and trailer automation
+serve.mjs           Optional local static server
+smoke-check.mjs     Lightweight project sanity check
+capture-trailer.mjs Optional trailer capture script
 ```
 
-The capture script writes the trailer assets to:
+## Roadmap
 
-- `media/soft-recall-trailer.webm`
-- `media/soft-recall-trailer.mp4`
+- Add illustrated character portraits for phone dialogue
+- Add optional developer commentary mode
+- Add more memory puzzles with different clue combinations
+- Add title-screen route gallery once multiple mornings are completed
+- Add GitHub Actions for smoke checks

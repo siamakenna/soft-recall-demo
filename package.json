@@ -4,9 +4,9 @@
   "private": true,
   "description": "Soft Recall, a quiet point-and-click memory and care game prototype.",
   "scripts": {
-    "start": "node scripts/serve.mjs",
-    "capture:trailer": "node scripts/capture-trailer.mjs",
-    "check": "node scripts/smoke-check.mjs"
+    "start": "node serve.mjs",
+    "capture:trailer": "node capture-trailer.mjs",
+    "check": "node smoke-check.mjs"
   },
   "devDependencies": {
     "ffmpeg-static": "^5.2.0",
