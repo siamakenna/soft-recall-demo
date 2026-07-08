@@ -74,6 +74,19 @@ Each room is built from lightweight CSS-generated plates:
 
 Review criterion: if the first gameplay screen feels like a map, board, dollhouse, or overhead diagram, the scene pass has failed. It should read as a composed watercolor first-person indie-game room.
 
+## Node-Based Visual Novel Pass
+
+Gameplay now centers on first-person scene nodes rather than room tabs. Nodes such as `bedroom_bedside`, `bedroom_mirror`, `kitchen_counter`, `living_coffee_table`, `hallway_mid`, and `hallway_door` each define their room, narration, exits, object markers, and optional internal choices.
+
+The main viewport includes:
+
+- Directional node exits for turning left/right, moving forward, and stepping back
+- Keyboard arrow movement when no modal is open
+- A persistent bottom visual-novel narration box with speaker labels, internal monologue, object responses, and choices
+- A small floor plan kept as a notebook aid, not the primary gameplay surface
+
+This pass is meant to make Soft Recall feel closer to a first-person point-and-click mystery and surreal visual novel: movement, observation, uncertainty, and confidence become the main interaction rhythm.
+
 ## Gameplay
 
 Move through five rooms:
@@ -84,7 +97,7 @@ Move through five rooms:
 - Living Room
 - Hallway/Doorway
 
-Use the apartment map to navigate, click objects in first-person room panels, inspect them closely, collect useful items, place support cues, and complete or reshape the morning without timers, combat, jump scares, or failure screens.
+Use first-person node exits to move through the apartment, click embedded objects, inspect them closely, collect useful items, place support cues, and complete or reshape the morning without timers, combat, jump scares, or failure screens. The apartment map remains available as a small support aid.
 
 Core interactions include:
 

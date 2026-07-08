@@ -818,6 +818,201 @@ const firstPersonHotspots = {
   front_door: [74, 45]
 };
 
+const roomStartNodes = {
+  bedroom: "bedroom_bedside",
+  bathroom: "bathroom_sink",
+  kitchen: "kitchen_counter",
+  living: "living_coffee_table",
+  hallway: "hallway_mid"
+};
+
+const sceneNodes = {
+  bedroom_bedside: {
+    room: "bedroom",
+    title: "Bedroom - Bedside",
+    perspective: "first-person",
+    mood: "softened",
+    exits: { left: "bedroom_mirror", right: "bedroom_window", forward: "bedroom_door" },
+    hotspots: ["bedside_glasses", "unread_texts", "bedroom_note", "voice_memo"],
+    speaker: "Morning",
+    narration: [
+      "The room is not gone. It is only arriving in pieces.",
+      "Something is glowing beside the bed."
+    ]
+  },
+  bedroom_mirror: {
+    room: "bedroom",
+    title: "Bedroom - Mirror",
+    perspective: "first-person",
+    mood: "uncanny",
+    exits: { right: "bedroom_bedside", back: "bedroom_bedside" },
+    hotspots: ["bedroom_note", "bedside_glasses"],
+    speaker: "Recognition",
+    narration: [
+      "The face is familiar. The name arrives late.",
+      "You know this feeling before you know the sentence for it."
+    ],
+    choices: [
+      { label: "I know this feeling.", text: "Recognition begins as a warmth, not a fact." },
+      { label: "Name one thing.", text: "Mirror. Bed. Table. One word returns, then another." },
+      { label: "Step away.", node: "bedroom_bedside", text: "You step back before the feeling gets too large." }
+    ]
+  },
+  bedroom_window: {
+    room: "bedroom",
+    title: "Bedroom - Window",
+    perspective: "first-person",
+    mood: "memory",
+    exits: { left: "bedroom_bedside", forward: "bedroom_door" },
+    hotspots: ["bedroom_window", "laptop", "voice_memo"],
+    speaker: "Morning",
+    narration: [
+      "Light leans through the window like it remembers the route.",
+      "The laptop waits with one unfinished sentence."
+    ]
+  },
+  bedroom_door: {
+    room: "bedroom",
+    title: "Bedroom - Door",
+    perspective: "first-person",
+    mood: "softened",
+    exits: { back: "bedroom_bedside", forward: "hallway_mid", right: "bathroom_sink" },
+    hotspots: ["laptop", "bedroom_note"],
+    speaker: "Threshold",
+    narration: [
+      "The door is a small decision, not a test.",
+      "The hall waits on the other side of the morning."
+    ]
+  },
+  bathroom_sink: {
+    room: "bathroom",
+    title: "Bathroom - Sink",
+    perspective: "first-person",
+    mood: "uncanny",
+    exits: { back: "hallway_mid", right: "bathroom_shelf" },
+    hotspots: ["mirror", "pill_organizer"],
+    speaker: "Bathroom",
+    narration: [
+      "The light is too white. The water knows what to do before you do.",
+      "The mirror offers a face in pieces, then all at once."
+    ]
+  },
+  bathroom_shelf: {
+    room: "bathroom",
+    title: "Bathroom - Shelf",
+    perspective: "first-person",
+    mood: "clear",
+    exits: { left: "bathroom_sink", back: "hallway_mid" },
+    hotspots: ["bathroom_cabinet", "pill_organizer"],
+    speaker: "Cue",
+    narration: [
+      "The organizer can answer without asking memory to perform.",
+      "A small box of days is kinder than guessing."
+    ]
+  },
+  kitchen_counter: {
+    room: "kitchen",
+    title: "Kitchen - Counter",
+    perspective: "first-person",
+    mood: "grounded",
+    exits: { left: "kitchen_window", back: "hallway_mid", right: "living_coffee_table" },
+    hotspots: ["mug", "tea_tin", "kettle", "medication_bottle", "calendar"],
+    speaker: "Kitchen",
+    narration: [
+      "The kettle makes the next step smaller.",
+      "Steam is easier to trust than memory."
+    ]
+  },
+  kitchen_window: {
+    room: "kitchen",
+    title: "Kitchen - Window",
+    perspective: "first-person",
+    mood: "memory",
+    exits: { right: "kitchen_counter", back: "hallway_mid" },
+    hotspots: ["plant_shelf", "calendar_alert", "calendar"],
+    speaker: "Window",
+    narration: [
+      "The basil leans toward the window. It does not need a perfect morning.",
+      "The appointment square is circled twice."
+    ]
+  },
+  living_coffee_table: {
+    room: "living",
+    title: "Living Room - Coffee Table",
+    perspective: "first-person",
+    mood: "memory",
+    exits: { left: "living_shelf", right: "hallway_mid", back: "kitchen_counter" },
+    hotspots: ["photo_frame", "postcard", "phone", "wallet", "playlist", "creative_project"],
+    speaker: "Memory",
+    narration: [
+      "The photo knows you before you know it back.",
+      "Faces feel close but unnamed. The room is tender, not empty."
+    ]
+  },
+  living_shelf: {
+    room: "living",
+    title: "Living Room - Shelf",
+    perspective: "first-person",
+    mood: "softened",
+    exits: { right: "living_coffee_table", forward: "hallway_mid" },
+    hotspots: ["playlist", "creative_project", "phone"],
+    speaker: "Room",
+    narration: [
+      "A song waits with the patience of a familiar hand.",
+      "The unfinished project still looks like your taste."
+    ]
+  },
+  hallway_mid: {
+    room: "hallway",
+    title: "Hallway - Midpoint",
+    perspective: "first-person",
+    mood: "dread",
+    exits: { forward: "hallway_door", back: "living_coffee_table", left: "bathroom_sink", right: "kitchen_counter" },
+    hotspots: ["keys", "hall_note", "tote_bag", "sneakers", "transit_card"],
+    speaker: "Hallway",
+    narration: [
+      "The hallway is longer than the apartment should allow.",
+      "The door is visible. The route to it feels less certain."
+    ]
+  },
+  hallway_mid_uncertain: {
+    room: "hallway",
+    title: "Hallway - Uncertain",
+    perspective: "first-person",
+    mood: "dread",
+    exits: { forward: "hallway_door", back: "living_coffee_table" },
+    hotspots: ["hall_note", "keys", "tote_bag"],
+    speaker: "Space",
+    narration: [
+      "You moved. The door did not get closer.",
+      "Name the next object. One step is allowed to be small."
+    ],
+    choices: [
+      { label: "Use floor note.", text: "Keys. Wallet. Phone. Card. The order becomes external." },
+      { label: "Name the next object.", text: "Keys first. The hallway stops widening." },
+      { label: "Step forward again.", node: "hallway_door", text: "The door becomes a door again." }
+    ]
+  },
+  hallway_door: {
+    room: "hallway",
+    title: "Door - Threshold",
+    perspective: "first-person",
+    mood: "threshold",
+    exits: { back: "hallway_mid" },
+    hotspots: ["front_door", "appointment_card", "keys", "hall_note"],
+    speaker: "Threshold",
+    narration: [
+      "The door is not only a door. It is the shape of the whole morning asking to be finished.",
+      "Light leaks around the frame, bright and not quite readable."
+    ],
+    choices: [
+      { label: "Check carried things.", text: "Keys. Wallet. Phone. Card. The list is plain and kind." },
+      { label: "Use support cue.", text: "Support does not erase the morning. It makes one step reachable." },
+      { label: "Make today smaller.", text: "Not today is also a way to care for the day.", action: "reschedule" }
+    ]
+  }
+};
+
 const phoneChoices = [
   {
     id: "ask_help",
@@ -943,6 +1138,7 @@ const endings = {
 const initialState = () => ({
   screen: "menu",
   currentRoom: "bedroom",
+  currentNode: "bedroom_bedside",
   clarity: 6,
   support: 1,
   inventory: [],
@@ -969,8 +1165,12 @@ const initialState = () => ({
   supportStyle: "gentle",
   inspectedObjects: [],
   visitedRooms: ["bedroom"],
+  visitedNodes: ["bedroom_bedside"],
   memoryBookSection: "fragments",
   currentInspectionId: null,
+  vnSpeaker: "Morning",
+  vnText: "The room is not gone. It is only arriving in pieces.",
+  vnChoices: [],
   interactionCount: 0,
   symptoms: {
     memory: 1.2,
@@ -997,7 +1197,8 @@ const initialState = () => ({
     askedHelp: false,
     deniedHelp: false,
     callOpen: false,
-    rescheduled: false
+    rescheduled: false,
+    hallwayLooped: false
   },
   endingId: null,
   settings: {
@@ -1033,8 +1234,11 @@ const els = {
   decorLayer: $("#decorLayer"),
   supportLayer: $("#supportLayer"),
   hotspotLayer: $("#hotspotLayer"),
+  nodeExitLayer: $("#nodeExitLayer"),
   roomMap: $("#roomMap"),
   caption: $("#caption"),
+  vnSpeaker: $("#vnSpeaker"),
+  vnChoices: $("#vnChoices"),
   checklist: $("#checklist"),
   inventory: $("#inventory"),
   journalLog: $("#journalLog"),
@@ -1114,6 +1318,15 @@ function init() {
     if ((event.key === "m" || event.key === "M") && state.screen === "game") {
       openModal("memoryBookModal");
     }
+    if (state.screen === "game" && !$$(".modal").some((modal) => !modal.classList.contains("hidden"))) {
+      const map = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "forward", ArrowDown: "back" };
+      const direction = map[event.key];
+      const target = direction ? currentSceneNode().exits?.[direction] : null;
+      if (target) {
+        event.preventDefault();
+        moveToNode(target, direction);
+      }
+    }
   });
 
   updateContinueButton();
@@ -1182,6 +1395,9 @@ function normalizeState(saved) {
     symptoms: { ...initialState().symptoms, ...(saved.symptoms || {}) },
     metacognition: { ...initialState().metacognition, ...(saved.metacognition || {}) },
     selfMonitoring: saved.selfMonitoring || [],
+    currentNode: saved.currentNode && sceneNodes[saved.currentNode] ? saved.currentNode : roomStartNodes[saved.currentRoom] || "bedroom_bedside",
+    visitedNodes: saved.visitedNodes || [saved.currentNode || "bedroom_bedside"],
+    vnChoices: saved.vnChoices || [],
     settings: { ...initialState().settings, ...(saved.settings || {}) }
   };
 }
@@ -1214,6 +1430,53 @@ function renderAll() {
   renderMetacognitionPanel();
   renderQuickMemoryGrid();
   renderMemoryBook();
+  renderVNBox();
+}
+
+function setVN(speaker, text, choices = []) {
+  state.vnSpeaker = speaker || "Morning";
+  state.vnText = text || "The apartment is quiet. Start with what helps you see.";
+  state.vnChoices = choices || [];
+  renderVNBox();
+}
+
+function renderVNBox() {
+  if (!els.caption || !els.vnSpeaker || !els.vnChoices) return;
+  const node = currentSceneNode();
+  const speaker = state.vnSpeaker || node?.speaker || "Morning";
+  const text = state.vnText || nodeText(node);
+  els.vnSpeaker.textContent = speaker;
+  els.caption.textContent = text;
+  els.vnChoices.innerHTML = (state.vnChoices || []).map((choice, index) => `
+    <button type="button" data-vn-choice="${index}">
+      ${choice.label}
+    </button>
+  `).join("");
+  $$("[data-vn-choice]").forEach((button) => {
+    button.addEventListener("click", () => chooseVNChoice(Number(button.dataset.vnChoice)));
+  });
+}
+
+function chooseVNChoice(index) {
+  const choice = state.vnChoices?.[index];
+  if (!choice) return;
+  if (choice.action === "reschedule") {
+    state.flags.rescheduled = true;
+    addCarePerspective("Making today smaller can be an autonomous choice.");
+    addSymptomLog({
+      clinical: "Threshold decision shifted toward rescheduling under high load.",
+      human: "Not today became care, not failure."
+    });
+    setVN("Threshold", choice.text, []);
+  } else if (choice.node) {
+    moveToNode(choice.node, "choice");
+    setVN(currentSceneNode().speaker || "Morning", choice.text, currentSceneNode().choices || []);
+  } else {
+    setVN(currentSceneNode().speaker || "Morning", choice.text, []);
+    ground(0.18);
+  }
+  renderAll();
+  saveGame();
 }
 
 function applySettings() {
@@ -1278,22 +1541,50 @@ function renderRoomMap() {
 
   $$("#roomMap [data-room]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.currentRoom = button.dataset.room;
-      if (!state.visitedRooms.includes(state.currentRoom)) state.visitedRooms.push(state.currentRoom);
-      soften(0.12);
-      beginRoomTransition();
-      announceFeedback("transition", `${rooms[state.currentRoom].name} washes into view.`);
-      renderAll();
-      saveGame();
+      const nodeId = roomStartNodes[button.dataset.room] || "bedroom_bedside";
+      moveToNode(nodeId, "map");
     });
   });
 }
 
+function currentSceneNode() {
+  return sceneNodes[state.currentNode] || sceneNodes[roomStartNodes[state.currentRoom]] || sceneNodes.bedroom_bedside;
+}
+
+function moveToNode(nodeId, direction = "forward") {
+  const current = currentSceneNode();
+  let targetId = nodeId;
+  if (
+    current &&
+    state.currentNode === "hallway_mid" &&
+    direction === "forward" &&
+    currentPerceptionState() === "dread" &&
+    !state.flags.hallwayLooped
+  ) {
+    targetId = "hallway_mid_uncertain";
+    state.flags.hallwayLooped = true;
+    nudgeSymptom("visuospatial", 0.25);
+  }
+  const node = sceneNodes[targetId];
+  if (!node) return;
+  state.currentNode = targetId;
+  state.currentRoom = node.room;
+  state.visitedNodes = [...new Set([...(state.visitedNodes || []), targetId])];
+  if (!state.visitedRooms.includes(node.room)) state.visitedRooms.push(node.room);
+  soften(direction === "map" ? 0.08 : 0.16);
+  beginRoomTransition();
+  setVN(node.speaker || "Morning", nodeText(node), node.choices || []);
+  announceFeedback("transition", `${node.title} settles into view.`);
+  playSound(node.room === "hallway" ? "hallway" : "ground");
+  renderAll();
+  saveGame();
+}
+
 function beginRoomTransition() {
-  document.body.classList.add("room-transitioning");
+  document.body.classList.add("room-transitioning", "node-transition");
   window.clearTimeout(beginRoomTransition.timeout);
   beginRoomTransition.timeout = window.setTimeout(() => {
-    document.body.classList.remove("room-transitioning");
+    document.body.classList.remove("room-transitioning", "node-transition");
   }, state.settings.reducedMotion ? 60 : 520);
 }
 
@@ -1306,12 +1597,16 @@ function roomStatus(roomId) {
 }
 
 function renderRoom() {
-  const room = rooms[state.currentRoom];
+  const nodeId = sceneNodes[state.currentNode] ? state.currentNode : roomStartNodes[state.currentRoom] || "bedroom_bedside";
+  state.currentNode = nodeId;
+  const node = sceneNodes[nodeId];
+  state.currentRoom = node.room;
+  const room = rooms[node.room];
   const clarity = currentClarityState();
   applyPerceptionClasses(clarity);
   if (!state.visitedRooms.includes(state.currentRoom)) state.visitedRooms.push(state.currentRoom);
-  els.roomTitle.textContent = room.name;
-  els.roomDescription.textContent = roomText(room);
+  els.roomTitle.textContent = node.title || room.name;
+  els.roomDescription.textContent = nodeText(node);
   els.clarityLabel.textContent = {
     clear: "Grounding: clear",
     softened: "Grounding: softened",
@@ -1324,17 +1619,34 @@ function renderRoom() {
   els.clarityMeter.style.width = `${(state.clarity / 6) * 100}%`;
   els.symptomSummary.innerHTML = renderSymptomSummary();
   els.roomStage.dataset.room = state.currentRoom;
+  els.roomStage.dataset.node = state.currentNode;
+  els.roomStage.dataset.mood = node.mood || clarity;
   els.roomStage.dataset.clarity = clarity;
-  els.decorLayer.innerHTML = renderFirstPersonScene(state.currentRoom);
+  els.decorLayer.innerHTML = renderFirstPersonScene(state.currentRoom, state.currentNode);
   els.supportLayer.innerHTML = state.supportPlaced
     .filter((id) => supportTargets.find((target) => target.id === id)?.room === state.currentRoom)
     .map((id) => `<span class="support-note support-${id}">${supportTargets.find((target) => target.id === id).label} cue</span>`)
     .join("");
-  els.hotspotLayer.innerHTML = room.objects.map((object) => renderHotspot(object, clarity)).join("");
+  const nodeObjects = (node.hotspots || room.objects.map((object) => object.id))
+    .map(findObjectById)
+    .filter(Boolean);
+  els.hotspotLayer.innerHTML = nodeObjects.map((object) => renderHotspot(object, clarity)).join("");
+  els.nodeExitLayer.innerHTML = renderNodeExits(node);
 
   $$(".hotspot").forEach((button) => {
     button.addEventListener("click", () => handleObject(button.dataset.object));
   });
+  $$("[data-node-exit]").forEach((button) => {
+    button.addEventListener("click", () => moveToNode(button.dataset.nodeExit, button.dataset.direction));
+  });
+}
+
+function nodeText(node) {
+  if (!node) return "The apartment is quiet. Start with what helps you see.";
+  const line = state.settings.plainLanguage ? node.narration[0] : node.narration[Math.min((state.interactionCount || 0) % node.narration.length, node.narration.length - 1)];
+  if (state.settings.disableDistortion || state.settings.plainLanguage) return line;
+  if (node.mood === "dread" && currentPerceptionState() !== "supported") return distortText(line, "fragmented");
+  return line;
 }
 
 function applyPerceptionClasses(clarity) {
@@ -1365,7 +1677,7 @@ function renderDecorDetail(detail) {
   `;
 }
 
-function renderFirstPersonScene(roomId) {
+function renderFirstPersonScene(roomId, nodeId) {
   const scene = firstPersonScenes[roomId] || { parts: [] };
   const parts = scene.parts.map((part) => `
     <span
@@ -1375,7 +1687,7 @@ function renderFirstPersonScene(roomId) {
     ></span>
   `).join("");
   return `
-    <div class="first-person-scene scene-${roomId}" aria-hidden="true">
+    <div class="first-person-scene scene-node scene-${roomId} node-${nodeId}" aria-hidden="true">
       <span class="scene-background"></span>
       <span class="scene-wall"></span>
       <span class="scene-back-wall"></span>
@@ -1390,6 +1702,26 @@ function renderFirstPersonScene(roomId) {
   `;
 }
 
+function renderNodeExits(node) {
+  const labels = {
+    left: "Turn left",
+    right: "Turn right",
+    forward: "Move forward",
+    back: "Step back"
+  };
+  return Object.entries(node.exits || {}).map(([direction, nodeId]) => `
+    <button
+      class="node-exit exit-${direction}"
+      type="button"
+      data-direction="${direction}"
+      data-node-exit="${nodeId}"
+      aria-label="${labels[direction] || "Move"} to ${sceneNodes[nodeId]?.title || nodeId}"
+    >
+      <span>${labels[direction] || "Move"}</span>
+    </button>
+  `).join("");
+}
+
 function renderHotspot(object, clarity) {
   const supported = state.supportPlaced.some((target) => object.id.includes(target));
   const labelState = supported ? "supported" : clarity;
@@ -1398,8 +1730,8 @@ function renderHotspot(object, clarity) {
   const helpful = isHelpfulObject(object);
   const [x, y] = firstPersonHotspots[object.id] || [object.x, object.y];
   return `
-    <button class="hotspot hotspot-${object.id} ${done ? "done" : ""} ${helpful ? "helpful" : ""}" style="left:${x}%;top:${y}%;" data-object="${object.id}" type="button">
-      <span>${label}</span>
+    <button class="hotspot object-marker hotspot-${object.id} ${done ? "done" : ""} ${helpful ? "helpful" : ""}" style="left:${x}%;top:${y}%;" data-object="${object.id}" type="button">
+      <span class="object-label">${label}</span>
     </button>
   `;
 }
@@ -1463,8 +1795,9 @@ function isHelpfulObject(object) {
 }
 
 function handleObject(objectId) {
-  const object = rooms[state.currentRoom].objects.find((item) => item.id === objectId);
+  const object = findObjectById(objectId);
   if (!object) return;
+  setVN(object.labels.clear || "Object", inspectionText(object.text || "The object waits in the scene."));
   openInspection(object);
 }
 
@@ -1550,7 +1883,7 @@ function openInspection(object) {
   els.inspectionText.textContent = inspectionText(data.look);
   els.inspectionFeeling.textContent = inspectionText(data.feeling || data.question || "The object feels familiar and not fully settled yet.");
   els.inspectionNote.textContent = data.note;
-  els.inspectionVisual.className = `inspection-visual inspect-${slug(data.visual || object.kind)}`;
+  els.inspectionVisual.className = `inspection-visual closeup-view inspect-${slug(data.visual || object.kind)}`;
   els.inspectionActions.innerHTML = inspectionActionsFor(object, data).map((action) => `
     <button type="button" data-inspection-action="${action.id}">
       <strong>${action.label}</strong>
@@ -1599,7 +1932,16 @@ function recordMetacognitiveCheck(confidence, object) {
     partial: "Feeling arrived before the facts, and that still counted as information.",
     unsure: "Needing a cue did not make the morning less yours."
   };
-  state.selfMonitoring.unshift({ confidence: key, object: objectName, text: lines[key], human: human[key] });
+  const node = currentSceneNode();
+  state.selfMonitoring.unshift({
+    confidence: key,
+    object: objectName,
+    sceneNode: state.currentNode,
+    sceneTitle: node?.title || rooms[state.currentRoom].name,
+    supportUsed: state.supportPlaced.length > 0,
+    text: lines[key],
+    human: human[key]
+  });
   state.selfMonitoring = state.selfMonitoring.slice(0, 30);
   if (key === "unsure") {
     state.metacognition.cuesUsed += 1;
@@ -2299,7 +2641,7 @@ function afterText(object) {
 }
 
 function setCaption(text) {
-  els.caption.textContent = text;
+  setVN(state.vnSpeaker || currentSceneNode()?.speaker || "Morning", text, []);
 }
 
 function announceFeedback(type, text) {
@@ -2448,7 +2790,9 @@ function renderMemoryBook() {
           return `
             <article class="memory-entry paired-note">
               <span>${line.confidence}</span>
+              <p><strong>Scene:</strong> ${line.sceneTitle || line.sceneNode || "Current view"}</p>
               <p><strong>Object:</strong> ${line.object}</p>
+              <p><strong>Support used:</strong> ${line.supportUsed ? "yes" : "not yet"}</p>
               <p>${line.text}</p>
               <p><strong>Human:</strong> ${line.human}</p>
             </article>
