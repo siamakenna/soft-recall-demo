@@ -1902,3 +1902,1204 @@ body.state-grounded {
     padding: 12px;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Publication-focused art direction pass
+   -------------------------------------------------------------------------- */
+:root {
+  --night: #152032;
+  --night-2: #202a3d;
+  --ink-deep: #151818;
+  --aged-paper: #f1e7cc;
+  --aged-paper-2: #deceb0;
+  --rose-wash: rgba(192, 91, 101, 0.34);
+  --moss-wash: rgba(79, 116, 70, 0.34);
+  --gold-wash: rgba(228, 175, 75, 0.38);
+  --blue-wash: rgba(83, 133, 153, 0.34);
+  --violet-wash: rgba(78, 70, 116, 0.32);
+  --card-radius: 12px;
+  --paper-border: rgba(43, 39, 32, 0.34);
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(104, 76, 107, 0.42), transparent 32%),
+    radial-gradient(ellipse at 90% 22%, rgba(75, 107, 126, 0.32), transparent 34%),
+    radial-gradient(ellipse at 68% 94%, rgba(112, 83, 61, 0.34), transparent 36%),
+    linear-gradient(135deg, #111a29 0%, #223047 48%, #171827 100%);
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  letter-spacing: 0.01em;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse at 24% 16%, rgba(238, 178, 109, 0.10), transparent 30%),
+    radial-gradient(ellipse at 78% 86%, rgba(132, 166, 141, 0.08), transparent 34%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.025) 0 1px, transparent 1px 8px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.title-card,
+.status-card,
+.scene-frame,
+.carried-tray,
+.modal-card,
+.ending-card {
+  position: relative;
+  border: 1px solid var(--paper-border);
+  border-radius: var(--card-radius);
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(192, 91, 101, 0.14), transparent 36%),
+    radial-gradient(ellipse at 92% 90%, rgba(90, 126, 95, 0.12), transparent 40%),
+    linear-gradient(180deg, rgba(248, 238, 207, 0.96), rgba(228, 211, 174, 0.94));
+  box-shadow:
+    inset 0 0 28px rgba(255, 252, 232, 0.42),
+    inset 0 0 80px rgba(89, 63, 48, 0.08),
+    0 18px 42px rgba(5, 9, 17, 0.34);
+}
+
+.title-card::before,
+.status-card::before,
+.scene-frame::before,
+.carried-tray::before,
+.modal-card::before,
+.ending-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(137, 55, 53, 0.18), transparent 15%),
+    radial-gradient(circle at 98% 100%, rgba(39, 68, 50, 0.12), transparent 18%),
+    repeating-linear-gradient(0deg, rgba(40, 34, 25, 0.028) 0 1px, transparent 1px 7px);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.title-card::after,
+.status-card::after,
+.scene-frame::after,
+.carried-tray::after,
+.modal-card::after,
+.ending-card::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,0.18);
+  pointer-events: none;
+}
+
+.menu-screen {
+  min-height: 100vh;
+  padding: clamp(18px, 4vw, 52px);
+  background:
+    radial-gradient(ellipse at 50% 36%, rgba(255, 228, 154, 0.18), transparent 34%),
+    radial-gradient(ellipse at 14% 88%, rgba(83, 133, 153, 0.18), transparent 38%);
+}
+
+.title-card {
+  width: min(560px, calc(100vw - 32px));
+  padding: clamp(26px, 5vw, 56px);
+  transform: rotate(-0.35deg);
+}
+
+.title-card h1 {
+  font-size: clamp(4rem, 12vw, 8.6rem);
+  line-height: 0.82;
+  font-weight: 400;
+  letter-spacing: -0.06em;
+  color: #161b18;
+  text-shadow: 0 2px 0 rgba(255, 249, 226, 0.24);
+}
+
+.menu-actions {
+  flex-direction: column;
+  align-items: stretch;
+  width: min(360px, 100%);
+  margin-inline: auto;
+}
+
+.menu-note {
+  margin: 22px 0 0;
+  color: rgba(45, 42, 34, 0.78);
+  font-size: 0.9rem;
+}
+
+.primary,
+.ghost,
+.icon-button,
+.mini-button {
+  border-radius: 9px;
+  border-color: rgba(63, 55, 43, 0.30);
+  background:
+    radial-gradient(ellipse at 18% 12%, rgba(255,255,255,0.42), transparent 42%),
+    linear-gradient(135deg, rgba(246, 231, 188, 0.96), rgba(216, 194, 152, 0.92));
+  box-shadow: 0 7px 18px rgba(9, 12, 21, 0.18);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.primary {
+  background:
+    radial-gradient(ellipse at 18% 20%, rgba(232, 168, 160, 0.42), transparent 48%),
+    linear-gradient(135deg, rgba(179, 83, 84, 0.92), rgba(116, 62, 63, 0.92));
+  color: #fff7e4;
+}
+
+.primary:hover,
+.ghost:hover,
+.mini-button:hover,
+.primary:focus-visible,
+.ghost:focus-visible,
+.mini-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(5, 8, 13, 0.28);
+  filter: saturate(1.04);
+}
+
+.game-screen {
+  --side-left: clamp(250px, 19vw, 330px);
+  --side-right: clamp(270px, 22vw, 380px);
+  display: grid;
+  grid-template-columns: var(--side-left) minmax(620px, 1fr) var(--side-right);
+  grid-template-areas: "left core right";
+  gap: clamp(12px, 1.4vw, 22px);
+  min-height: 100vh;
+  padding: clamp(12px, 1.5vw, 24px);
+  background:
+    radial-gradient(ellipse at 10% 20%, rgba(141, 97, 80, 0.16), transparent 32%),
+    radial-gradient(ellipse at 77% 16%, rgba(91, 89, 130, 0.20), transparent 28%),
+    radial-gradient(ellipse at 48% 90%, rgba(45, 80, 75, 0.13), transparent 36%),
+    linear-gradient(135deg, rgba(17, 27, 42, 0.94), rgba(31, 39, 54, 0.92));
+}
+
+.game-left { grid-area: left; }
+.game-core { grid-area: core; }
+.game-right { grid-area: right; }
+
+.status-panel,
+.journal-panel,
+.play-area {
+  align-self: stretch;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.game-left,
+.game-right,
+.game-core {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.game-logo-card {
+  padding: 26px 18px 18px;
+  text-align: center;
+}
+
+.game-logo {
+  margin: 0;
+  font-size: clamp(3.1rem, 5.5vw, 5.4rem);
+  line-height: 0.84;
+  font-weight: 400;
+  letter-spacing: -0.08em;
+  color: #151815;
+}
+
+.mini-subtitle {
+  margin: 12px 0 18px;
+  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  text-transform: lowercase;
+}
+
+.status-card {
+  padding: 14px;
+}
+
+.room-card {
+  display: grid;
+  gap: 8px;
+}
+
+.room-card h2,
+.notes-card h2,
+.checklist-box h3,
+.metacognition-card h3,
+.quick-book-card h3,
+.floor-plan-panel h3 {
+  color: #405238;
+  letter-spacing: 0.08em;
+}
+
+.room-description {
+  min-height: 0;
+  margin: 0;
+  font-size: 0.9rem;
+  color: #535247;
+}
+
+.time {
+  display: inline-block;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(94, 64, 76, 0.12);
+  color: #8d4050;
+}
+
+.control-hints {
+  display: grid;
+  gap: 8px;
+  color: rgba(236, 226, 194, 0.86);
+  background:
+    linear-gradient(135deg, rgba(18, 27, 41, 0.92), rgba(35, 44, 63, 0.92));
+}
+
+.control-hints kbd,
+.shortcut-pill {
+  display: inline-block;
+  min-width: 32px;
+  margin-right: 8px;
+  border: 1px solid rgba(238, 232, 205, 0.28);
+  border-radius: 5px;
+  padding: 2px 7px;
+  color: #f3e8c8;
+  background: rgba(0,0,0,0.22);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.top-signal-strip {
+  display: flex;
+  justify-content: center;
+  min-height: 54px;
+  z-index: 3;
+}
+
+.symptom-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+  margin: 0;
+}
+
+.symptom-summary span {
+  min-width: 128px;
+  border: 1px solid rgba(38, 34, 28, 0.24);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background:
+    radial-gradient(ellipse at 18% 20%, rgba(255,255,255,0.3), transparent 46%),
+    linear-gradient(180deg, rgba(242, 229, 191, 0.96), rgba(213, 196, 158, 0.94));
+  color: #24251e;
+  box-shadow: 0 9px 18px rgba(5, 8, 13, 0.20);
+  text-align: center;
+  font-size: 0.77rem;
+  text-transform: capitalize;
+}
+
+.scene-frame {
+  flex: 1 1 auto;
+  min-height: 560px;
+  padding: 10px;
+  background:
+    linear-gradient(135deg, rgba(48, 39, 34, 0.78), rgba(28, 36, 48, 0.72)),
+    radial-gradient(ellipse at 40% 30%, rgba(241, 203, 121, 0.10), transparent 40%);
+}
+
+.room-stage {
+  width: 100%;
+  min-height: clamp(500px, 61vh, 720px);
+  aspect-ratio: 1.86;
+  border-radius: 10px;
+  border: 1px solid rgba(7, 9, 13, 0.55);
+  box-shadow:
+    inset 0 -90px 120px rgba(24, 20, 17, 0.36),
+    inset 0 80px 120px rgba(248, 207, 113, 0.11),
+    0 24px 60px rgba(3, 5, 9, 0.44);
+}
+
+.room-stage::before {
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 50% 27%, rgba(255, 210, 121, 0.38), transparent 24%),
+    radial-gradient(ellipse at 18% 80%, rgba(92, 62, 49, 0.34), transparent 30%),
+    radial-gradient(ellipse at 85% 76%, rgba(23, 26, 32, 0.34), transparent 28%),
+    linear-gradient(180deg, rgba(220, 172, 104, 0.18) 0 52%, rgba(82, 61, 45, 0.18) 52% 53%, rgba(111, 123, 77, 0.16) 53% 100%),
+    repeating-linear-gradient(0deg, rgba(39, 33, 26, 0.035) 0 1px, transparent 1px 6px);
+}
+
+.room-stage[data-room="bedroom"] {
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(255, 211, 126, 0.32), transparent 24%),
+    linear-gradient(180deg, #836f56 0 40%, #6d5545 40% 42%, #5d6d49 42% 100%);
+}
+.room-stage[data-room="bathroom"] {
+  background:
+    radial-gradient(ellipse at 42% 28%, rgba(232, 248, 248, 0.28), transparent 28%),
+    linear-gradient(180deg, #8cb1b8 0 48%, #4e7984 48% 50%, #d8c6a7 50% 100%);
+}
+.room-stage[data-room="kitchen"] {
+  background:
+    radial-gradient(ellipse at 58% 24%, rgba(255, 208, 112, 0.30), transparent 28%),
+    linear-gradient(180deg, #b77b4a 0 42%, #7a4838 42% 44%, #697d4f 44% 100%);
+}
+.room-stage[data-room="living"] {
+  background:
+    radial-gradient(ellipse at 45% 38%, rgba(238, 173, 111, 0.23), transparent 32%),
+    linear-gradient(180deg, #85646a 0 40%, #4b3a54 40% 42%, #65764d 42% 100%);
+}
+.room-stage[data-room="hallway"] {
+  background:
+    radial-gradient(ellipse at 75% 28%, rgba(255, 206, 117, 0.25), transparent 22%),
+    linear-gradient(120deg, #765238 0%, #9f774b 44%, #425e70 100%);
+}
+
+.decor-layer {
+  transform: perspective(900px) rotateX(5deg) translateY(1%);
+  transform-origin: center bottom;
+}
+
+.scene-detail {
+  border-color: rgba(28, 25, 21, 0.20);
+  border-radius: 9px;
+  color: transparent;
+  text-shadow: none;
+  box-shadow:
+    inset 0 0 18px rgba(255, 245, 217, 0.16),
+    0 16px 24px rgba(21, 18, 15, 0.18);
+  opacity: 0.92;
+}
+
+.scene-detail::after {
+  background: radial-gradient(ellipse at 20% 15%, rgba(255, 255, 230, 0.20), transparent 48%);
+  mix-blend-mode: screen;
+}
+
+.detail-laptop,
+.detail-project,
+.detail-phone,
+.detail-texts,
+.detail-alert,
+.detail-playlist,
+.detail-earbuds {
+  box-shadow: 0 0 18px rgba(117, 157, 148, 0.20), 0 16px 24px rgba(21, 18, 15, 0.18);
+}
+
+.hotspot {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border: 2px solid rgba(255, 246, 217, 0.95);
+  border-radius: 999px;
+  padding: 0;
+  background: rgba(219, 159, 71, 0.72);
+  box-shadow:
+    0 0 0 4px rgba(81, 58, 35, 0.28),
+    0 0 24px rgba(255, 217, 133, 0.38),
+    0 8px 20px rgba(5, 8, 13, 0.28);
+}
+
+.hotspot span {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 180px;
+  border: 1px solid rgba(48, 39, 31, 0.22);
+  border-radius: 7px;
+  padding: 6px 9px;
+  background: rgba(246, 233, 198, 0.96);
+  color: var(--ink);
+  box-shadow: 0 12px 24px rgba(5, 8, 13, 0.24);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+  font-size: 0.76rem;
+}
+
+.hotspot:hover span,
+.hotspot:focus-visible span {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.hotspot.done {
+  background: rgba(107, 139, 83, 0.78);
+}
+
+.hotspot.helpful {
+  background: rgba(230, 181, 83, 0.92);
+  box-shadow:
+    0 0 0 4px rgba(236, 213, 143, 0.32),
+    0 0 34px rgba(245, 216, 124, 0.62),
+    0 12px 22px rgba(5, 8, 13, 0.28);
+}
+
+.caption {
+  width: 100%;
+  min-height: 52px;
+  margin: 10px auto 0;
+  border: 1px solid rgba(43, 39, 32, 0.24);
+  border-radius: 9px;
+  padding: 12px 16px;
+  color: #3b3b32;
+  background:
+    linear-gradient(135deg, rgba(245, 232, 195, 0.94), rgba(220, 201, 163, 0.88));
+  box-shadow: inset 0 0 18px rgba(255, 251, 227, 0.34);
+}
+
+.carried-tray {
+  padding: 10px 12px 12px;
+}
+
+.carried-tray h3 {
+  display: inline-block;
+  margin: -3px 0 8px;
+  padding: 4px 10px;
+  border-radius: 5px;
+  color: #f5ead2;
+  background: rgba(52, 78, 54, 0.78);
+}
+
+.inventory {
+  grid-template-columns: repeat(8, minmax(64px, 1fr));
+  gap: 6px;
+}
+
+.slot {
+  min-height: 58px;
+  border-style: dashed;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.26), transparent 46%),
+    linear-gradient(180deg, rgba(237, 222, 186, 0.92), rgba(208, 187, 148, 0.88));
+}
+
+.slot b {
+  color: #2d3e30;
+  font-size: 0.78rem;
+}
+
+.floor-plan-panel {
+  padding-bottom: 16px;
+}
+
+.room-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(52, 47, 38, 0.18);
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(229, 219, 190, 0.72), rgba(205, 195, 169, 0.58));
+}
+
+.room-map button {
+  min-height: 54px;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(244, 233, 198, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.24);
+}
+
+.room-map button.active {
+  color: #f9efcf;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(246, 219, 129, 0.28), transparent 46%),
+    linear-gradient(135deg, #405f43, #2f4734);
+}
+
+.room-map button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.map-legend {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  margin-top: 10px;
+  font-size: 0.78rem;
+  color: rgba(245, 235, 207, 0.84);
+}
+
+.map-legend span { display: inline-flex; align-items: center; gap: 7px; }
+.map-legend i { display:inline-block; width:10px; height:10px; border-radius: 999px; }
+.map-legend .stable { background: #7ea15a; }
+.map-legend .uncertain { background: #e2bf57; }
+.map-legend .unresolved { background: #a2638e; }
+
+.notes-card .journal-log {
+  min-height: 120px;
+  max-height: 18vh;
+  margin-bottom: 0;
+}
+
+.entry {
+  border-left-color: rgba(67, 91, 55, 0.55);
+  color: #46473d;
+}
+
+.checklist {
+  padding-left: 0;
+  list-style: none;
+}
+
+.checklist li {
+  position: relative;
+  margin: 8px 0;
+  padding-left: 28px;
+  line-height: 1.35;
+}
+
+.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.25em;
+  width: 15px;
+  height: 15px;
+  border: 1px solid rgba(55, 52, 42, 0.48);
+  border-radius: 3px;
+  background: rgba(255,255,245,0.35);
+}
+
+.checklist li.done::before {
+  background: #667b44;
+  box-shadow: inset 0 0 0 3px rgba(245, 238, 205, 0.85);
+}
+
+.metacognition-panel {
+  display: grid;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.meta-meter {
+  display: grid;
+  gap: 5px;
+}
+
+.meta-meter span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.meta-meter i {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(62, 55, 46, 0.18);
+  overflow: hidden;
+}
+
+.meta-meter i::before {
+  content: "";
+  display: block;
+  height: 100%;
+  width: var(--value, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, #a66d73, #d6ae52, #668a58);
+}
+
+.quick-memory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.quick-memory-grid button {
+  min-height: 58px;
+  border: 1px solid rgba(55, 48, 38, 0.20);
+  border-radius: 8px;
+  padding: 8px;
+  background: rgba(241, 229, 196, 0.70);
+  color: #24251f;
+  text-align: center;
+}
+
+.quick-memory-grid strong,
+.quick-memory-grid span {
+  display: block;
+}
+
+.quick-memory-grid span {
+  color: #5f6154;
+  font-size: 0.78rem;
+}
+
+.mini-button {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+}
+
+.side-actions {
+  grid-template-columns: repeat(2, minmax(0,1fr));
+}
+
+.side-actions .wide {
+  width: auto;
+}
+
+.inspection-card {
+  width: min(980px, calc(100vw - 28px));
+}
+
+.inspection-layout {
+  grid-template-columns: minmax(240px, 360px) 1fr;
+}
+
+.inspection-visual {
+  min-height: 290px;
+}
+
+.meta-check-inline {
+  margin-top: 14px;
+  border-top: 1px solid rgba(58, 51, 41, 0.16);
+  padding-top: 12px;
+}
+
+.meta-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 8px;
+}
+
+.meta-choice-grid button {
+  border: 1px solid rgba(58, 51, 41, 0.24);
+  border-radius: 999px;
+  padding: 7px 8px;
+  background: rgba(248, 237, 202, 0.78);
+  color: var(--ink);
+}
+
+.meta-choice-grid button:hover,
+.meta-choice-grid button:focus-visible {
+  background: rgba(210, 225, 188, 0.88);
+}
+
+.memory-tabs button,
+.reflection-prompts button {
+  box-shadow: none;
+}
+
+.memory-entries {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.book-card {
+  width: min(980px, calc(100vw - 28px));
+}
+
+.ending-card {
+  width: min(880px, calc(100vw - 28px));
+}
+
+body.state-dread .scene-frame {
+  box-shadow: inset 0 0 60px rgba(42, 31, 59, 0.18), 0 18px 42px rgba(5, 9, 17, 0.34);
+}
+
+body.state-dread .caption,
+body.state-overloaded .caption,
+body.state-uncanny .caption {
+  background:
+    radial-gradient(ellipse at 10% 18%, rgba(104, 77, 122, 0.16), transparent 40%),
+    linear-gradient(135deg, rgba(234, 225, 205, 0.94), rgba(198, 190, 178, 0.88));
+}
+
+body.state-grounded .hotspot.helpful,
+body.state-supported .hotspot.helpful {
+  background: rgba(111, 149, 95, 0.94);
+}
+
+body.high-contrast .hotspot span,
+body.high-contrast .caption,
+body.high-contrast .status-card,
+body.high-contrast .scene-frame,
+body.high-contrast .carried-tray {
+  color: #111;
+  background: #fff8dd;
+}
+
+@media (max-width: 1320px) {
+  .game-screen {
+    grid-template-columns: 250px minmax(540px, 1fr) 300px;
+  }
+  .inventory { grid-template-columns: repeat(5, minmax(64px, 1fr)); }
+  .symptom-summary span { min-width: 110px; }
+}
+
+@media (max-width: 1100px) {
+  .game-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "core" "left" "right";
+  }
+  .game-left,
+  .game-right {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .game-logo-card { grid-row: span 2; }
+  .scene-frame { min-height: auto; }
+  .room-stage { min-height: 470px; }
+}
+
+@media (max-width: 760px) {
+  .game-screen { padding: 10px; }
+  .game-left,
+  .game-right { grid-template-columns: 1fr; }
+  .top-signal-strip { min-height: 0; }
+  .symptom-summary span { min-width: 46%; font-size: 0.68rem; }
+  .room-stage { min-height: 390px; aspect-ratio: 1.15; }
+  .inventory { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .side-actions { grid-template-columns: 1fr; }
+  .inspection-layout,
+  .meta-choice-grid { grid-template-columns: 1fr; }
+  .hotspot span { display: none; }
+}
+
+
+/* --------------------------------------------------------------------------
+   Full-surface watercolor art direction pass
+   Applies the screenshot-inspired language to every major surface, not only
+   the title/opening screen or central scene.
+-------------------------------------------------------------------------- */
+
+.whole-game-watercolor {
+  --surface-cream: rgba(246, 234, 199, 0.94);
+  --surface-cream-deep: rgba(213, 194, 153, 0.90);
+  --surface-ink: rgba(24, 25, 21, 0.94);
+  --surface-blueblack: rgba(12, 20, 34, 0.94);
+  --surface-wine: rgba(117, 64, 76, 0.32);
+  --surface-gold: rgba(229, 177, 82, 0.34);
+  --surface-green: rgba(85, 120, 78, 0.28);
+  --surface-violet: rgba(78, 64, 112, 0.30);
+  --surface-edge: rgba(39, 35, 28, 0.26);
+}
+
+.whole-game-watercolor::before,
+.whole-game-watercolor::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+}
+
+.whole-game-watercolor::before {
+  background:
+    radial-gradient(ellipse at 7% 8%, rgba(130, 74, 72, 0.32), transparent 28%),
+    radial-gradient(ellipse at 94% 12%, rgba(75, 64, 112, 0.26), transparent 30%),
+    radial-gradient(ellipse at 56% 96%, rgba(66, 103, 93, 0.20), transparent 38%),
+    linear-gradient(135deg, #111a2a 0%, #21283a 48%, #17233a 100%);
+}
+
+.whole-game-watercolor::after {
+  opacity: 0.34;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, rgba(4, 7, 13, 0.055) 0 1px, transparent 1px 9px),
+    radial-gradient(ellipse at 28% 72%, rgba(239, 203, 122, 0.09), transparent 34%);
+  mix-blend-mode: overlay;
+}
+
+/* Every visible card now uses the same tactile paper vocabulary. */
+.title-card,
+.status-card,
+.scene-frame,
+.carried-tray,
+.modal-card,
+.ending-card,
+.phone-surface,
+.inspection-visual,
+.memory-entry,
+.slot,
+.quick-memory-grid button,
+.reflection-prompts button,
+.meta-choice-grid button,
+.settings-grid label,
+.support-style-choices button,
+.support-choices button,
+.dialogue-options button,
+.inspection-actions button {
+  position: relative;
+  overflow: hidden;
+}
+
+.title-card::before,
+.status-card::before,
+.scene-frame::before,
+.carried-tray::before,
+.modal-card::before,
+.ending-card::before,
+.phone-surface::before,
+.memory-entry::before,
+.slot::before,
+.quick-memory-grid button::before,
+.settings-grid label::before,
+.support-style-choices button::before,
+.support-choices button::before,
+.dialogue-options button::before,
+.inspection-actions button::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 42% 58% 50% 45%;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(255,255,255,0.24), transparent 34%),
+    radial-gradient(ellipse at 74% 28%, var(--surface-gold), transparent 30%),
+    radial-gradient(ellipse at 18% 82%, var(--surface-green), transparent 42%);
+  filter: blur(14px);
+  opacity: 0.42;
+}
+
+.title-card > *,
+.status-card > *,
+.scene-frame > *,
+.carried-tray > *,
+.modal-card > *,
+.ending-card > *,
+.phone-surface > *,
+.memory-entry > *,
+.slot > *,
+.quick-memory-grid button > *,
+.settings-grid label > *,
+.support-style-choices button > *,
+.support-choices button > *,
+.dialogue-options button > *,
+.inspection-actions button > * {
+  position: relative;
+  z-index: 1;
+}
+
+.title-card,
+.status-card,
+.carried-tray,
+.modal-card,
+.ending-card {
+  border: 1px solid var(--surface-edge);
+  background:
+    linear-gradient(135deg, var(--surface-cream), var(--surface-cream-deep)),
+    radial-gradient(ellipse at 14% 16%, rgba(255,255,255,0.34), transparent 38%);
+  box-shadow:
+    inset 0 0 28px rgba(255, 248, 221, 0.20),
+    0 18px 44px rgba(5, 8, 13, 0.30);
+}
+
+.title-card::after,
+.status-card::after,
+.carried-tray::after,
+.modal-card::after,
+.ending-card::after,
+.scene-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(35, 30, 24, 0.035) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(92deg, rgba(35, 30, 24, 0.024) 0 1px, transparent 1px 11px);
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+/* Opening/menu, case file, onboarding, settings, credits. */
+.menu-screen {
+  background:
+    radial-gradient(ellipse at 18% 16%, rgba(221, 145, 126, 0.18), transparent 34%),
+    radial-gradient(ellipse at 82% 28%, rgba(112, 139, 151, 0.18), transparent 34%),
+    radial-gradient(ellipse at 44% 90%, rgba(101, 133, 80, 0.14), transparent 40%);
+}
+
+.title-card {
+  width: min(540px, calc(100vw - 32px));
+  border-radius: 10px 18px 12px 16px;
+  padding: clamp(28px, 5vw, 58px) clamp(22px, 4vw, 48px);
+  transform: rotate(-0.35deg);
+}
+
+.title-card h1 {
+  text-shadow: 0 8px 18px rgba(57, 44, 35, 0.10);
+}
+
+.modal {
+  background:
+    radial-gradient(ellipse at 24% 18%, rgba(222, 174, 112, 0.16), transparent 34%),
+    radial-gradient(ellipse at 80% 84%, rgba(67, 91, 121, 0.24), transparent 40%),
+    rgba(6, 10, 18, 0.62);
+  backdrop-filter: blur(2px);
+}
+
+.modal-card,
+.ending-card {
+  border-radius: 12px 18px 14px 20px;
+}
+
+.case-card,
+.onboarding-card,
+.support-card,
+.phone-modal-card,
+.inspection-card,
+.book-card {
+  box-shadow:
+    inset 0 0 60px rgba(255, 248, 221, 0.16),
+    0 28px 82px rgba(3, 6, 11, 0.46);
+}
+
+.case-lines,
+.onboarding-steps,
+.content-note,
+.clinical-line {
+  position: relative;
+  border-color: rgba(62, 55, 46, 0.22);
+  background:
+    radial-gradient(ellipse at 16% 16%, rgba(255, 255, 245, 0.26), transparent 32%),
+    linear-gradient(135deg, rgba(248, 238, 205, 0.78), rgba(220, 205, 170, 0.58));
+  box-shadow: inset 0 0 18px rgba(255,255,240,0.18);
+}
+
+/* Support, dialogue, and inspection buttons use the same diegetic card style. */
+.support-style-choices button,
+.support-choices button,
+.dialogue-options button,
+.inspection-actions button,
+.settings-grid label {
+  min-height: 96px;
+  border-color: rgba(55, 49, 40, 0.26);
+  border-radius: 11px 14px 10px 15px;
+  background:
+    linear-gradient(135deg, rgba(245, 233, 198, 0.92), rgba(217, 199, 161, 0.86));
+}
+
+.support-style-choices button:hover,
+.support-choices button:hover,
+.dialogue-options button:hover,
+.inspection-actions button:hover,
+.settings-grid label:hover,
+.quick-memory-grid button:hover,
+.memory-tabs button:hover,
+.reflection-prompts button:hover,
+.meta-choice-grid button:hover {
+  transform: translateY(-1px) rotate(-0.12deg);
+  box-shadow: 0 14px 30px rgba(4, 7, 13, 0.24);
+}
+
+/* Inspection cards: every close-up should feel like holding the object. */
+.inspection-card {
+  background:
+    radial-gradient(ellipse at 16% 16%, rgba(238, 171, 135, 0.20), transparent 36%),
+    radial-gradient(ellipse at 88% 84%, rgba(103, 169, 189, 0.18), transparent 40%),
+    linear-gradient(135deg, rgba(248, 238, 205, 0.98), rgba(218, 204, 171, 0.96));
+}
+
+.inspection-visual {
+  border-radius: 14px 20px 16px 18px;
+  background:
+    radial-gradient(ellipse at 50% 34%, rgba(255, 248, 220, 0.64), transparent 28%),
+    radial-gradient(ellipse at 22% 78%, rgba(95, 143, 88, 0.22), transparent 34%),
+    linear-gradient(135deg, rgba(73, 85, 100, 0.42), rgba(59, 45, 73, 0.52));
+  box-shadow:
+    inset 0 0 48px rgba(8, 12, 18, 0.22),
+    0 18px 34px rgba(5, 8, 13, 0.22);
+}
+
+.inspection-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 16% 12%, rgba(255,255,255,0.22), transparent 30%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 5px);
+  mix-blend-mode: screen;
+}
+
+.meta-check-inline {
+  border-radius: 12px;
+  padding: 12px;
+  background:
+    radial-gradient(ellipse at 15% 20%, rgba(240, 200, 75, 0.18), transparent 38%),
+    rgba(246, 233, 198, 0.48);
+}
+
+/* Phone and messages. */
+.phone-modal-card {
+  background:
+    radial-gradient(ellipse at 16% 16%, rgba(90, 113, 139, 0.22), transparent 38%),
+    linear-gradient(135deg, rgba(239, 231, 204, 0.98), rgba(197, 187, 170, 0.95));
+}
+
+.phone-surface {
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 28% 0%, rgba(138, 174, 168, 0.22), transparent 38%),
+    linear-gradient(160deg, rgba(28, 31, 49, 0.98), rgba(55, 47, 78, 0.98) 58%, rgba(38, 69, 54, 0.98));
+}
+
+.bubble {
+  box-shadow: 0 8px 18px rgba(3, 6, 11, 0.18);
+}
+
+.bubble.them {
+  border-radius: 18px 18px 18px 5px;
+}
+
+.bubble.me {
+  border-radius: 18px 18px 5px 18px;
+}
+
+/* Memory Book, Symptom Log, Self-Monitoring, and research artifacts. */
+.book-card {
+  background:
+    radial-gradient(ellipse at 14% 18%, rgba(156, 85, 101, 0.24), transparent 34%),
+    radial-gradient(ellipse at 88% 26%, rgba(95, 122, 110, 0.22), transparent 34%),
+    linear-gradient(135deg, rgba(244, 229, 195, 0.98), rgba(210, 194, 159, 0.95));
+}
+
+.memory-tabs {
+  padding: 8px;
+  border: 1px solid rgba(61, 54, 43, 0.16);
+  border-radius: 13px;
+  background: rgba(67, 55, 71, 0.10);
+}
+
+.memory-tabs button {
+  border-radius: 10px 13px 10px 14px;
+  background: rgba(246, 233, 198, 0.72);
+}
+
+.memory-tabs button.active {
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(241, 203, 121, 0.28), transparent 42%),
+    linear-gradient(135deg, rgba(68, 84, 57, 0.96), rgba(45, 65, 48, 0.96));
+}
+
+.memory-entry,
+.quick-memory-grid button {
+  border-radius: 12px 16px 12px 14px;
+  background:
+    radial-gradient(ellipse at 18% 16%, rgba(255,255,255,0.22), transparent 36%),
+    linear-gradient(135deg, rgba(248, 236, 203, 0.88), rgba(215, 198, 160, 0.78));
+}
+
+.memory-entry:nth-child(3n + 1)::before { background: radial-gradient(ellipse at 26% 32%, rgba(199, 102, 121, 0.24), transparent 46%); }
+.memory-entry:nth-child(3n + 2)::before { background: radial-gradient(ellipse at 72% 32%, rgba(103, 169, 189, 0.24), transparent 46%); }
+.memory-entry:nth-child(3n + 3)::before { background: radial-gradient(ellipse at 42% 78%, rgba(240, 200, 75, 0.24), transparent 46%); }
+
+.metacognition-card {
+  background:
+    radial-gradient(ellipse at 10% 16%, rgba(126, 99, 144, 0.18), transparent 32%),
+    linear-gradient(135deg, rgba(245, 233, 198, 0.94), rgba(211, 197, 160, 0.90));
+}
+
+.meta-meter {
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255, 248, 232, 0.42);
+}
+
+/* Ending surfaces should be painterly, not result pages. */
+.ending {
+  background:
+    radial-gradient(ellipse at 10% 12%, rgba(139, 72, 81, 0.20), transparent 34%),
+    radial-gradient(ellipse at 84% 20%, rgba(60, 85, 112, 0.24), transparent 34%),
+    radial-gradient(ellipse at 48% 92%, rgba(83, 115, 84, 0.18), transparent 38%),
+    linear-gradient(135deg, rgba(12, 20, 34, 0.96), rgba(29, 34, 48, 0.95));
+}
+
+.ending-card {
+  border-radius: 18px 24px 18px 24px;
+  background:
+    radial-gradient(ellipse at 18% 15%, rgba(240, 200, 75, 0.24), transparent 36%),
+    radial-gradient(ellipse at 86% 28%, rgba(103, 169, 189, 0.18), transparent 34%),
+    radial-gradient(ellipse at 45% 100%, rgba(199, 102, 121, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(247, 235, 202, 0.98), rgba(216, 200, 164, 0.95));
+}
+
+.ending-summary,
+.ending-reflection {
+  border-radius: 14px;
+  padding: 16px;
+  background:
+    radial-gradient(ellipse at 18% 18%, rgba(255,255,255,0.24), transparent 34%),
+    rgba(246, 233, 198, 0.52);
+}
+
+.ending-reflection textarea {
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(255, 248, 232, 0.88), rgba(222, 205, 169, 0.70));
+  box-shadow: inset 0 0 18px rgba(255,255,245,0.22);
+}
+
+/* Research/readiness consistency tokens: full-surface-art-direction and research-ready-surfaces. */
+.research-ready-surfaces .clinical-line::before,
+.research-ready-surfaces .content-note::before {
+  content: "observation";
+  display: inline-block;
+  margin-right: 8px;
+  color: #435d40;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.full-surface-art-direction .support-note {
+  border-radius: 8px 10px 8px 12px;
+  transform: rotate(-1.2deg);
+  background:
+    radial-gradient(ellipse at 18% 15%, rgba(255,255,255,0.24), transparent 36%),
+    linear-gradient(135deg, rgba(255, 244, 180, 0.90), rgba(229, 206, 123, 0.82));
+}
+
+.full-surface-art-direction .room-stage[data-room="hallway"] .hotspot {
+  box-shadow:
+    0 0 0 4px rgba(49, 58, 72, 0.30),
+    0 0 32px rgba(133, 162, 178, 0.42),
+    0 14px 22px rgba(5, 8, 13, 0.36);
+}
+
+body.reduced-motion .title-card,
+body.reduced-motion .status-card,
+body.reduced-motion .modal-card,
+body.reduced-motion .ending-card,
+body.reduced-motion .hotspot,
+body.reduced-motion .quick-memory-grid button {
+  transform: none !important;
+}
+
+@media (max-width: 1100px) {
+  .title-card { transform: none; }
+  .modal-card, .ending-card { border-radius: 12px; }
+}

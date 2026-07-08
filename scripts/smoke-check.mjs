@@ -18,30 +18,24 @@ const readme = readFileSync(resolve(root, "README.md"), "utf8");
 for (const id of [
   "newGame",
   "continueGame",
-  "caseFileModal",
-  "inspectionModal",
-  "symptomLogModal",
-  "memoryTabs",
-  "symptomSummary",
   "gameScreen",
   "roomStage",
   "checklist",
-  "accessibilityPanel",
-  "endingBook",
-  "endingSymptomLog",
+  "inventory",
+  "roomMap",
+  "symptomSummary",
+  "metacognitionPanel",
+  "quickMemoryGrid",
+  "metacognitiveChoices",
+  "inspectionModal",
+  "inspectionFeeling",
+  "memoryTabs",
+  "symptomLogModal",
   "supportStyleChoices",
   "reflectionPrompts",
-  "reflectionInput",
-  "saveReflection",
-  "saveGame",
-  "openMemoryBookMenu",
-  "openAccessibility",
-  "openCredits",
-  "onboardingModal",
-  "feedbackLayer",
-  "inspectionFeeling",
-  "phoneThread",
-  "openAccessibilityGame"
+  "accessibilityPanel",
+  "openAccessibilityGame",
+  "feedbackLayer"
 ]) {
   if (!html.includes(id)) throw new Error(`Missing expected HTML id: ${id}`);
 }
@@ -60,8 +54,12 @@ for (const token of [
   "renderSymptomLog",
   "supportStyles",
   "carePerspective",
-  "addCarePerspective",
   "supportStyle",
+  "selfMonitoring",
+  "metacognition",
+  "recordMetacognitiveCheck",
+  "renderMetacognitionPanel",
+  "renderQuickMemoryGrid",
   "group_chat",
   "voice_memo",
   "playlist",
@@ -72,18 +70,12 @@ for (const token of [
   "overload",
   "dread",
   "uncanny",
-  "reflectionPrompts",
-  "announceFeedback",
-  "beginRoomTransition",
-  "visitedRooms",
-  "roomStatus",
   "Supported Departure",
   "Smaller Morning",
   "Quiet Proof",
   "Overloaded but Not Alone",
   "The Circled Appointment",
   "Shared Morning",
-  "Quiet Independence",
   "reduceBlur",
   "disableDistortion",
   "contentNote"
@@ -100,6 +92,11 @@ for (const token of [
   "ink-shadow",
   "soft-vignette",
   "threshold-haze",
+  "scene-frame",
+  "game-logo-card",
+  "carried-tray",
+  "quick-memory-grid",
+  "meta-choice-grid",
   "state-dread",
   "state-memory",
   "state-grounded",
@@ -120,14 +117,45 @@ for (const token of [
   "Close inspection",
   "Support Style",
   "Care Perspective",
+  "metacognitive",
+  "self-monitoring",
   "can affect younger adults",
-  "broad tonal inspirations only",
   "modern watercolor-inspired",
-  "no external dependencies",
   "GitHub Pages",
   "Roadmap"
 ]) {
   if (!readme.includes(token)) throw new Error(`Missing expected README text: ${token}`);
+}
+
+
+for (const token of [
+  "whole-game-watercolor",
+  "research-ready-surfaces",
+  "full-surface-art-direction"
+]) {
+  if (!html.includes(token)) throw new Error(`Missing full-surface HTML token: ${token}`);
+}
+
+for (const token of [
+  "Full-surface watercolor art direction pass",
+  "full-surface-art-direction",
+  "research-ready-surfaces",
+  "phone-modal-card",
+  "ending-reflection",
+  "support-card",
+  "title-card::before",
+  "modal-card::before"
+]) {
+  if (!css.includes(token)) throw new Error(`Missing full-surface CSS token: ${token}`);
+}
+
+for (const token of [
+  "Whole-Game Art Direction Pass",
+  "not only the opening screen",
+  "full-surface consistency",
+  "metacognitive premise"
+]) {
+  if (!readme.includes(token)) throw new Error(`Missing full-surface README text: ${token}`);
 }
 
 console.log("Smoke check passed.");

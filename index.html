@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <main class="shell" id="app">
+    <main class="shell whole-game-watercolor research-ready-surfaces full-surface-art-direction" id="app">
       <section class="menu-screen" id="menuScreen" aria-labelledby="gameTitle">
         <div class="grain"></div>
         <div class="menu-wash" aria-hidden="true"></div>
@@ -16,63 +16,109 @@
           <span class="artifact-appointment">9:30 circled twice</span>
           <span class="artifact-light"></span>
         </div>
-        <p class="eyebrow">a quiet point-and-click narrative</p>
-        <h1 id="gameTitle">Soft Recall</h1>
-        <p class="subtitle">A Morning in Five Rooms</p>
-        <p class="menu-copy">Move gently through an apartment where routine, memory, perception, and care shape the morning.</p>
-        <nav class="menu-actions" aria-label="Main menu">
-          <button class="primary" id="newGame">New Game</button>
-          <button class="ghost" id="continueGame">Continue</button>
-          <button class="ghost" id="openMemoryBookMenu">Memory Book</button>
-          <button class="ghost" id="openAccessibility">Accessibility</button>
-          <button class="ghost" id="openCredits">Credits</button>
-        </nav>
+        <article class="title-card">
+          <p class="eyebrow">a quiet point-and-click narrative</p>
+          <h1 id="gameTitle">Soft Recall</h1>
+          <p class="subtitle">A Morning in Five Rooms</p>
+          <p class="menu-copy">Move gently through an apartment where routine, memory, perception, and care shape the morning.</p>
+          <nav class="menu-actions" aria-label="Main menu">
+            <button class="primary" id="newGame">New Morning</button>
+            <button class="ghost" id="continueGame">Continue</button>
+            <button class="ghost" id="openMemoryBookMenu">Memory Book</button>
+            <button class="ghost" id="openAccessibility">Accessibility</button>
+            <button class="ghost" id="openCredits">Credits</button>
+          </nav>
+          <p class="menu-note">You can change settings anytime from the pause menu. ♡</p>
+        </article>
       </section>
 
       <section class="game-screen hidden" id="gameScreen" aria-label="Soft Recall game">
-        <aside class="status-panel" aria-label="Morning status">
-          <p class="time">7:13 AM</p>
-          <h2 id="roomTitle">Bedroom</h2>
-          <p class="room-state" id="clarityLabel">Grounding: clear</p>
-          <div class="clarity-meter" aria-label="Grounding level">
-            <span id="clarityMeter"></span>
-          </div>
-          <div id="symptomSummary" class="symptom-summary" aria-label="Symptom and perception summary"></div>
-          <p id="roomDescription" class="room-description"></p>
+        <aside class="status-panel game-left" aria-label="Morning status and navigation">
+          <section class="game-logo-card" aria-label="Soft Recall status card">
+            <p class="eyebrow">morning file</p>
+            <h2 class="game-logo">Soft<br>Recall</h2>
+            <p class="mini-subtitle">a morning in five rooms</p>
+            <p class="time">7:13 AM</p>
+          </section>
 
-          <section class="checklist-box" aria-labelledby="checklistTitle">
+          <section class="status-card room-card" aria-labelledby="roomTitle">
+            <h2 id="roomTitle">Bedroom</h2>
+            <p class="room-state" id="clarityLabel">Grounding: clear</p>
+            <div class="clarity-meter" aria-label="Grounding level"><span id="clarityMeter"></span></div>
+            <p id="roomDescription" class="room-description"></p>
+          </section>
+
+          <section class="control-hints status-card" aria-label="Keyboard shortcuts">
+            <div><kbd>Tab</kbd> Focus</div>
+            <div><kbd>M</kbd> Memory Book</div>
+            <div><kbd>Esc</kbd> Pause</div>
+          </section>
+
+          <section class="floor-plan-panel status-card" aria-labelledby="floorPlanTitle">
+            <div class="panel-title-row">
+              <h3 id="floorPlanTitle">Floor Plan</h3>
+              <span class="shortcut-pill">Tab</span>
+            </div>
+            <nav class="room-map" id="roomMap" aria-label="Room navigation"></nav>
+            <div class="map-legend" aria-hidden="true">
+              <span><i class="stable"></i> stable</span>
+              <span><i class="uncertain"></i> uncertain</span>
+              <span><i class="unresolved"></i> unresolved</span>
+            </div>
+          </section>
+        </aside>
+
+        <section class="play-area game-core" aria-label="Interactive apartment scene">
+          <div class="top-signal-strip" aria-label="Current perception states">
+            <div id="symptomSummary" class="symptom-summary" aria-label="Symptom and perception summary"></div>
+          </div>
+          <div class="scene-frame">
+            <div class="room-stage" id="roomStage" data-room="bedroom" data-clarity="clear">
+              <div class="watercolor-wash" aria-hidden="true"></div>
+              <div class="memory-bloom" aria-hidden="true"></div>
+              <div class="dread-stain" aria-hidden="true"></div>
+              <div class="grounding-light" aria-hidden="true"></div>
+              <div class="threshold-haze" aria-hidden="true"></div>
+              <div class="paper-grain" aria-hidden="true"></div>
+              <div class="ink-shadow" aria-hidden="true"></div>
+              <div class="soft-vignette" aria-hidden="true"></div>
+              <div id="decorLayer" class="decor-layer" aria-hidden="true"></div>
+              <div id="supportLayer" class="support-layer" aria-hidden="true"></div>
+              <div id="hotspotLayer" class="hotspot-layer"></div>
+              <div id="feedbackLayer" class="feedback-layer" aria-live="polite"></div>
+            </div>
+            <p id="caption" class="caption" aria-live="polite">The apartment is quiet. Start with what helps you see.</p>
+          </div>
+          <section class="inventory-box carried-tray" aria-labelledby="inventoryTitle">
+            <h3 id="inventoryTitle">Things Carried</h3>
+            <div id="inventory" class="inventory" aria-live="polite"></div>
+          </section>
+        </section>
+
+        <aside class="journal-panel game-right" aria-label="Journal, metacognition, and actions">
+          <section class="notes-card status-card">
+            <h2>Morning Notes</h2>
+            <div id="journalLog" class="journal-log" aria-live="polite"></div>
+          </section>
+
+          <section class="checklist-box status-card" aria-labelledby="checklistTitle">
             <h3 id="checklistTitle">One Next Step</h3>
             <ol id="checklist" class="checklist"></ol>
           </section>
 
-          <section class="inventory-box" aria-labelledby="inventoryTitle">
-            <h3 id="inventoryTitle">Things Carried</h3>
-            <div id="inventory" class="inventory" aria-live="polite"></div>
+          <section class="metacognition-card status-card" aria-labelledby="metacognitionTitle">
+            <h3 id="metacognitionTitle">Self-Monitoring</h3>
+            <div id="metacognitionPanel" class="metacognition-panel" aria-live="polite"></div>
           </section>
-        </aside>
 
-        <section class="play-area">
-          <nav class="room-map" id="roomMap" aria-label="Room navigation"></nav>
-          <div class="room-stage" id="roomStage" data-room="bedroom" data-clarity="clear">
-            <div class="watercolor-wash" aria-hidden="true"></div>
-            <div class="memory-bloom" aria-hidden="true"></div>
-            <div class="dread-stain" aria-hidden="true"></div>
-            <div class="grounding-light" aria-hidden="true"></div>
-            <div class="threshold-haze" aria-hidden="true"></div>
-            <div class="paper-grain" aria-hidden="true"></div>
-            <div class="ink-shadow" aria-hidden="true"></div>
-            <div class="soft-vignette" aria-hidden="true"></div>
-            <div id="decorLayer" class="decor-layer" aria-hidden="true"></div>
-            <div id="supportLayer" class="support-layer" aria-hidden="true"></div>
-            <div id="hotspotLayer" class="hotspot-layer"></div>
-            <div id="feedbackLayer" class="feedback-layer" aria-live="polite"></div>
-          </div>
-          <p id="caption" class="caption" aria-live="polite">The apartment is quiet. Start with what helps you see.</p>
-        </section>
+          <section class="quick-book-card status-card" aria-labelledby="quickBookTitle">
+            <div class="panel-title-row">
+              <h3 id="quickBookTitle">Memory Book</h3>
+              <button class="mini-button" id="quickOpenBook" type="button">Open Book</button>
+            </div>
+            <div id="quickMemoryGrid" class="quick-memory-grid" aria-live="polite"></div>
+          </section>
 
-        <aside class="journal-panel" aria-label="Journal and actions">
-          <h2>Morning Notes</h2>
-          <div id="journalLog" class="journal-log" aria-live="polite"></div>
           <div class="side-actions">
             <button class="ghost wide" id="openSupport">Make the Room Easier</button>
             <button class="ghost wide" id="openMemoryBookGame">Memory Book</button>
@@ -132,6 +178,7 @@
           <div class="onboarding-steps">
             <p><strong>Click objects</strong> to hold them in focus.</p>
             <p><strong>Look, Use, Ask, Ground</strong> to choose how large the next step should be.</p>
+            <p><strong>Self-monitor</strong> by noticing whether you feel sure, partly sure, or unsure.</p>
             <p><strong>Make the Room Easier</strong> to place a cue without giving up control.</p>
             <p><strong>Memory Book</strong> keeps fragments after they settle.</p>
             <p><strong>Accessibility</strong> is always available before and during play.</p>
@@ -156,7 +203,7 @@
       </section>
 
       <section class="modal hidden" id="phoneModal" role="dialog" aria-modal="true" aria-labelledby="phoneTitle">
-        <div class="modal-card">
+        <div class="modal-card phone-modal-card">
           <p class="eyebrow">phone call</p>
           <h2 id="phoneTitle">A familiar voice answers.</h2>
           <div class="phone-surface" aria-label="Phone conversation">
@@ -188,6 +235,10 @@
               <p class="inspection-kicker">What it feels like</p>
               <p id="inspectionFeeling"></p>
               <p id="inspectionNote" class="clinical-line"></p>
+              <div class="meta-check-inline" aria-label="Metacognitive check">
+                <p class="inspection-kicker">How sure does this feel?</p>
+                <div id="metacognitiveChoices" class="meta-choice-grid"></div>
+              </div>
             </div>
           </div>
           <div id="inspectionActions" class="inspection-actions"></div>
@@ -231,7 +282,7 @@
             </div>
             <button class="icon-button" data-close="creditsModal" aria-label="Close credits">x</button>
           </div>
-          <p>Designed as a gentle neuroeducation prototype about routine, environmental support, symptom perception, and dignity-centered care.</p>
+          <p>Designed as a gentle neuroeducation prototype about routine, environmental support, symptom perception, metacognitive awareness, and dignity-centered care.</p>
           <p>Broadly inspired by compassionate clinical and psychological indie-game atmosphere, while remaining original in content, story, interface, and mechanics.</p>
           <p>Built with plain HTML, CSS, and JavaScript for GitHub Pages.</p>
           <p class="clinical-line">Disclaimer: Soft Recall is narrative neuroeducation and interaction design. It is not medical advice, diagnosis, or treatment.</p>

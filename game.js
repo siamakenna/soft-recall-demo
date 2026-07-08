@@ -647,6 +647,7 @@ const memoryBookSections = [
   { id: "symptoms", label: "Symptom Log" },
   { id: "carePerspective", label: "Care Perspective" },
   { id: "records", label: "Morning Records" },
+  { id: "selfMonitoring", label: "Self-Monitoring" },
   { id: "reflections", label: "Reflections" }
 ];
 
@@ -846,7 +847,15 @@ const initialState = () => ({
   messages: [],
   carePerspective: [],
   reflections: [],
+  selfMonitoring: [],
   supportPlaced: [],
+  metacognition: {
+    sure: 0,
+    partial: 0,
+    unsure: 0,
+    cuesUsed: 0,
+    lastConfidence: "unrecorded"
+  },
   supportStyle: "gentle",
   inspectedObjects: [],
   visitedRooms: ["bedroom"],
@@ -907,6 +916,9 @@ const els = {
   clarityLabel: $("#clarityLabel"),
   clarityMeter: $("#clarityMeter"),
   symptomSummary: $("#symptomSummary"),
+  metacognitionPanel: $("#metacognitionPanel"),
+  metacognitiveChoices: $("#metacognitiveChoices"),
+  quickMemoryGrid: $("#quickMemoryGrid"),
   roomStage: $("#roomStage"),
   decorLayer: $("#decorLayer"),
   supportLayer: $("#supportLayer"),
@@ -942,6 +954,7 @@ function init() {
   $("#continueGame").addEventListener("click", continueGame);
   $("#openMemoryBookMenu").addEventListener("click", () => openModal("memoryBookModal"));
   $("#openMemoryBookGame").addEventListener("click", () => openModal("memoryBookModal"));
+  $("#quickOpenBook").addEventListener("click", () => openModal("memoryBookModal"));
   $("#openAccessibility").addEventListener("click", () => openModal("accessibilityPanel"));
   $("#openAccessibilityGame").addEventListener("click", () => openModal("accessibilityPanel"));
   $("#openAccessibilityFromCase").addEventListener("click", () => openModal("accessibilityPanel"));
@@ -987,6 +1000,9 @@ function init() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       $$(".modal").forEach((modal) => modal.classList.add("hidden"));
+    }
+    if ((event.key === "m" || event.key === "M") && state.screen === "game") {
+      openModal("memoryBookModal");
     }
   });
 
@@ -1054,6 +1070,8 @@ function normalizeState(saved) {
     ...saved,
     flags: { ...initialState().flags, ...(saved.flags || {}) },
     symptoms: { ...initialState().symptoms, ...(saved.symptoms || {}) },
+    metacognition: { ...initialState().metacognition, ...(saved.metacognition || {}) },
+    selfMonitoring: saved.selfMonitoring || [],
     settings: { ...initialState().settings, ...(saved.settings || {}) }
   };
 }
@@ -1083,6 +1101,8 @@ function renderAll() {
   renderChecklist();
   renderInventory();
   renderJournal();
+  renderMetacognitionPanel();
+  renderQuickMemoryGrid();
   renderMemoryBook();
 }
 
@@ -1401,13 +1421,65 @@ function openInspection(object) {
       <span>${action.text}</span>
     </button>
   `).join("");
+  renderMetacognitiveChoices(object);
   openModal("inspectionModal");
   if (object.id === "mirror") playSound("mirror");
   if (object.id === "front_door" && currentPerceptionState() !== "supported") playSound("hallway");
   $$("[data-inspection-action]").forEach((button) => {
     button.addEventListener("click", () => runInspectionAction(button.dataset.inspectionAction, object.id));
   });
+  $$("[data-meta-confidence]").forEach((button) => {
+    button.addEventListener("click", () => recordMetacognitiveCheck(button.dataset.metaConfidence, object));
+  });
 }
+
+function renderMetacognitiveChoices(object) {
+  if (!els.metacognitiveChoices) return;
+  const label = object?.labels?.clear || "this object";
+  els.metacognitiveChoices.innerHTML = [
+    ["sure", "Sure", `I know what ${label} means.`],
+    ["partial", "Partly sure", "I know the feeling before the facts."],
+    ["unsure", "Unsure", "I need a cue, not pressure."]
+  ].map(([id, title, text]) => `
+    <button type="button" data-meta-confidence="${id}">
+      <strong>${title}</strong>
+      <span>${text}</span>
+    </button>
+  `).join("");
+}
+
+function recordMetacognitiveCheck(confidence, object) {
+  const key = confidence === "sure" ? "sure" : confidence === "partial" ? "partial" : "unsure";
+  state.metacognition[key] = (state.metacognition[key] || 0) + 1;
+  state.metacognition.lastConfidence = key;
+  const objectName = object?.labels?.clear || "the object";
+  const lines = {
+    sure: `Confidence check near ${objectName}: sure enough to act.`,
+    partial: `Confidence check near ${objectName}: partly sure; sensory context mattered.`,
+    unsure: `Confidence check near ${objectName}: unsure; external cue would preserve autonomy.`
+  };
+  const human = {
+    sure: "Certainty became action without needing to be perfect.",
+    partial: "Feeling arrived before the facts, and that still counted as information.",
+    unsure: "Needing a cue did not make the morning less yours."
+  };
+  state.selfMonitoring.unshift({ confidence: key, object: objectName, text: lines[key], human: human[key] });
+  state.selfMonitoring = state.selfMonitoring.slice(0, 30);
+  if (key === "unsure") {
+    state.metacognition.cuesUsed += 1;
+    nudgeSymptom("overload", 0.1);
+  } else if (key === "sure") {
+    nudgeSymptom("dread", -0.08);
+  } else {
+    nudgeSymptom("memory", -0.04);
+  }
+  addSymptomLog({ clinical: lines[key], human: human[key] });
+  announceFeedback("metacognition", human[key]);
+  renderMetacognitionPanel();
+  renderMemoryBook();
+  saveGame();
+}
+
 
 function inspectionText(text) {
   if (state.settings.disableDistortion || state.settings.plainLanguage) return text;
@@ -2133,6 +2205,46 @@ function renderJournal() {
     : `<p class="entry">Journal entries will gather here as you move through the morning.</p>`;
 }
 
+function renderMetacognitionPanel() {
+  if (!els.metacognitionPanel) return;
+  const total = Math.max(1, state.metacognition.sure + state.metacognition.partial + state.metacognition.unsure);
+  const pct = (value) => `${Math.round((value / total) * 100)}%`;
+  const last = state.selfMonitoring[0];
+  els.metacognitionPanel.innerHTML = `
+    <div class="meta-meter">
+      <span><b>Sure</b><em>${state.metacognition.sure}</em></span><i style="--value:${pct(state.metacognition.sure)}"></i>
+      <span><b>Partial</b><em>${state.metacognition.partial}</em></span><i style="--value:${pct(state.metacognition.partial)}"></i>
+      <span><b>Unsure</b><em>${state.metacognition.unsure}</em></span><i style="--value:${pct(state.metacognition.unsure)}"></i>
+    </div>
+    <p>${last ? last.human : "Confidence checks will gather here when you inspect objects."}</p>
+  `;
+}
+
+function renderQuickMemoryGrid() {
+  if (!els.quickMemoryGrid) return;
+  const counts = {
+    Fragments: state.fragments.length,
+    Songs: state.songs.length,
+    Messages: state.messages.length,
+    Symptoms: state.symptomLog.length,
+    Care: state.carePerspective.length,
+    Monitor: state.selfMonitoring.length
+  };
+  els.quickMemoryGrid.innerHTML = Object.entries(counts).map(([label, value]) => `
+    <button type="button" data-quick-book="${label.toLowerCase()}">
+      <strong>${label}</strong>
+      <span>${value}</span>
+    </button>
+  `).join("");
+  $$("[data-quick-book]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const map = { fragments: "fragments", songs: "songs", messages: "messages", symptoms: "symptoms", care: "carePerspective", monitor: "selfMonitoring" };
+      state.memoryBookSection = map[button.dataset.quickBook] || "fragments";
+      openModal("memoryBookModal");
+    });
+  });
+}
+
 function renderMemoryBook() {
   els.memoryTabs.innerHTML = memoryBookSections.map((section) => `
     <button type="button" class="${state.memoryBookSection === section.id ? "active" : ""}" data-book-section="${section.id}">
@@ -2169,6 +2281,7 @@ function renderMemoryBook() {
 
   const sectionData = {
     records: state.morningRecords,
+    selfMonitoring: state.selfMonitoring,
     songs: state.songs,
     messages: state.messages,
     carePerspective: state.carePerspective.length
@@ -2188,12 +2301,23 @@ function renderMemoryBook() {
     carePerspective: "How care helped will gather here.",
     symptoms: "The room is quiet for now.",
     records: "No morning records have dried on the page yet.",
+    selfMonitoring: "No confidence checks have been written into the morning yet.",
     reflections: "You have not written back to the morning yet."
   };
 
   els.memoryEntries.innerHTML = sectionData.length
     ? sectionData.map((line) => {
       if (typeof line === "object") {
+        if (line.confidence) {
+          return `
+            <article class="memory-entry paired-note">
+              <span>${line.confidence}</span>
+              <p><strong>Object:</strong> ${line.object}</p>
+              <p>${line.text}</p>
+              <p><strong>Human:</strong> ${line.human}</p>
+            </article>
+          `;
+        }
         return `
           <article class="memory-entry paired-note">
             <p><strong>Clinical:</strong> ${line.clinical}</p>
@@ -2264,6 +2388,7 @@ function placeSupport(targetId) {
     const style = supportStyles[state.supportStyle] || supportStyles.gentle;
     state.supportPlaced.push(targetId);
     state.support = clamp(state.support + style.effect.support, 1, 6);
+    state.metacognition.cuesUsed += 1;
     state.clarity = clamp(state.clarity + style.effect.clarity, 1, 6);
     nudgeSymptom("dread", style.effect.dread);
     nudgeSymptom("overload", style.effect.overload);
