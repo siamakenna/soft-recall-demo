@@ -3935,3 +3935,370 @@ body.reduced-motion .vn-choices button {
     min-width: 96px;
   }
 }
+
+/* Vertical slice production viewport: first-person VN prototype, not a dashboard. */
+body {
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(95, 70, 82, 0.34), transparent 34%),
+    linear-gradient(180deg, #090b10 0%, #121016 52%, #07080c 100%);
+}
+
+.game-viewport {
+  min-height: 100vh;
+  color: rgba(255, 248, 226, 0.96);
+  background:
+    radial-gradient(ellipse at 50% 28%, rgba(194, 139, 89, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(13, 14, 20, 0.98), rgba(4, 6, 10, 1));
+}
+
+.game-screen {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) !important;
+  place-items: center;
+  min-height: 100vh;
+  padding: clamp(12px, 2vw, 30px);
+  overflow: hidden;
+}
+
+.game-screen.hidden {
+  display: none;
+}
+
+.game-core {
+  width: min(100%, 1240px);
+  max-height: 100vh;
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+}
+
+.scene-frame.scene-viewport {
+  width: min(100%, 1180px);
+  aspect-ratio: 16 / 9;
+  min-height: 0;
+  margin: 0 auto;
+  overflow: visible;
+  border: 1px solid rgba(250, 226, 169, 0.24);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(7, 9, 14, 0.92), rgba(20, 16, 18, 0.98));
+  box-shadow:
+    0 32px 90px rgba(0, 0, 0, 0.62),
+    inset 0 0 0 1px rgba(255, 250, 219, 0.06);
+}
+
+.room-stage.first-person-stage {
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 55% 18%, rgba(247, 202, 132, 0.22), transparent 30%),
+    linear-gradient(180deg, #64584f 0 45%, #3f3a38 45% 47%, #18201e 47% 100%);
+}
+
+.scene-plate {
+  inset: 0;
+}
+
+.scene-surface {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  bottom: 8%;
+  height: 24%;
+  border-radius: 48% 48% 12px 12px / 80% 80% 12px 12px;
+  background:
+    linear-gradient(180deg, rgba(123, 85, 63, 0.58), rgba(37, 28, 25, 0.78)),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 18px);
+  box-shadow: 0 -18px 38px rgba(0, 0, 0, 0.18);
+}
+
+.scene-table {
+  border-radius: 12px 12px 28px 28px;
+  background: linear-gradient(180deg, rgba(129, 83, 57, 0.88), rgba(58, 39, 33, 0.96));
+}
+
+.scene-window {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 239, 184, 0.75), transparent 58%),
+    linear-gradient(180deg, rgba(182, 207, 198, 0.72), rgba(91, 112, 113, 0.42));
+  box-shadow: 0 0 58px rgba(255, 221, 154, 0.2);
+}
+
+.scene-mirror,
+.node-bedroom_mirror .scene-surface::after {
+  content: "";
+  position: absolute;
+  left: 36%;
+  top: 12%;
+  width: 28%;
+  height: 46%;
+  border: 1px solid rgba(228, 223, 202, 0.34);
+  border-radius: 44% 44% 12px 12px;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(245, 229, 204, 0.20), transparent 24%),
+    linear-gradient(130deg, rgba(126, 151, 158, 0.36), rgba(40, 45, 57, 0.68));
+  filter: blur(0.2px);
+}
+
+.node-bedroom_bedside .first-person-scene {
+  transform: scale(1.12) translateY(1%);
+  transform-origin: 52% 74%;
+}
+
+.node-phone_closeup .first-person-scene {
+  transform: scale(1.38) translate(-10%, 8%);
+  transform-origin: 64% 54%;
+  filter: contrast(1.05) saturate(0.92);
+}
+
+.node-bedroom_mirror .first-person-scene {
+  transform: scale(1.18) translate(5%, 2%);
+  transform-origin: 42% 35%;
+  filter: saturate(0.86) contrast(1.06);
+}
+
+.node-hallway_mid .first-person-scene,
+.node-hallway_mid_uncertain .first-person-scene {
+  transform: scale(1.08) translateY(1%);
+  transform-origin: 62% 48%;
+}
+
+.node-hallway_door .first-person-scene {
+  transform: scale(1.28) translate(-8%, 3%);
+  transform-origin: 76% 42%;
+}
+
+.object-marker.hotspot {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  border-radius: 999px;
+  padding: 0;
+  border: 1px solid rgba(255, 232, 167, 0.66);
+  background:
+    radial-gradient(circle, rgba(255, 244, 194, 0.92) 0 18%, rgba(232, 176, 91, 0.72) 19% 44%, rgba(16, 19, 24, 0.72) 45%);
+  box-shadow:
+    0 0 0 5px rgba(255, 224, 146, 0.08),
+    0 0 24px rgba(255, 213, 130, 0.25);
+}
+
+.object-marker .object-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  min-width: max-content;
+  max-width: 170px;
+  transform: translateX(-50%) translateY(6px);
+  opacity: 0;
+  padding: 6px 9px;
+  border-radius: 6px;
+  color: rgba(255, 248, 226, 0.96);
+  background: rgba(10, 13, 18, 0.86);
+  border: 1px solid rgba(255, 226, 165, 0.24);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.object-marker:hover .object-label,
+.object-marker:focus-visible .object-label,
+.object-marker.controller-focus .object-label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.controller-focus,
+.vn-choice.controller-focus,
+.node-exit.controller-focus {
+  outline: 2px solid rgba(255, 240, 176, 0.98);
+  outline-offset: 4px;
+  box-shadow:
+    0 0 0 7px rgba(255, 210, 116, 0.13),
+    0 0 34px rgba(255, 217, 130, 0.34);
+}
+
+.input-prompts {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 12px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  pointer-events: none;
+}
+
+.input-prompts span {
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 232, 168, 0.18);
+  border-radius: 999px;
+  color: rgba(255, 247, 224, 0.82);
+  background: rgba(8, 10, 15, 0.58);
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(4px);
+}
+
+.input-prompts b {
+  color: rgba(255, 224, 146, 0.96);
+}
+
+.vn-box {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  bottom: 18px;
+  width: min(92%, 940px);
+  min-height: 122px;
+  margin: 0;
+  transform: translateX(-50%);
+  border-radius: 8px;
+}
+
+.vn-choice {
+  min-height: 38px;
+}
+
+.slice-hud,
+.slice-notebook,
+.top-signal-strip,
+.carried-tray {
+  display: none !important;
+}
+
+.slice-hud .game-logo-card,
+.slice-hud .room-card,
+.slice-hud .floor-plan-panel,
+.slice-hud .control-hints,
+.slice-notebook .status-card,
+.slice-notebook .side-actions {
+  border-radius: 8px;
+  background: rgba(8, 10, 15, 0.68);
+  backdrop-filter: blur(10px);
+}
+
+.slice-notebook .notes-card,
+.slice-notebook .checklist-box {
+  display: none;
+}
+
+.floor-plan-panel h3::after {
+  content: " aid";
+  color: rgba(255, 235, 178, 0.62);
+  font-weight: 500;
+}
+
+.room-map {
+  grid-template-columns: 1fr 1fr;
+}
+
+.room-map [data-room="bathroom"],
+.room-map [data-room="kitchen"],
+.room-map [data-room="living"] {
+  display: none;
+}
+
+.closeup-card {
+  width: min(92vw, 920px);
+  color: rgba(255, 248, 226, 0.96);
+  background:
+    radial-gradient(circle at 22% 18%, rgba(239, 194, 126, 0.12), transparent 32%),
+    linear-gradient(135deg, rgba(14, 17, 24, 0.96), rgba(30, 27, 31, 0.96));
+}
+
+.closeup-card .inspection-layout {
+  align-items: stretch;
+}
+
+.closeup-card .inspection-visual {
+  border-radius: 8px;
+  background-color: rgba(5, 8, 13, 0.72);
+}
+
+body.high-contrast .input-prompts span,
+body.high-contrast .closeup-card,
+body.high-contrast .object-marker.hotspot {
+  border-color: #fff4b0;
+}
+
+body.reduced-motion .controller-focus,
+body.reduced-motion .object-marker .object-label {
+  transition: none !important;
+}
+
+@media (max-width: 900px) {
+  .game-screen {
+    align-content: start;
+    min-height: 100svh;
+    padding: 8px;
+  }
+
+  .game-core {
+    width: 100%;
+  }
+
+  .scene-frame.scene-viewport {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+  }
+
+  .slice-hud,
+  .slice-notebook {
+    display: none !important;
+  }
+
+  .slice-hud {
+    grid-template-columns: 1fr;
+  }
+
+  .slice-notebook {
+    display: none;
+  }
+
+  .vn-box {
+    bottom: 8px;
+    width: calc(100% - 16px);
+    min-height: 126px;
+  }
+
+  .input-prompts {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+  }
+
+  .input-prompts span {
+    font-size: 0.62rem;
+    padding: 4px 6px;
+  }
+}
+
+@media (max-width: 520px) {
+  .game-screen {
+    min-height: 100svh;
+    place-items: start center;
+  }
+
+  .scene-frame.scene-viewport {
+    height: calc(100svh - 16px);
+    aspect-ratio: auto;
+  }
+
+  .room-stage.first-person-stage {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .node-phone_closeup .first-person-scene,
+  .node-hallway_door .first-person-scene {
+    transform: scale(1.18);
+  }
+}

@@ -32,11 +32,8 @@ const itemData = {
 
 const checklist = [
   { id: "glasses", label: "Find glasses" },
-  { id: "tea", label: "Make tea" },
-  { id: "medication", label: "Confirm and take medication" },
-  { id: "photo", label: "Reconstruct the photo memory" },
   { id: "phone", label: "Use the phone" },
-  { id: "leave", label: "Collect essentials and leave" }
+  { id: "leave", label: "Reach the door with one support cue" }
 ];
 
 const memoryFragments = {
@@ -183,6 +180,16 @@ const rooms = {
         labels: { clear: "sticky note", softened: "yellow paper", supported: "note - morning list" },
         text: "The note says: glasses, tea, medicine, phone, appointment.",
         after: "The paper remembers without asking you to apologize."
+      },
+      {
+        id: "phone",
+        item: "phone",
+        kind: "phone",
+        x: 58,
+        y: 49,
+        labels: { clear: "phone", softened: "small bright demand", supported: "phone - one reply" },
+        text: "The phone is warm from its own waiting. One message can be smaller than the whole morning.",
+        after: "The phone is in your pocket. The sentence does not have to be perfect."
       },
       {
         id: "unread_texts",
@@ -805,7 +812,7 @@ const firstPersonHotspots = {
   calendar_alert: [89, 38],
   photo_frame: [43, 59],
   postcard: [33, 69],
-  phone: [64, 66],
+  phone: [64, 54],
   wallet: [77, 56],
   playlist: [56, 73],
   creative_project: [82, 67],
@@ -820,11 +827,15 @@ const firstPersonHotspots = {
 
 const roomStartNodes = {
   bedroom: "bedroom_bedside",
-  bathroom: "bathroom_sink",
-  kitchen: "kitchen_counter",
-  living: "living_coffee_table",
+  bathroom: "bedroom_mirror",
+  kitchen: "hallway_mid",
+  living: "phone_closeup",
   hallway: "hallway_mid"
 };
+
+const verticalSliceRoomIds = ["bedroom", "hallway"];
+const verticalSliceNodes = ["bedroom_bedside", "bedroom_mirror", "phone_closeup", "hallway_mid", "hallway_mid_uncertain", "hallway_door"];
+const sliceRequiredItems = ["keys", "phone", "appointment_card"];
 
 const sceneNodes = {
   bedroom_bedside: {
@@ -832,12 +843,12 @@ const sceneNodes = {
     title: "Bedroom - Bedside",
     perspective: "first-person",
     mood: "softened",
-    exits: { left: "bedroom_mirror", right: "bedroom_window", forward: "bedroom_door" },
-    hotspots: ["bedside_glasses", "unread_texts", "bedroom_note", "voice_memo"],
+    exits: { left: "bedroom_mirror", right: "phone_closeup", forward: "hallway_mid" },
+    hotspots: ["bedside_glasses", "phone", "unread_texts", "bedroom_note", "voice_memo"],
     speaker: "Morning",
     narration: [
-      "The room is not gone. It is only arriving in pieces.",
-      "Something is glowing beside the bed."
+      "The room is familiar before it is clear.",
+      "The table remembers where your hands usually go."
     ]
   },
   bedroom_mirror: {
@@ -856,6 +867,25 @@ const sceneNodes = {
       { label: "I know this feeling.", text: "Recognition begins as a warmth, not a fact." },
       { label: "Name one thing.", text: "Mirror. Bed. Table. One word returns, then another." },
       { label: "Step away.", node: "bedroom_bedside", text: "You step back before the feeling gets too large." }
+    ]
+  },
+  phone_closeup: {
+    room: "bedroom",
+    title: "Phone - Close-up",
+    perspective: "first-person",
+    mood: "memory",
+    exits: { back: "bedroom_bedside", left: "bedroom_mirror", forward: "hallway_mid" },
+    hotspots: ["phone", "unread_texts", "voice_memo", "bedroom_note"],
+    speaker: "Phone",
+    narration: [
+      "You know what you mean. The sentence is the hard part.",
+      "The unread message is not a threat. It is only waiting for a smaller answer."
+    ],
+    choices: [
+      { label: "Send simple reply.", text: "Running slow. I care. Text soon.", action: "simpleReply" },
+      { label: "Ask for one question at a time.", text: "Could you ask one question at a time?", action: "oneQuestion" },
+      { label: "Call.", text: "A familiar voice gives the room a second center.", action: "call" },
+      { label: "Not now.", node: "bedroom_bedside", text: "The phone can wait without becoming a verdict." }
     ]
   },
   bedroom_window: {
@@ -967,8 +997,8 @@ const sceneNodes = {
     title: "Hallway - Midpoint",
     perspective: "first-person",
     mood: "dread",
-    exits: { forward: "hallway_door", back: "living_coffee_table", left: "bathroom_sink", right: "kitchen_counter" },
-    hotspots: ["keys", "hall_note", "tote_bag", "sneakers", "transit_card"],
+    exits: { forward: "hallway_door", back: "bedroom_bedside" },
+    hotspots: ["keys", "hall_note", "tote_bag", "sneakers", "transit_card", "appointment_card"],
     speaker: "Hallway",
     narration: [
       "The hallway is longer than the apartment should allow.",
@@ -980,8 +1010,8 @@ const sceneNodes = {
     title: "Hallway - Uncertain",
     perspective: "first-person",
     mood: "dread",
-    exits: { forward: "hallway_door", back: "living_coffee_table" },
-    hotspots: ["hall_note", "keys", "tote_bag"],
+    exits: { forward: "hallway_door", back: "bedroom_bedside" },
+    hotspots: ["hall_note", "keys", "appointment_card"],
     speaker: "Space",
     narration: [
       "You moved. The door did not get closer.",
@@ -1006,8 +1036,8 @@ const sceneNodes = {
       "Light leaks around the frame, bright and not quite readable."
     ],
     choices: [
-      { label: "Check carried things.", text: "Keys. Wallet. Phone. Card. The list is plain and kind." },
-      { label: "Use support cue.", text: "Support does not erase the morning. It makes one step reachable." },
+      { label: "Check carried things.", text: "Keys. Phone. Card. The list is plain and kind." },
+      { label: "Use support cue.", text: "Support does not erase the morning. It makes one step reachable.", action: "supportDoor" },
       { label: "Make today smaller.", text: "Not today is also a way to care for the day.", action: "reschedule" }
     ]
   }
@@ -1055,32 +1085,12 @@ const reflectionPrompts = [
 const endings = {
   supported: {
     title: "Supported Departure",
-    text: "The door opens after labels, lists, tea, a call, and the small patience of the room. Support did not erase uncertainty. It made the next step reachable.",
+    text: "The door opens after the room lends back a few simple facts: glasses, phone, keys, card, one cue. Support did not erase uncertainty. It made the next step reachable.",
     points: [
-      "What helped: external labels, checklist cues, and gathered essentials.",
-      "What remained difficult: sequencing still needed visible support.",
+      "What helped: object cues, a carried phone, and one visible support near the door.",
+      "What remained difficult: the threshold still asked for patience.",
       "Care note: support protected autonomy instead of replacing it.",
       "Reflection: what made the morning feel possible?"
-    ]
-  },
-  independent: {
-    title: "Quiet Independence",
-    text: "You leave with the essentials gathered and the call short. The morning stays quiet, private, and possible.",
-    points: [
-      "What helped: routine, preparation, and familiar objects.",
-      "What remained difficult: asking for support stayed complicated.",
-      "Care note: privacy and support can both be valid needs.",
-      "Reflection: where did independence feel gentle?"
-    ]
-  },
-  callOpen: {
-    title: "Shared Morning",
-    text: "A familiar voice stays with you through the hallway. The apartment feels less wide when connection is allowed to remain.",
-    points: [
-      "What helped: a familiar voice stayed present.",
-      "What remained difficult: the hallway still felt like a threshold.",
-      "Care note: connection reduced distress without taking control.",
-      "Reflection: what kind of help felt respectful?"
     ]
   },
   notToday: {
@@ -1093,44 +1103,14 @@ const endings = {
       "Reflection: what would rest make room for?"
     ]
   },
-  quietProof: {
-    title: "Quiet Proof",
-    text: "You do not complete everything, but you reconnect with enough of yourself to know the morning is still yours.",
-    points: [
-      "What helped: privacy, music, one sentence, and small choices.",
-      "What remained difficult: support still felt complicated to accept.",
-      "Care note: proof of selfhood is not measured by productivity.",
-      "Reflection: what reminded you that you were still yourself?"
-    ]
-  },
   overloadedNotAlone: {
     title: "Overloaded but Not Alone",
-    text: "The morning becomes too loud, but the support remains. No one disappears because the day got difficult.",
+    text: "The hallway becomes too loud, but the support remains. A call, a note, or a smaller plan keeps the morning from becoming something faced alone.",
     points: [
-      "What helped: pausing, relational support, and leaving some tasks unfinished.",
+      "What helped: pausing, relational support, and the option to leave some tasks unfinished.",
       "What remained difficult: overload and dread stayed present.",
       "Care note: being overwhelmed is not being abandoned.",
       "Reflection: what would make tomorrow smaller?"
-    ]
-  },
-  circledAppointment: {
-    title: "The Circled Appointment",
-    text: "The double circle is not a twist. It is a note from a braver moment: this appointment mattered because you were ready to ask what was happening.",
-    points: [
-      "What helped: calendar cue, voice memo, sensory fragments, and trusted support.",
-      "What remained difficult: knowing why did not remove the fear.",
-      "Care note: dread can grow between knowing something matters and not knowing why.",
-      "Reflection: what kind of support preserved dignity?"
-    ]
-  },
-  unsteady: {
-    title: "Overloaded but Moving",
-    text: "The door opens with a few things still uncertain. The morning is imperfect, but it is held by notes, memory, and motion.",
-    points: [
-      "What helped: movement, notes, and partial routines.",
-      "What remained difficult: memory and spatial orientation fluctuated.",
-      "Care note: incomplete clarity is not failure.",
-      "Reflection: what support should be easier to reach next time?"
     ]
   }
 };
@@ -1168,8 +1148,10 @@ const initialState = () => ({
   visitedNodes: ["bedroom_bedside"],
   memoryBookSection: "fragments",
   currentInspectionId: null,
+  currentFocusIndex: 0,
+  lastInputMode: "keyboard",
   vnSpeaker: "Morning",
-  vnText: "The room is not gone. It is only arriving in pieces.",
+  vnText: "The room is familiar before it is clear.",
   vnChoices: [],
   interactionCount: 0,
   symptoms: {
@@ -1248,6 +1230,7 @@ const els = {
   memoryEntries: $("#memoryEntries"),
   symptomLogEntries: $("#symptomLogEntries"),
   feedbackLayer: $("#feedbackLayer"),
+  inputPrompts: $("#inputPrompts"),
   phoneChoices: $("#phoneChoices"),
   inspectionEyebrow: $("#inspectionEyebrow"),
   inspectionTitle: $("#inspectionTitle"),
@@ -1311,26 +1294,164 @@ function init() {
     });
   }
 
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      $$(".modal").forEach((modal) => modal.classList.add("hidden"));
-    }
-    if ((event.key === "m" || event.key === "M") && state.screen === "game") {
-      openModal("memoryBookModal");
-    }
-    if (state.screen === "game" && !$$(".modal").some((modal) => !modal.classList.contains("hidden"))) {
-      const map = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "forward", ArrowDown: "back" };
-      const direction = map[event.key];
-      const target = direction ? currentSceneNode().exits?.[direction] : null;
-      if (target) {
-        event.preventDefault();
-        moveToNode(target, direction);
-      }
-    }
-  });
+  document.addEventListener("keydown", handleKeyboardInput);
 
   updateContinueButton();
   renderAll();
+  startGamepadLoop();
+}
+
+function visibleModal() {
+  return $$(".modal").find((modal) => !modal.classList.contains("hidden"));
+}
+
+function handleKeyboardInput(event) {
+  if (state.screen !== "game") {
+    if (event.key === "Escape") closeTopModalOrBack();
+    return;
+  }
+
+  const key = event.key.toLowerCase();
+  const modal = visibleModal();
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeTopModalOrBack();
+    return;
+  }
+
+  if (modal) return;
+
+  const directionMap = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "forward", ArrowDown: "back" };
+  const direction = directionMap[event.key];
+  if (direction) {
+    event.preventDefault();
+    state.lastInputMode = "keyboard";
+    moveOrFocus(direction);
+    return;
+  }
+
+  if (event.key === "Tab") {
+    event.preventDefault();
+    state.lastInputMode = "keyboard";
+    cycleControllerFocus(event.shiftKey ? -1 : 1);
+    return;
+  }
+
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    activateControllerFocus();
+    return;
+  }
+
+  if (key === "m" || key === "y") {
+    event.preventDefault();
+    openModal("memoryBookModal");
+    return;
+  }
+
+  if (key === "s" || key === "x") {
+    event.preventDefault();
+    openSupport();
+  }
+}
+
+function closeTopModalOrBack() {
+  const modal = visibleModal();
+  if (modal) {
+    closeModal(modal.id);
+    return;
+  }
+  if (state.screen === "game") {
+    const back = currentSceneNode().exits?.back;
+    if (back) moveToNode(back, "back");
+  }
+}
+
+function moveOrFocus(direction) {
+  const target = currentSceneNode().exits?.[direction];
+  if (target) {
+    moveToNode(target, direction);
+    return;
+  }
+  cycleControllerFocus(direction === "left" || direction === "back" ? -1 : 1);
+}
+
+function interactiveElements() {
+  return [
+    ...$$("[data-vn-choice]"),
+    ...$$(".object-marker"),
+    ...$$("[data-node-exit]")
+  ].filter((element) => element.offsetParent !== null && !element.disabled);
+}
+
+function refreshControllerFocus() {
+  const elements = interactiveElements();
+  if (!elements.length) return;
+  if (state.currentFocusIndex >= elements.length) state.currentFocusIndex = 0;
+  elements.forEach((element, index) => {
+    element.classList.toggle("controller-focus", index === state.currentFocusIndex);
+  });
+}
+
+function cycleControllerFocus(delta = 1) {
+  const elements = interactiveElements();
+  if (!elements.length) return;
+  state.currentFocusIndex = (state.currentFocusIndex + delta + elements.length) % elements.length;
+  refreshControllerFocus();
+  elements[state.currentFocusIndex]?.focus({ preventScroll: true });
+}
+
+function activateControllerFocus() {
+  const elements = interactiveElements();
+  if (!elements.length) return;
+  const element = elements[state.currentFocusIndex] || elements[0];
+  element.click();
+}
+
+function startGamepadLoop() {
+  if (!("getGamepads" in navigator)) return;
+  const previous = { buttons: [], axes: [0, 0] };
+  const tick = () => {
+    if (state.screen === "game" && !visibleModal()) {
+      const pad = Array.from(navigator.getGamepads()).find(Boolean);
+      if (pad) handleGamepadInput(pad, previous);
+    }
+    window.requestAnimationFrame(tick);
+  };
+  window.requestAnimationFrame(tick);
+}
+
+function pressedNow(pad, previous, index) {
+  const pressed = Boolean(pad.buttons[index]?.pressed);
+  const wasPressed = Boolean(previous.buttons[index]);
+  previous.buttons[index] = pressed;
+  return pressed && !wasPressed;
+}
+
+function axisTap(value, previousValue) {
+  return Math.abs(value) > 0.62 && Math.abs(previousValue) <= 0.62;
+}
+
+function handleGamepadInput(pad, previous) {
+  state.lastInputMode = "gamepad";
+  const xAxis = pad.axes[0] || 0;
+  const yAxis = pad.axes[1] || 0;
+
+  if (axisTap(xAxis, previous.axes[0])) moveOrFocus(xAxis < 0 ? "left" : "right");
+  if (axisTap(yAxis, previous.axes[1])) moveOrFocus(yAxis < 0 ? "forward" : "back");
+  previous.axes = [xAxis, yAxis];
+
+  if (pressedNow(pad, previous, 0)) activateControllerFocus();
+  if (pressedNow(pad, previous, 1)) closeTopModalOrBack();
+  if (pressedNow(pad, previous, 2)) openSupport();
+  if (pressedNow(pad, previous, 3)) openModal("memoryBookModal");
+  if (pressedNow(pad, previous, 4)) cycleControllerFocus(-1);
+  if (pressedNow(pad, previous, 5)) cycleControllerFocus(1);
+  if (pressedNow(pad, previous, 12)) moveOrFocus("forward");
+  if (pressedNow(pad, previous, 13)) moveOrFocus("back");
+  if (pressedNow(pad, previous, 14)) moveOrFocus("left");
+  if (pressedNow(pad, previous, 15)) moveOrFocus("right");
 }
 
 function newGame() {
@@ -1397,6 +1518,8 @@ function normalizeState(saved) {
     selfMonitoring: saved.selfMonitoring || [],
     currentNode: saved.currentNode && sceneNodes[saved.currentNode] ? saved.currentNode : roomStartNodes[saved.currentRoom] || "bedroom_bedside",
     visitedNodes: saved.visitedNodes || [saved.currentNode || "bedroom_bedside"],
+    currentFocusIndex: Number.isFinite(saved.currentFocusIndex) ? saved.currentFocusIndex : 0,
+    lastInputMode: saved.lastInputMode || "keyboard",
     vnChoices: saved.vnChoices || [],
     settings: { ...initialState().settings, ...(saved.settings || {}) }
   };
@@ -1431,6 +1554,8 @@ function renderAll() {
   renderQuickMemoryGrid();
   renderMemoryBook();
   renderVNBox();
+  renderInputPrompts();
+  refreshControllerFocus();
 }
 
 function setVN(speaker, text, choices = []) {
@@ -1448,13 +1573,31 @@ function renderVNBox() {
   els.vnSpeaker.textContent = speaker;
   els.caption.textContent = text;
   els.vnChoices.innerHTML = (state.vnChoices || []).map((choice, index) => `
-    <button type="button" data-vn-choice="${index}">
+    <button class="vn-choice" type="button" data-vn-choice="${index}" data-interactive="choice">
       ${choice.label}
     </button>
   `).join("");
   $$("[data-vn-choice]").forEach((button) => {
     button.addEventListener("click", () => chooseVNChoice(Number(button.dataset.vnChoice)));
   });
+  refreshControllerFocus();
+}
+
+function renderInputPrompts() {
+  if (!els.inputPrompts) return;
+  const exits = Object.keys(currentSceneNode().exits || {});
+  const turnPrompt = exits.includes("left") || exits.includes("right") ? "<span><b>Left/Right</b> Turn</span>" : "";
+  const forwardPrompt = exits.includes("forward") ? "<span><b>Up</b> Move</span>" : "";
+  const backPrompt = exits.includes("back") ? "<span><b>B / Esc</b> Back</span>" : "<span><b>B / Esc</b> Close</span>";
+  els.inputPrompts.innerHTML = `
+    <span><b>A / Enter</b> Inspect</span>
+    ${backPrompt}
+    <span><b>X / S</b> Support</span>
+    <span><b>Y / M</b> Memory Book</span>
+    <span><b>Tab / Shoulder</b> Focus</span>
+    ${turnPrompt}
+    ${forwardPrompt}
+  `;
 }
 
 function chooseVNChoice(index) {
@@ -1468,6 +1611,45 @@ function chooseVNChoice(index) {
       human: "Not today became care, not failure."
     });
     setVN("Threshold", choice.text, []);
+    showEnding("notToday");
+    return;
+  } else if (choice.action === "supportDoor") {
+    if (!state.supportPlaced.includes("door")) placeSupport("door");
+    setVN("Support", choice.text, []);
+    return;
+  } else if (choice.action === "simpleReply") {
+    state.flags.textHandled = true;
+    state.flags.phoneUsed = true;
+    complete("phone");
+    addItem("phone");
+    addMessage(choice.text);
+    addFragment("half_text");
+    addCarePerspective("Communication can be made smaller without making the person smaller.");
+    setVN("Phone", choice.text, []);
+    ground(0.45);
+    playSound("text");
+  } else if (choice.action === "oneQuestion") {
+    state.flags.oneQuestionAtATime = true;
+    state.flags.askedHelp = true;
+    state.flags.phoneUsed = true;
+    complete("phone");
+    addItem("phone");
+    addMessage(choice.text);
+    addCarePerspective("One question at a time is a support need, not a failure.");
+    setVN("Phone", "Sam: Of course. One question. Do you want me to stay on the phone, or just text?", []);
+    ground(0.65);
+    playSound("text");
+  } else if (choice.action === "call") {
+    state.flags.callOpen = true;
+    state.flags.askedHelp = true;
+    state.flags.phoneUsed = true;
+    complete("phone");
+    addItem("phone");
+    addFragment("voice");
+    addCarePerspective("Relational support can stay present without taking control.");
+    setVN("Sam", "I am here. No rush. You are not a problem I am solving.", []);
+    ground(0.8);
+    playSound("phone");
   } else if (choice.node) {
     moveToNode(choice.node, "choice");
     setVN(currentSceneNode().speaker || "Morning", choice.text, currentSceneNode().choices || []);
@@ -1527,7 +1709,9 @@ function distortText(text, mode) {
 }
 
 function renderRoomMap() {
-  els.roomMap.innerHTML = Object.entries(rooms).map(([id, room]) => `
+  els.roomMap.innerHTML = verticalSliceRoomIds.map((id) => {
+    const room = rooms[id];
+    return `
     <button
       class="${id === state.currentRoom ? "active" : ""} ${state.visitedRooms.includes(id) ? "visited" : ""} ${roomStatus(id)}"
       data-room="${id}"
@@ -1537,7 +1721,8 @@ function renderRoomMap() {
       <span class="map-dot"></span>
       <span>${room.nav}</span>
     </button>
-  `).join("");
+  `;
+  }).join("");
 
   $$("#roomMap [data-room]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1687,11 +1872,12 @@ function renderFirstPersonScene(roomId, nodeId) {
     ></span>
   `).join("");
   return `
-    <div class="first-person-scene scene-node scene-${roomId} node-${nodeId}" aria-hidden="true">
+    <div class="first-person-scene scene-node scene-plate scene-${roomId} node-${nodeId}" aria-hidden="true">
       <span class="scene-background"></span>
       <span class="scene-wall"></span>
       <span class="scene-back-wall"></span>
       <span class="scene-floor"></span>
+      <span class="scene-surface"></span>
       <span class="scene-floor-lines"></span>
       <span class="scene-midground"></span>
       <span class="scene-foreground"></span>
@@ -1715,6 +1901,7 @@ function renderNodeExits(node) {
       type="button"
       data-direction="${direction}"
       data-node-exit="${nodeId}"
+      data-interactive="exit"
       aria-label="${labels[direction] || "Move"} to ${sceneNodes[nodeId]?.title || nodeId}"
     >
       <span>${labels[direction] || "Move"}</span>
@@ -1730,7 +1917,7 @@ function renderHotspot(object, clarity) {
   const helpful = isHelpfulObject(object);
   const [x, y] = firstPersonHotspots[object.id] || [object.x, object.y];
   return `
-    <button class="hotspot object-marker hotspot-${object.id} ${done ? "done" : ""} ${helpful ? "helpful" : ""}" style="left:${x}%;top:${y}%;" data-object="${object.id}" type="button">
+    <button class="hotspot object-marker hotspot-${object.id} ${done ? "done" : ""} ${helpful ? "helpful" : ""}" style="left:${x}%;top:${y}%;" data-object="${object.id}" data-interactive="object" type="button">
       <span class="object-label">${label}</span>
     </button>
   `;
@@ -2215,14 +2402,8 @@ function reconstructPhoto(object) {
 function usePhone(object) {
   if (!hasItem("phone")) {
     collectObject(object);
-    setCaption("The phone is in your pocket. You can call when the memory is steadier.");
-    return;
-  }
-
-  if (!state.completed.includes("photo")) {
-    soften(0.3);
-    nudgeSymptom("recognition", 0.2);
-    gentlePause("The phone is ready. The photo memory may help the contact feel less abstract first.");
+    complete("phone");
+    setCaption("The phone is in your pocket. The message can become smaller now.");
     return;
   }
 
@@ -2231,7 +2412,7 @@ function usePhone(object) {
     return;
   }
 
-  openPhone();
+  moveToNode("phone_closeup", "choice");
 }
 
 function useGroupChat(object) {
@@ -2402,7 +2583,7 @@ function choosePhone(choiceId) {
 }
 
 function tryLeave(object) {
-  const needed = ["keys", "wallet", "phone", "appointment_card"];
+  const needed = sliceRequiredItems;
   const missing = needed.filter((item) => !hasItem(item));
 
   if (state.flags.rescheduled) {
@@ -2410,7 +2591,7 @@ function tryLeave(object) {
     return;
   }
 
-  if (!state.supportPlaced.includes("door") && state.symptoms.visuospatial >= 3.2) {
+  if (!state.supportPlaced.includes("door") && state.symptoms.visuospatial >= 3.2 && !state.flags.callOpen) {
     soften(0.55);
     nudgeSymptom("visuospatial", 0.35);
     addSymptomLog("Hallway felt spatially unstable until a door cue was available.");
@@ -2430,14 +2611,9 @@ function tryLeave(object) {
 }
 
 function selectEnding() {
-  if (state.fragments.includes("circled_twice") && state.fragments.includes("hard_mornings") && state.flags.voiceMemoPlayed) return "circledAppointment";
-  if (state.flags.callOpen) return "callOpen";
-  if (state.symptoms.overload >= 4 || state.symptoms.dread >= 4.4) return "overloadedNotAlone";
-  if (state.supportPlaced.length >= 3 || state.flags.askedHelp) return "supported";
-  if (state.flags.laptopHandled || state.flags.playlistUsed || state.flags.textHandled) return "quietProof";
-  if (state.flags.deniedHelp && state.clarity >= 3.4) return "independent";
-  if (state.clarity < 3.2) return "unsteady";
-  return "independent";
+  if (state.flags.rescheduled) return "notToday";
+  if (state.symptoms.overload >= 4 || state.symptoms.dread >= 4.4 || state.flags.callOpen) return "overloadedNotAlone";
+  return "supported";
 }
 
 function showEnding(id) {
@@ -2904,42 +3080,35 @@ window.softRecallTrailer = {
     $("#newGame").click();
     await wait(500);
     $("#beginCaseFile").click();
+    await wait(500);
+    $("#finishOnboarding").click();
+    await wait(900);
+    await trailerClick("bedside_glasses", 900);
+    await trailerNode("phone_closeup", 900);
+    $('[data-vn-choice="2"]')?.click();
     await wait(1200);
-    await trailerClick("bedside_glasses", 1500);
-    await trailerClick("voice_memo", 1000);
-    await trailerClick("unread_texts", 1000);
-    await trailerRoom("kitchen", 800);
-    await trailerClick("mug", 900);
-    await trailerClick("tea_tin", 900);
-    await trailerClick("kettle", 1300);
-    await trailerClick("plant_shelf", 900);
+    await trailerNode("bedroom_mirror", 900);
+    $('[data-vn-choice="1"]')?.click();
+    await wait(1000);
+    await trailerNode("hallway_mid", 900);
+    await trailerClick("keys", 700);
+    await trailerClick("appointment_card", 700);
     $("#openSupport").click();
     await wait(500);
     $('[data-support-style="gentle"]').click();
     await wait(300);
-    $('[data-support-target="kettle"]').click();
-    await wait(1300);
-    await trailerRoom("bathroom", 800);
-    await trailerClick("pill_organizer", 1000);
-    await trailerRoom("kitchen", 700);
-    await trailerClick("medication_bottle", 1200);
-    await trailerRoom("living", 700);
-    await trailerClick("postcard", 900);
-    await trailerClick("photo_frame", 1300);
-    await trailerClick("playlist", 900);
-    await trailerClick("phone", 700);
-    await trailerClick("phone", 900);
-    $('[data-phone="stay_phone"]').click();
-    await wait(1600);
-    await trailerRoom("hallway", 700);
-    await trailerClick("keys", 700);
-    await trailerClick("appointment_card", 700);
-    await trailerClick("transit_card", 700);
-    await trailerClick("tote_bag", 700);
-    await trailerClick("hall_note", 700);
-    await wait(9000);
+    $('[data-support-target="door"]').click();
+    await wait(900);
+    await trailerNode("hallway_door", 900);
+    await trailerClick("front_door", 1200);
+    await wait(5000);
   }
 };
+
+async function trailerNode(nodeId, delay) {
+  moveToNode(nodeId, "trailer");
+  await new Promise((resolve) => setTimeout(resolve, delay));
+}
 
 async function trailerRoom(roomId, delay) {
   $(`#roomMap [data-room="${roomId}"]`).click();

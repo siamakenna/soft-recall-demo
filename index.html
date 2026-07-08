@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Soft Recall: A Morning in Five Rooms</title>
+    <title>Soft Recall: Vertical Slice</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <main class="shell whole-game-watercolor research-ready-surfaces full-surface-art-direction" id="app">
+    <main class="shell game-viewport whole-game-watercolor research-ready-surfaces full-surface-art-direction" id="app">
       <section class="menu-screen" id="menuScreen" aria-labelledby="gameTitle">
         <div class="grain"></div>
         <div class="menu-wash" aria-hidden="true"></div>
@@ -19,8 +19,8 @@
         <article class="title-card">
           <p class="eyebrow">a quiet point-and-click narrative</p>
           <h1 id="gameTitle">Soft Recall</h1>
-          <p class="subtitle">A Morning in Five Rooms</p>
-          <p class="menu-copy">Move gently through an apartment where routine, memory, perception, and care shape the morning.</p>
+          <p class="subtitle">Vertical Slice</p>
+          <p class="menu-copy">A first-person visual novel mystery about a bedside, a mirror, a phone, and the door.</p>
           <nav class="menu-actions" aria-label="Main menu">
             <button class="primary" id="newGame">New Morning</button>
             <button class="ghost" id="continueGame">Continue</button>
@@ -33,11 +33,11 @@
       </section>
 
       <section class="game-screen hidden" id="gameScreen" aria-label="Soft Recall game">
-        <aside class="status-panel game-left" aria-label="Morning status and navigation">
+        <aside class="status-panel game-left slice-hud" aria-label="Morning status and navigation">
           <section class="game-logo-card" aria-label="Soft Recall status card">
             <p class="eyebrow">morning file</p>
             <h2 class="game-logo">Soft<br>Recall</h2>
-            <p class="mini-subtitle">a morning in five rooms</p>
+            <p class="mini-subtitle">vertical slice</p>
             <p class="time">7:13 AM</p>
           </section>
 
@@ -48,10 +48,11 @@
             <p id="roomDescription" class="room-description"></p>
           </section>
 
-          <section class="control-hints status-card" aria-label="Keyboard shortcuts">
-            <div><kbd>Tab</kbd> Focus</div>
-            <div><kbd>M</kbd> Memory Book</div>
-            <div><kbd>Esc</kbd> Pause</div>
+          <section class="control-hints status-card" aria-label="Keyboard and controller shortcuts">
+            <div><kbd>A</kbd>/<kbd>Enter</kbd> Inspect</div>
+            <div><kbd>B</kbd>/<kbd>Esc</kbd> Back</div>
+            <div><kbd>Y</kbd>/<kbd>M</kbd> Memory Book</div>
+            <div><kbd>X</kbd>/<kbd>S</kbd> Support</div>
           </section>
 
           <section class="floor-plan-panel status-card" aria-labelledby="floorPlanTitle">
@@ -59,7 +60,7 @@
               <h3 id="floorPlanTitle">Floor Plan</h3>
               <span class="shortcut-pill">Tab</span>
             </div>
-            <nav class="room-map" id="roomMap" aria-label="Room navigation"></nav>
+            <nav class="room-map" id="roomMap" aria-label="Notebook navigation aid"></nav>
             <div class="map-legend" aria-hidden="true">
               <span><i class="stable"></i> stable</span>
               <span><i class="uncertain"></i> uncertain</span>
@@ -88,6 +89,7 @@
               <div id="nodeExitLayer" class="node-exit-layer" aria-label="First-person movement controls"></div>
               <div id="feedbackLayer" class="feedback-layer" aria-live="polite"></div>
             </div>
+            <div id="inputPrompts" class="input-prompts" aria-label="Input prompts"></div>
             <section class="vn-box" aria-live="polite" aria-label="Narration">
               <p id="vnSpeaker" class="vn-speaker">Morning</p>
               <p id="caption" class="caption vn-text">The apartment is quiet. Start with what helps you see.</p>
@@ -100,7 +102,7 @@
           </section>
         </section>
 
-        <aside class="journal-panel game-right" aria-label="Journal, metacognition, and actions">
+        <aside class="journal-panel game-right slice-notebook" aria-label="Journal, metacognition, and actions">
           <section class="notes-card status-card">
             <h2>Morning Notes</h2>
             <div id="journalLog" class="journal-log" aria-live="polite"></div>
@@ -224,7 +226,7 @@
       </section>
 
       <section class="modal hidden" id="inspectionModal" role="dialog" aria-modal="true" aria-labelledby="inspectionTitle" aria-describedby="inspectionText">
-        <div class="modal-card inspection-card">
+        <div class="modal-card inspection-card closeup-card">
           <div class="panel-header">
             <div>
               <p class="eyebrow" id="inspectionEyebrow">close inspection</p>
