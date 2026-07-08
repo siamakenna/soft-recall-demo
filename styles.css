@@ -3948,8 +3948,10 @@ body {
   min-height: 100vh;
   color: rgba(255, 248, 226, 0.96);
   background:
+    url("assets/ui/watercolor_noise.svg"),
     radial-gradient(ellipse at 50% 28%, rgba(194, 139, 89, 0.18), transparent 42%),
     linear-gradient(180deg, rgba(13, 14, 20, 0.98), rgba(4, 6, 10, 1));
+  background-size: 520px 350px, auto, auto;
 }
 
 .game-screen {
@@ -3975,7 +3977,7 @@ body {
 }
 
 .scene-frame.scene-viewport {
-  width: min(100%, 1180px);
+  width: min(100%, 1120px);
   aspect-ratio: 16 / 9;
   min-height: 0;
   margin: 0 auto;
@@ -3983,7 +3985,9 @@ body {
   border: 1px solid rgba(250, 226, 169, 0.24);
   border-radius: 10px;
   background:
+    url("assets/ui/paper_texture.svg"),
     linear-gradient(180deg, rgba(7, 9, 14, 0.92), rgba(20, 16, 18, 0.98));
+  background-size: 360px 240px, auto;
   box-shadow:
     0 32px 90px rgba(0, 0, 0, 0.62),
     inset 0 0 0 1px rgba(255, 250, 219, 0.06);
@@ -4002,6 +4006,41 @@ body {
 
 .scene-plate {
   inset: 0;
+}
+
+.scene-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.96) contrast(1.04);
+}
+
+.scene-ink-wash,
+.scene-paper-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scene-ink-wash {
+  background:
+    radial-gradient(ellipse at 50% 28%, rgba(255, 213, 142, 0.11), transparent 28%),
+    radial-gradient(ellipse at 8% 80%, rgba(12, 17, 27, 0.58), transparent 38%),
+    radial-gradient(ellipse at 96% 42%, rgba(11, 12, 18, 0.52), transparent 35%),
+    linear-gradient(180deg, rgba(7, 8, 12, 0.04), rgba(4, 5, 8, 0.34));
+  mix-blend-mode: multiply;
+}
+
+.scene-paper-grain {
+  opacity: 0.26;
+  background-image:
+    url("assets/ui/paper_texture.svg"),
+    repeating-radial-gradient(circle at 20% 20%, rgba(37, 29, 24, 0.22) 0 1px, transparent 1px 9px);
+  background-size: 420px 280px, 19px 19px;
+  mix-blend-mode: overlay;
 }
 
 .scene-surface {
@@ -4155,23 +4194,131 @@ body {
   position: absolute;
   left: 50%;
   right: auto;
-  bottom: 18px;
+  bottom: 108px;
   width: min(92%, 940px);
   min-height: 122px;
   margin: 0;
   transform: translateX(-50%);
-  border-radius: 8px;
+  border-radius: 9px 13px 8px 12px;
+  z-index: 15;
+  border: 2px solid rgba(43, 31, 25, 0.5);
+  color: #2b231d;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(235, 214, 180, 0.96), rgba(218, 193, 154, 0.94));
+  background-size: 380px 250px, auto;
+  box-shadow:
+    inset 0 0 32px rgba(255, 246, 218, 0.24),
+    0 18px 42px rgba(0, 0, 0, 0.44);
 }
 
 .vn-choice {
   min-height: 38px;
 }
 
+.vn-speaker {
+  color: #4b5c34;
+  text-shadow: none;
+}
+
+.vn-text {
+  color: #2b231d;
+  text-shadow: none;
+  font-family: "Comic Sans MS", "Bradley Hand", "Segoe Print", cursive;
+}
+
+.vn-choices button,
+.vn-choice {
+  border: 1px solid rgba(77, 55, 40, 0.24);
+  border-radius: 5px 9px 5px 7px;
+  color: #2f261e;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(222, 202, 164, 0.94), rgba(199, 172, 131, 0.9));
+  background-size: 260px 180px, auto;
+  box-shadow: 0 5px 10px rgba(42, 29, 22, 0.18);
+}
+
+.vn-choices button:hover,
+.vn-choices button:focus-visible,
+.vn-choice.controller-focus {
+  color: #231c17;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(231, 194, 154, 0.98), rgba(206, 132, 117, 0.9));
+  transform: translateY(-1px) rotate(-0.2deg);
+}
+
+.top-signal-strip {
+  position: absolute;
+  z-index: 14;
+  left: calc(50% - 350px);
+  top: clamp(8px, 1.6vw, 18px);
+  width: min(700px, 58vw);
+  pointer-events: none;
+}
+
+.symptom-summary {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.symptom-summary span {
+  min-width: 112px;
+  padding: 7px 10px;
+  border: 1px solid rgba(46, 33, 26, 0.38);
+  border-radius: 5px 9px 5px 8px;
+  color: #2a231c;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(237, 214, 177, 0.92), rgba(204, 181, 143, 0.88));
+  background-size: 280px 180px, auto;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+  font-size: 0.68rem;
+  text-transform: none;
+}
+
 .slice-hud,
-.slice-notebook,
-.top-signal-strip,
+.slice-notebook {
+  position: absolute;
+  z-index: 12;
+  width: min(260px, 20vw);
+  display: grid;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.slice-hud {
+  left: clamp(12px, 2vw, 26px);
+  top: clamp(14px, 2vw, 28px);
+}
+
+.slice-notebook {
+  right: clamp(12px, 2vw, 26px);
+  top: clamp(14px, 2vw, 28px);
+  max-height: calc(100vh - 34px);
+  overflow: auto;
+}
+
 .carried-tray {
-  display: none !important;
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  bottom: clamp(8px, 1.4vw, 18px);
+  width: min(720px, 55vw);
+  transform: translateX(-50%);
+  display: block;
+  border: 2px solid rgba(47, 33, 25, 0.42);
+  border-radius: 8px 12px 7px 11px;
+  padding: 10px 12px 12px;
+  color: #2c241d;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(237, 211, 168, 0.94), rgba(207, 177, 133, 0.92));
+  background-size: 360px 240px, auto;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
 }
 
 .slice-hud .game-logo-card,
@@ -4180,14 +4327,24 @@ body {
 .slice-hud .control-hints,
 .slice-notebook .status-card,
 .slice-notebook .side-actions {
-  border-radius: 8px;
-  background: rgba(8, 10, 15, 0.68);
-  backdrop-filter: blur(10px);
+  border: 2px solid rgba(47, 33, 25, 0.38);
+  border-radius: 7px 12px 8px 10px;
+  color: #2d241d;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(235, 214, 179, 0.94), rgba(210, 185, 146, 0.9));
+  background-size: 320px 220px, auto;
+  box-shadow:
+    inset 0 0 22px rgba(255, 246, 215, 0.24),
+    0 12px 28px rgba(0, 0, 0, 0.3);
+  backdrop-filter: none;
 }
 
 .slice-notebook .notes-card,
-.slice-notebook .checklist-box {
-  display: none;
+.slice-notebook .checklist-box,
+.slice-notebook .quick-book-card,
+.slice-notebook .metacognition-card {
+  display: block;
 }
 
 .floor-plan-panel h3::after {
@@ -4210,8 +4367,10 @@ body {
   width: min(92vw, 920px);
   color: rgba(255, 248, 226, 0.96);
   background:
+    url("assets/ui/paper_texture.svg"),
     radial-gradient(circle at 22% 18%, rgba(239, 194, 126, 0.12), transparent 32%),
     linear-gradient(135deg, rgba(14, 17, 24, 0.96), rgba(30, 27, 31, 0.96));
+  background-size: 360px 240px, auto, auto;
 }
 
 .closeup-card .inspection-layout {
@@ -4251,7 +4410,9 @@ body.reduced-motion .object-marker .object-label {
   }
 
   .slice-hud,
-  .slice-notebook {
+  .slice-notebook,
+  .top-signal-strip,
+  .carried-tray {
     display: none !important;
   }
 
@@ -4301,4 +4462,117 @@ body.reduced-motion .object-marker .object-label {
   .node-hallway_door .first-person-scene {
     transform: scale(1.18);
   }
+}
+
+/* Painted-paper surface unification for menus, modals, endings, and scrapbook UI. */
+.title-card,
+.modal-card,
+.ending-card,
+.book-card,
+.phone-modal-card,
+.support-card {
+  border: 2px solid rgba(48, 34, 26, 0.42);
+  border-radius: 9px 14px 8px 12px;
+  color: #2d241d;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    radial-gradient(circle at 18% 12%, rgba(205, 119, 105, 0.22), transparent 26%),
+    linear-gradient(180deg, rgba(238, 218, 185, 0.97), rgba(212, 184, 143, 0.94));
+  background-size: 380px 250px, auto, auto;
+  box-shadow:
+    inset 0 0 30px rgba(255, 246, 218, 0.25),
+    0 18px 48px rgba(0, 0, 0, 0.36);
+}
+
+.title-card h1,
+.game-logo,
+.book-card h2,
+.ending-card h2,
+.modal-card h2 {
+  color: #211a16;
+  font-family: "Comic Sans MS", "Bradley Hand", "Segoe Print", cursive;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.title-card .subtitle,
+.menu-copy,
+.modal-card p,
+.ending-card p,
+.memory-entry,
+.journal-log,
+.checklist,
+.inventory {
+  color: #33291f;
+}
+
+.primary,
+.ghost,
+.mini-button,
+.menu-actions button,
+.inspection-actions button,
+.support-choices button,
+.support-style-choices button,
+.memory-tabs button,
+.dialogue-options button,
+.reflection-prompts button {
+  border: 1px solid rgba(58, 41, 30, 0.28);
+  border-radius: 5px 10px 5px 8px;
+  color: #2e241d;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(230, 205, 164, 0.96), rgba(199, 169, 128, 0.92));
+  background-size: 260px 170px, auto;
+  box-shadow: 0 6px 12px rgba(45, 30, 21, 0.18);
+}
+
+.primary,
+.menu-actions .primary {
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(218, 145, 130, 0.92), rgba(191, 101, 96, 0.86));
+}
+
+.primary:hover,
+.ghost:hover,
+.mini-button:hover,
+.inspection-actions button:hover,
+.support-choices button:hover,
+.support-style-choices button:hover,
+.memory-tabs button:hover,
+.dialogue-options button:hover {
+  transform: translateY(-1px) rotate(-0.2deg);
+  filter: saturate(1.06);
+}
+
+.inventory .slot,
+.quick-memory-grid button,
+.memory-entry,
+.meta-choice-grid button {
+  border-radius: 6px 10px 6px 8px;
+  color: #30261f;
+  background:
+    url("assets/ui/paper_texture.svg"),
+    linear-gradient(180deg, rgba(237, 218, 184, 0.94), rgba(215, 188, 146, 0.9));
+  background-size: 240px 160px, auto;
+}
+
+.inspection-card.closeup-card {
+  color: #2d241d;
+}
+
+.inspection-card .clinical-line,
+.clinical-line {
+  color: rgba(75, 56, 42, 0.78);
+}
+
+.phone-surface,
+.inspection-visual,
+.closeup-view {
+  border-color: rgba(56, 40, 31, 0.34);
+  background:
+    url("assets/ui/paper_texture.svg"),
+    radial-gradient(circle at 45% 35%, rgba(105, 139, 137, 0.26), transparent 42%),
+    linear-gradient(180deg, rgba(215, 195, 164, 0.92), rgba(169, 139, 108, 0.88));
+  background-size: 260px 180px, auto, auto;
 }

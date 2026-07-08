@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Soft Recall phone close-up</title>
+  <desc id="desc">Watercolor close-up of a phone on paper with unread messages, an unsent draft, voice memo card, and notes.</desc>
+  <defs>
+    <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".025" numOctaves="4" seed="42"/><feDisplacementMap in="SourceGraphic" scale="9"/></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="3" seed="12"/><feColorMatrix type="saturate" values=".2"/><feBlend in="SourceGraphic" mode="multiply"/></filter>
+    <radialGradient id="glow" cx="48%" cy="42%" r="58%"><stop offset="0" stop-color="#b7d7c9" stop-opacity=".82"/><stop offset=".48" stop-color="#6c8f91" stop-opacity=".38"/><stop offset="1" stop-color="#1a202b" stop-opacity=".1"/></radialGradient>
+    <style>
+      .line{fill:none;stroke:#201918;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;opacity:.58}
+      .thin{fill:none;stroke:#201918;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.48}
+      .text{font:26px serif;fill:#2d261f}
+      .small{font:20px serif;fill:#2d261f}
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#121824"/>
+  <path d="M153 96 C401 29 664 61 892 82 C1113 102 1297 50 1477 116 L1430 790 C1074 836 796 811 520 793 C317 780 187 819 99 758 Z" fill="#e9d4b5" filter="url(#rough)"/>
+  <path d="M120 134 C350 92 603 108 818 126 C1070 148 1281 98 1457 152" class="line"/>
+  <path d="M156 758 C430 710 767 775 1414 735" class="thin"/>
+  <ellipse cx="799" cy="451" rx="408" ry="276" fill="#a96f76" opacity=".2" filter="url(#rough)"/>
+  <ellipse cx="884" cy="420" rx="256" ry="190" fill="#547979" opacity=".2" filter="url(#rough)"/>
+  <g transform="translate(649 118) rotate(7 210 335)">
+    <rect x="0" y="0" width="396" height="660" rx="54" fill="#131820" stroke="#090b0e" stroke-width="18"/>
+    <rect x="32" y="66" width="331" height="532" rx="28" fill="url(#glow)"/>
+    <rect x="142" y="22" width="108" height="22" rx="11" fill="#090b0e"/>
+    <circle cx="95" cy="44" r="8" fill="#2d3744"/>
+    <g opacity=".76">
+      <rect x="65" y="116" width="214" height="58" rx="18" fill="#e7ead4"/>
+      <path d="M91 138 L222 136M91 158 L250 156" class="thin"/>
+      <rect x="106" y="212" width="205" height="62" rx="18" fill="#293849" opacity=".62"/>
+      <path d="M134 234 L260 232M134 255 L227 253" stroke="#e8e1c8" stroke-width="3" opacity=".62"/>
+      <rect x="66" y="319" width="238" height="64" rx="18" fill="#e7ead4"/>
+      <path d="M95 343 L255 341M95 365 L206 363" class="thin"/>
+      <rect x="82" y="450" width="182" height="50" rx="15" fill="#293849" opacity=".55"/>
+      <path d="M111 473 L223 472" stroke="#e8e1c8" stroke-width="3" opacity=".62"/>
+    </g>
+  </g>
+  <g transform="translate(188 174)">
+    <text x="0" y="0" class="text">what you see</text>
+    <text x="0" y="52" class="small">Screen glow. Unread</text>
+    <text x="0" y="84" class="small">messages. A draft</text>
+    <text x="0" y="116" class="small">that almost says it.</text>
+    <text x="0" y="215" class="text" fill="#9a4d52">what it feels like</text>
+    <text x="0" y="267" class="small">A mix of wanting</text>
+    <text x="0" y="299" class="small">connection and not</text>
+    <text x="0" y="331" class="small">having the words.</text>
+  </g>
+  <g transform="translate(1100 183)">
+    <rect x="0" y="0" width="270" height="62" rx="9" fill="#d8c299" stroke="#4b3528" stroke-width="3" opacity=".9"/>
+    <text x="68" y="39" class="small">Read Messages</text>
+    <path d="M28 23 C42 9 69 19 66 42 C51 38 39 45 27 54 C31 43 15 39 28 23Z" fill="#49664c" opacity=".72"/>
+    <rect x="0" y="88" width="270" height="62" rx="9" fill="#d8c299" stroke="#4b3528" stroke-width="3" opacity=".9"/>
+    <text x="68" y="127" class="small">Call Someone</text>
+    <path d="M30 102 C50 117 59 133 45 147 C26 137 17 117 30 102Z" fill="#54493c"/>
+    <rect x="0" y="176" width="270" height="62" rx="9" fill="#d8c299" stroke="#4b3528" stroke-width="3" opacity=".9"/>
+    <text x="68" y="215" class="small">Voice Memo</text>
+    <path d="M40 188 L40 225M26 207 C33 216 47 216 54 207M31 230 L53 230" class="thin"/>
+    <rect x="0" y="264" width="270" height="62" rx="9" fill="#d8c299" stroke="#4b3528" stroke-width="3" opacity=".9"/>
+    <text x="68" y="303" class="small">Not Now</text>
+  </g>
+  <g transform="translate(261 690)">
+    <path d="M0 0 C220 -31 493 15 771 -6 C887 -14 1017 -8 1136 20 L1112 84 C816 68 533 95 247 75 C152 68 69 88 -18 67 Z" fill="#cc7c83" opacity=".48" filter="url(#rough)"/>
+    <text x="354" y="50" class="text">Things do not have to be perfect to be enough.</text>
+  </g>
+  <rect width="1600" height="900" filter="url(#grain)" opacity=".27"/>
+</svg>

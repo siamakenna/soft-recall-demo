@@ -47,6 +47,8 @@ Mouse and touch remain supported.
 
 Options include larger text, high contrast, reduced motion, reduced blur, plain language, disabled text distortion, content note toggle, mute sound, visible focus states, keyboard navigation, and no timers, jump scares, combat, shame language, or failure screens.
 
+This build does not include voiceover, music, or sound effects.
+
 ## Disclaimer
 
 Soft Recall is a narrative neuroeducation and interaction design prototype. It is not medical advice, diagnosis, treatment, or a clinical assessment tool.

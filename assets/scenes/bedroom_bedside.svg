@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Soft Recall bedroom bedside scene</title>
+  <desc id="desc">First-person watercolor bedroom with quilt, bedside table, phone, glasses, note, window light, plants, wall art, and door.</desc>
+  <defs>
+    <filter id="ink"><feTurbulence type="fractalNoise" baseFrequency=".018" numOctaves="4" seed="31"/><feColorMatrix type="saturate" values=".25"/><feBlend in="SourceGraphic" mode="multiply"/></filter>
+    <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".032" numOctaves="3" seed="9"/><feDisplacementMap in="SourceGraphic" scale="7"/></filter>
+    <radialGradient id="windowGlow" cx="50%" cy="48%" r="68%"><stop offset="0" stop-color="#ffe0a3"/><stop offset=".46" stop-color="#cc8b54" stop-opacity=".42"/><stop offset="1" stop-color="#1b2027" stop-opacity=".14"/></radialGradient>
+    <linearGradient id="wall" x1="0" x2="1"><stop offset="0" stop-color="#4d4039"/><stop offset=".47" stop-color="#9b7357"/><stop offset="1" stop-color="#55473f"/></linearGradient>
+    <linearGradient id="floor" y1="0" y2="1"><stop offset="0" stop-color="#53483d"/><stop offset="1" stop-color="#1e2925"/></linearGradient>
+    <style>
+      .line{fill:none;stroke:#211b18;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;opacity:.55}
+      .thin{fill:none;stroke:#221d19;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.48}
+      .paper{fill:#e9d2aa;stroke:#3b2a22;stroke-width:3;opacity:.92}
+      .noteText{font:22px serif;fill:#2c261e}
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#141a24"/>
+  <rect x="52" y="34" width="1496" height="808" rx="28" fill="url(#wall)" filter="url(#rough)"/>
+  <rect x="52" y="455" width="1496" height="387" fill="url(#floor)" opacity=".96"/>
+  <path d="M64 447 C352 414 638 433 870 460 C1117 489 1316 462 1542 434 L1544 845 L58 844 Z" fill="#27342d" opacity=".62"/>
+  <path d="M92 73 C310 120 480 65 649 91 C879 128 1056 60 1268 91 C1379 106 1459 86 1535 70" class="thin"/>
+  <g opacity=".22" stroke="#1a1715" stroke-width="2">
+    <path d="M118 508 C472 484 885 501 1472 470"/>
+    <path d="M148 580 C533 554 955 564 1510 536"/>
+    <path d="M204 704 C616 657 982 688 1512 632"/>
+    <path d="M316 845 L414 468M626 845 L680 466M1000 844 L970 468M1324 844 L1246 456"/>
+  </g>
+  <g transform="translate(560 95)">
+    <rect x="0" y="0" width="390" height="270" rx="8" fill="#d19a61" opacity=".34"/>
+    <rect x="30" y="28" width="330" height="202" fill="#f4d4a2" opacity=".76" filter="url(#rough)"/>
+    <path d="M195 31 L195 228M31 127 L358 127" class="line"/>
+    <rect x="43" y="41" width="300" height="176" fill="url(#windowGlow)" opacity=".72"/>
+    <path d="M70 187 C170 122 255 139 328 95" class="thin"/>
+    <path d="M42 232 C102 244 307 245 361 229" class="thin"/>
+    <g transform="translate(62 218)">
+      <rect x="0" y="0" width="46" height="18" rx="4" fill="#4d3b2a"/>
+      <path d="M12 0 C8 -45 22 -76 36 -109M30 0 C39 -38 56 -61 75 -82" class="thin"/>
+      <path d="M23 -52 C-5 -72 3 -98 30 -84M38 -58 C68 -78 78 -54 51 -44M54 -78 C82 -109 101 -80 74 -65" fill="#38533d" opacity=".78"/>
+    </g>
+  </g>
+  <g transform="translate(84 452)">
+    <path d="M0 120 C76 42 229 17 367 40 C470 57 535 111 559 214 L533 362 L3 357 Z" fill="#4a5a3d" opacity=".93" filter="url(#rough)"/>
+    <path d="M124 62 C205 101 331 95 474 70" class="line"/>
+    <path d="M68 165 C197 188 328 164 528 151" class="thin"/>
+    <path d="M205 234 C312 246 405 229 520 213" class="thin"/>
+    <path d="M340 47 C328 111 339 206 303 353" stroke="#7d4a4c" stroke-width="62" opacity=".38" fill="none" filter="url(#rough)"/>
+    <path d="M347 44 C333 116 348 207 309 355" stroke="#d49883" stroke-width="48" opacity=".62" fill="none" filter="url(#rough)"/>
+  </g>
+  <g transform="translate(845 370)">
+    <path d="M0 96 L448 42 L539 248 L63 308 Z" fill="#6c442f" opacity=".95" filter="url(#rough)"/>
+    <path d="M69 305 L70 430M470 254 L505 394M26 106 L7 277" class="line"/>
+    <path d="M51 99 L445 53M94 160 L506 101M77 244 L530 184" class="thin"/>
+    <rect x="272" y="54" width="145" height="84" rx="9" fill="#1b2630" stroke="#221815" stroke-width="4"/>
+    <rect x="287" y="67" width="114" height="54" rx="5" fill="#b8d1c2" opacity=".62"/>
+    <path d="M312 94 C351 80 370 118 398 90" class="thin"/>
+    <rect x="182" y="96" width="82" height="38" rx="5" fill="#2c1d1b"/>
+    <ellipse cx="220" cy="96" rx="46" ry="12" fill="#34221d"/>
+    <path d="M191 91 C176 58 177 33 193 14M213 92 C209 55 223 30 251 12M239 94 C253 63 277 42 305 34" class="thin"/>
+    <path d="M186 51 C162 29 188 5 212 26M235 40 C261 11 293 31 263 55M267 35 C298 7 327 33 294 55" fill="#446444" opacity=".8"/>
+    <g transform="translate(80 122)">
+      <ellipse cx="34" cy="22" rx="42" ry="17" fill="#1a1413" opacity=".6"/>
+      <path d="M1 22 C15 2 47 0 66 20 C49 38 17 39 1 22Z" fill="#e8ddcb" stroke="#221a17" stroke-width="3"/>
+      <path d="M31 5 C24 23 31 37 45 40" class="line"/>
+      <circle cx="23" cy="21" r="17" fill="none" stroke="#26323a" stroke-width="8"/>
+      <circle cx="50" cy="21" r="17" fill="none" stroke="#26323a" stroke-width="8"/>
+      <path d="M39 20 C43 16 47 16 51 20" class="thin"/>
+    </g>
+    <rect x="70" y="172" width="238" height="71" rx="8" class="paper" transform="rotate(-4 70 172)"/>
+    <path d="M101 198 L246 187M101 218 L263 207" class="thin"/>
+    <rect x="329" y="142" width="128" height="148" rx="16" fill="#22263b" stroke="#1a1114" stroke-width="5" transform="rotate(3 329 142)"/>
+    <rect x="345" y="166" width="95" height="86" rx="8" fill="#88a9a2" opacity=".55"/>
+    <circle cx="427" cy="166" r="10" fill="#80c9cf" opacity=".72"/>
+    <circle cx="384" cy="254" r="12" fill="#7ec1c9" opacity=".62"/>
+  </g>
+  <g transform="translate(1220 88)">
+    <path d="M14 4 L296 20 L292 365 L0 357 Z" fill="#624538" opacity=".8" filter="url(#rough)"/>
+    <path d="M57 68 L215 86 L210 298 L63 287 Z" fill="#9b643e" opacity=".45"/>
+    <path d="M50 55 L225 75 L221 306 L56 293 Z" class="line"/>
+    <path d="M93 112 L176 126M91 161 L178 174M89 211 L176 225" class="thin"/>
+    <rect x="245" y="160" width="46" height="108" rx="7" fill="#2b3432" stroke="#211815" stroke-width="4"/>
+    <circle cx="258" cy="214" r="5" fill="#d9b25d"/>
+  </g>
+  <g transform="translate(118 98)" opacity=".82">
+    <rect x="0" y="0" width="58" height="72" rx="4" fill="#6b5b43" opacity=".45"/>
+    <rect x="71" y="23" width="48" height="55" rx="4" fill="#3b4d4f" opacity=".45"/>
+    <rect x="19" y="91" width="44" height="58" rx="4" fill="#5d483f" opacity=".45"/>
+    <path d="M12 17 L48 55M78 68 L110 31M24 139 L54 103" class="thin"/>
+  </g>
+  <g transform="translate(1038 188)">
+    <rect x="0" y="0" width="108" height="142" rx="7" class="paper"/>
+    <text x="18" y="36" class="noteText">Breathe in.</text>
+    <text x="18" y="68" class="noteText">Breathe out.</text>
+    <text x="18" y="101" class="noteText">Small is</text>
+    <text x="18" y="126" class="noteText">still a step.</text>
+  </g>
+  <g opacity=".36" filter="url(#ink)">
+    <rect width="1600" height="900" fill="#332b2d"/>
+  </g>
+  <rect x="52" y="34" width="1496" height="808" rx="28" fill="none" stroke="#251c1a" stroke-width="8" opacity=".6"/>
+</svg>

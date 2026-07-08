@@ -649,11 +649,7 @@ const inspectionData = {
 
 const memoryBookSections = [
   { id: "fragments", label: "Fragments" },
-  { id: "songs", label: "Songs" },
   { id: "messages", label: "Messages" },
-  { id: "symptoms", label: "Symptom Log" },
-  { id: "carePerspective", label: "Care Perspective" },
-  { id: "records", label: "Morning Records" },
   { id: "selfMonitoring", label: "Self-Monitoring" },
   { id: "reflections", label: "Reflections" }
 ];
@@ -794,13 +790,13 @@ const firstPersonScenes = {
 };
 
 const firstPersonHotspots = {
-  bedside_glasses: [56, 56],
+  bedside_glasses: [52, 56],
   bedroom_window: [76, 24],
-  bedroom_note: [51, 63],
-  unread_texts: [65, 54],
-  voice_memo: [73, 40],
+  bedroom_note: [55, 66],
+  unread_texts: [64, 55],
+  voice_memo: [71, 44],
   laptop: [73, 68],
-  mirror: [46, 32],
+  mirror: [50, 41],
   pill_organizer: [63, 60],
   bathroom_cabinet: [80, 27],
   mug: [31, 68],
@@ -812,17 +808,17 @@ const firstPersonHotspots = {
   calendar_alert: [89, 38],
   photo_frame: [43, 59],
   postcard: [33, 69],
-  phone: [64, 54],
+  phone: [65, 56],
   wallet: [77, 56],
   playlist: [56, 73],
   creative_project: [82, 67],
-  keys: [32, 39],
-  appointment_card: [50, 29],
+  keys: [33, 54],
+  appointment_card: [57, 34],
   transit_card: [43, 72],
   sneakers: [30, 78],
   tote_bag: [74, 64],
-  hall_note: [51, 41],
-  front_door: [74, 45]
+  hall_note: [51, 38],
+  front_door: [69, 45]
 };
 
 const roomStartNodes = {
@@ -836,6 +832,15 @@ const roomStartNodes = {
 const verticalSliceRoomIds = ["bedroom", "hallway"];
 const verticalSliceNodes = ["bedroom_bedside", "bedroom_mirror", "phone_closeup", "hallway_mid", "hallway_mid_uncertain", "hallway_door"];
 const sliceRequiredItems = ["keys", "phone", "appointment_card"];
+
+const scenePlateAssets = {
+  bedroom_bedside: "assets/scenes/bedroom_bedside.svg",
+  bedroom_mirror: "assets/scenes/bedroom_mirror.svg",
+  phone_closeup: "assets/scenes/phone_closeup.svg",
+  hallway_mid: "assets/scenes/hallway_mid.svg",
+  hallway_mid_uncertain: "assets/scenes/hallway_mid.svg",
+  hallway_door: "assets/scenes/hallway_door.svg"
+};
 
 const sceneNodes = {
   bedroom_bedside: {
@@ -1863,27 +1868,12 @@ function renderDecorDetail(detail) {
 }
 
 function renderFirstPersonScene(roomId, nodeId) {
-  const scene = firstPersonScenes[roomId] || { parts: [] };
-  const parts = scene.parts.map((part) => `
-    <span
-      class="scene-part ${part.cls}"
-      style="left:${part.x}%;top:${part.y}%;width:${part.w}%;height:${part.h}%;"
-      aria-hidden="true"
-    ></span>
-  `).join("");
+  const asset = scenePlateAssets[nodeId] || scenePlateAssets[roomStartNodes[roomId]] || scenePlateAssets.bedroom_bedside;
   return `
     <div class="first-person-scene scene-node scene-plate scene-${roomId} node-${nodeId}" aria-hidden="true">
-      <span class="scene-background"></span>
-      <span class="scene-wall"></span>
-      <span class="scene-back-wall"></span>
-      <span class="scene-floor"></span>
-      <span class="scene-surface"></span>
-      <span class="scene-floor-lines"></span>
-      <span class="scene-midground"></span>
-      <span class="scene-foreground"></span>
-      <span class="scene-light"></span>
-      <span class="scene-shadow"></span>
-      ${parts}
+      <img class="scene-art" src="${asset}" alt="">
+      <span class="scene-ink-wash" aria-hidden="true"></span>
+      <span class="scene-paper-grain" aria-hidden="true"></span>
     </div>
   `;
 }
@@ -2440,16 +2430,16 @@ function useGroupChat(object) {
 
 function useVoiceMemo(object) {
   if (state.flags.voiceMemoPlayed) {
-    writeJournal("The voice memo is still there: No rush. I am here.");
+    writeJournal("The transcript card is still there: No rush. I am here.");
     ground(0.35);
     return;
   }
 
   state.flags.voiceMemoPlayed = true;
   addFragment("hard_mornings");
-  addMessage("Voice memo: No rush. I'm here. You do not have to prove anything to me.");
-  writeJournal("The memo plays: 'No rush. I'm here. You are not a problem I am solving.'");
-  setCaption("The loved one is present without taking the morning away.");
+  addMessage("Voice memo transcript: No rush. I'm here. You do not have to prove anything to me.");
+  writeJournal("The memo transcript reads: 'No rush. I'm here. You are not a problem I am solving.'");
+  setCaption("The words are present without taking the morning away.");
   addSymptomLog({
     clinical: "Relational cue reduced dread during disorientation.",
     human: "Someone believed you, even when the room did not."
@@ -2773,39 +2763,8 @@ function addReflection(text) {
   state.reflections = [...new Set(state.reflections)].slice(0, 40);
 }
 
-let audioContext;
-
 function playSound(type) {
-  if (state.settings.muteSound) return;
-  try {
-    audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    const tones = {
-      kettle: [460, 0.08],
-      page: [320, 0.05],
-      phone: [220, 0.09],
-      keys: [720, 0.06],
-      memory: [540, 0.08],
-      overload: [120, 0.05],
-      ground: [660, 0.08],
-      hallway: [96, 0.04],
-      mirror: [260, 0.05],
-      text: [180, 0.07],
-      song: [590, 0.07]
-    };
-    const [frequency, volume] = tones[type] || tones.page;
-    oscillator.frequency.value = frequency;
-    oscillator.type = type === "overload" || type === "hallway" ? "sawtooth" : "sine";
-    gain.gain.setValueAtTime(volume, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.18);
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + 0.18);
-  } catch {
-    // Audio is optional; unsupported browsers simply play silently.
-  }
+  return type;
 }
 
 function clamp(value, min, max) {
@@ -2900,6 +2859,9 @@ function renderQuickMemoryGrid() {
 }
 
 function renderMemoryBook() {
+  if (!memoryBookSections.some((section) => section.id === state.memoryBookSection)) {
+    state.memoryBookSection = "fragments";
+  }
   els.memoryTabs.innerHTML = memoryBookSections.map((section) => `
     <button type="button" class="${state.memoryBookSection === section.id ? "active" : ""}" data-book-section="${section.id}">
       ${section.label}

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Soft Recall mirror close-up</title>
+  <desc id="desc">First-person dresser and mirror with soft reflection, grounding notes, pale blue haze, and bedside objects.</desc>
+  <defs>
+    <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="4" seed="61"/><feDisplacementMap in="SourceGraphic" scale="8"/></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".052" numOctaves="3" seed="6"/><feColorMatrix type="saturate" values=".25"/><feBlend in="SourceGraphic" mode="multiply"/></filter>
+    <radialGradient id="mirrorLight" cx="48%" cy="42%" r="68%"><stop offset="0" stop-color="#dae4db" stop-opacity=".55"/><stop offset=".55" stop-color="#728999" stop-opacity=".34"/><stop offset="1" stop-color="#131821" stop-opacity=".18"/></radialGradient>
+    <style>
+      .line{fill:none;stroke:#211a18;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;opacity:.56}
+      .thin{fill:none;stroke:#211a18;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.45}
+      .note{font:24px serif;fill:#2d261f}
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#111722"/>
+  <rect x="60" y="32" width="1480" height="820" rx="28" fill="#594d4b" filter="url(#rough)"/>
+  <rect x="60" y="468" width="1480" height="384" fill="#252f2e" opacity=".84"/>
+  <path d="M230 105 C387 68 567 80 734 91 C987 108 1168 64 1386 98 L1364 650 C987 691 692 666 398 684 C250 693 150 664 111 620 Z" fill="#293845" opacity=".42" filter="url(#rough)"/>
+  <g transform="translate(460 84)">
+    <path d="M60 0 C208 -42 428 -17 562 26 C636 50 647 95 624 177 L560 552 C381 613 178 605 10 546 L-21 154 C-29 74 4 23 60 0Z" fill="url(#mirrorLight)" stroke="#201817" stroke-width="8" filter="url(#rough)"/>
+    <path d="M118 95 C203 38 407 44 510 124 C475 284 450 392 494 516 C368 554 214 552 96 515 C142 388 121 246 118 95Z" fill="#e6d7c5" opacity=".12"/>
+    <path d="M264 185 C305 150 369 159 404 205 C375 239 292 240 264 185Z" fill="#22303a" opacity=".22"/>
+    <path d="M317 171 C300 251 334 336 298 439" stroke="#d7d2c5" stroke-width="28" opacity=".1" fill="none"/>
+    <path d="M83 121 C187 60 437 72 542 153M90 516 C232 556 388 558 528 520" class="line"/>
+  </g>
+  <g transform="translate(254 590)">
+    <path d="M0 28 L1044 -29 L1230 148 L116 254 Z" fill="#73513e" filter="url(#rough)"/>
+    <path d="M83 244 L72 338M1102 162 L1135 319M0 28 L116 254M1044 -29 L1230 148" class="line"/>
+    <rect x="250" y="78" width="155" height="58" rx="7" fill="#e8d4ac" stroke="#3c2c23" stroke-width="3" transform="rotate(-4 250 78)"/>
+    <text x="270" y="114" class="note">Name one thing.</text>
+    <rect x="580" y="44" width="132" height="82" rx="8" fill="#efe0bd" stroke="#3c2c23" stroke-width="3"/>
+    <path d="M600 70 L690 67M600 94 L674 92" class="thin"/>
+    <ellipse cx="865" cy="68" rx="62" ry="21" fill="#171313" opacity=".6"/>
+    <path d="M821 67 C849 34 901 35 926 68 C900 97 850 97 821 67Z" fill="#e2d7c8" stroke="#201817" stroke-width="3"/>
+    <circle cx="853" cy="66" r="20" fill="none" stroke="#2b3440" stroke-width="8"/>
+    <circle cx="897" cy="66" r="20" fill="none" stroke="#2b3440" stroke-width="8"/>
+    <rect x="958" y="28" width="110" height="138" rx="17" fill="#20283b" stroke="#171112" stroke-width="5" transform="rotate(6 958 28)"/>
+    <rect x="973" y="51" width="78" height="74" rx="8" fill="#88aaa6" opacity=".46"/>
+  </g>
+  <g transform="translate(118 142)">
+    <rect x="0" y="0" width="142" height="180" rx="8" fill="#e7d1ac" stroke="#3e2d25" stroke-width="4" filter="url(#rough)"/>
+    <text x="22" y="42" class="note">Breathe.</text>
+    <text x="22" y="82" class="note">Bed.</text>
+    <text x="22" y="122" class="note">Table.</text>
+    <text x="22" y="162" class="note">Mirror.</text>
+    <path d="M12 16 C49 2 92 6 130 18M15 166 C61 153 94 170 128 154" class="thin"/>
+  </g>
+  <g transform="translate(1278 168)" opacity=".78">
+    <rect x="0" y="0" width="92" height="122" rx="7" fill="#4d3d3e"/>
+    <path d="M12 16 L76 103M77 15 L14 102" class="thin"/>
+    <rect x="115" y="36" width="68" height="82" rx="7" fill="#70594d"/>
+    <path d="M127 52 L169 102" class="thin"/>
+  </g>
+  <rect width="1600" height="900" filter="url(#grain)" opacity=".3"/>
+  <rect x="60" y="32" width="1480" height="820" rx="28" fill="none" stroke="#211817" stroke-width="8" opacity=".62"/>
+</svg>

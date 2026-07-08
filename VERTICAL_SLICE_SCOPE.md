@@ -34,6 +34,7 @@ The kitchen, bathroom, living room, expanded checklist, and larger ending set ar
 - Large dashboard layout
 - Six-plus endings
 - Heavy clinical/system explanation in README
+- Audio, voiceover, sound effects, music, and generated audio
 
 ## Acceptance Criteria
 
@@ -45,3 +46,4 @@ The kitchen, bathroom, living room, expanded checklist, and larger ending set ar
 - Object markers are small and embedded over visible objects.
 - At least one ending is reachable in browser QA.
 - No console errors, horizontal overflow, generic web-dashboard dominance, or overhead room map feel.
+- No audio plays or is generated.

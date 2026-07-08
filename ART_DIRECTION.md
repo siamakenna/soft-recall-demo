@@ -4,6 +4,8 @@
 
 Soft Recall should look like a first-person visual novel point-and-click mystery: intimate, warm, slightly uncanny, and readable. The player is standing in the room.
 
+The current web build uses original SVG scene plates and painted-paper UI textures. Future passes should improve or replace those assets with authored art, not revert to simple CSS rectangles.
+
 ## Palette
 
 - Warm interior light: muted amber, paper cream, faded lamp glow
@@ -56,3 +58,10 @@ Hallway / door:
 - Keys, tote, sneakers, transit card, appointment note
 - Door with light around frame
 - Repeated notes and shadow distortion on walls
+
+## Show-Don't-Tell Rules
+
+- Show dread with longer shadows, repeated notes, and distorted distance.
+- Show support through physical notes, marked objects, and smaller choices.
+- Show uncertainty through softened labels and delayed recognition.
+- Avoid clinical explanation during ordinary play.

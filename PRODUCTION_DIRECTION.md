@@ -49,6 +49,10 @@ All required gameplay should be reachable without a mouse.
 
 Use CSS scene plates for now: warm interior light, uneasy shadow, watercolor grain, small object glints, and tactile close-up cards. Future engine work should replace CSS props with authored first-person scene art while preserving the same composition rules.
 
+The browser vertical slice now uses original SVG scene plates in `assets/scenes/` and paper/noise SVGs in `assets/ui/`. Treat these as migration references for composition, not final shipped art.
+
 ## Migration Notes
 
 Keep game data structured around scene nodes, exits, hotspots, VN lines, choices, support prompts, and endings. These map cleanly to ScriptableObjects, JSON resources, Godot Resources, Ink/Yarn nodes, or a custom narrative graph later.
+
+No audio should be added until the visual, pacing, and interaction language are stable.

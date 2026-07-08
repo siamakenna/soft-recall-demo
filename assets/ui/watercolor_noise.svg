@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="280" viewBox="0 0 420 280">
+  <filter id="wash">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="4" seed="23"/>
+    <feDisplacementMap in="SourceGraphic" scale="18"/>
+  </filter>
+  <rect width="420" height="280" fill="#121622"/>
+  <g filter="url(#wash)" opacity="0.78">
+    <ellipse cx="82" cy="46" rx="120" ry="52" fill="#7b5064" opacity="0.38"/>
+    <ellipse cx="348" cy="74" rx="115" ry="70" fill="#2d3f50" opacity="0.52"/>
+    <ellipse cx="228" cy="236" rx="190" ry="76" fill="#243b34" opacity="0.42"/>
+    <ellipse cx="176" cy="138" rx="135" ry="95" fill="#a96e48" opacity="0.16"/>
+  </g>
+</svg>

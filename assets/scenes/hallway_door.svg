@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Soft Recall door threshold</title>
+  <desc id="desc">Close first-person hallway door with light leaking around frame, keys, appointment note, support cue, and long shadows.</desc>
+  <defs>
+    <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="4" seed="81"/><feDisplacementMap in="SourceGraphic" scale="9"/></filter>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".047" numOctaves="3" seed="29"/><feColorMatrix type="saturate" values=".22"/><feBlend in="SourceGraphic" mode="multiply"/></filter>
+    <radialGradient id="leak" cx="55%" cy="44%" r="60%"><stop offset="0" stop-color="#ffd28b" stop-opacity=".82"/><stop offset=".38" stop-color="#a5674a" stop-opacity=".48"/><stop offset="1" stop-color="#121725" stop-opacity=".04"/></radialGradient>
+    <style>
+      .line{fill:none;stroke:#161316;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
+      .thin{fill:none;stroke:#161316;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.48}
+      .note{font:22px serif;fill:#2a241d}
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="#0d121e"/>
+  <rect x="80" y="42" width="1440" height="812" rx="28" fill="#2b2a33" filter="url(#rough)"/>
+  <path d="M463 46 L1122 68 L1160 846 L398 846 Z" fill="url(#leak)" opacity=".72" filter="url(#rough)"/>
+  <g transform="translate(520 73)">
+    <path d="M0 0 L484 12 L500 728 L-14 724 Z" fill="#6d452f" stroke="#181313" stroke-width="8" filter="url(#rough)"/>
+    <path d="M55 63 L432 68 L442 674 L44 668 Z" fill="#231f20" opacity=".24"/>
+    <path d="M50 68 L430 69M47 668 L442 674M55 63 L44 668M432 68 L442 674" class="line"/>
+    <path d="M91 119 L388 125 L389 310 L91 300 ZM90 369 L391 375 L397 626 L87 620 Z" class="thin"/>
+    <circle cx="411" cy="392" r="22" fill="#d0a64e" stroke="#171211" stroke-width="5"/>
+    <circle cx="411" cy="392" r="7" fill="#271915"/>
+  </g>
+  <path d="M390 848 C471 640 610 604 771 606 C956 609 1092 669 1198 848 Z" fill="#201f2f" opacity=".78" filter="url(#rough)"/>
+  <path d="M489 845 C557 708 683 681 805 690 C935 699 1030 742 1101 848 Z" fill="#6c4a55" opacity=".34"/>
+  <g transform="translate(238 226)">
+    <rect x="0" y="0" width="128" height="160" rx="7" fill="#e7d1a8" stroke="#30241d" stroke-width="4" filter="url(#rough)"/>
+    <text x="18" y="42" class="note">One step.</text>
+    <text x="18" y="80" class="note">Keys first.</text>
+    <text x="18" y="118" class="note">Phone.</text>
+    <text x="18" y="148" class="note">Card.</text>
+  </g>
+  <g transform="translate(1198 244)">
+    <rect x="0" y="0" width="132" height="106" rx="7" fill="#e6cfa7" stroke="#30241d" stroke-width="4" filter="url(#rough)"/>
+    <text x="18" y="38" class="note">appt.</text>
+    <text x="18" y="72" class="note">9:30</text>
+    <path d="M72 67 C94 40 126 66 103 92 C81 116 46 99 57 74 C62 63 68 60 72 67Z" class="thin"/>
+  </g>
+  <g transform="translate(333 582)">
+    <path d="M0 33 C59 -4 132 4 166 42 C121 83 48 84 0 33Z" fill="#d2ac57" stroke="#191414" stroke-width="4"/>
+    <circle cx="39" cy="33" r="15" fill="none" stroke="#211917" stroke-width="7"/>
+    <path d="M55 34 L153 42M101 39 L106 60M126 41 L132 57" class="line"/>
+  </g>
+  <g transform="translate(1054 605)">
+    <path d="M0 65 C70 -1 176 -13 244 42 C201 109 67 128 0 65Z" fill="#253141" opacity=".72" stroke="#161316" stroke-width="4"/>
+    <path d="M30 62 C99 83 179 72 225 43" class="thin"/>
+  </g>
+  <rect width="1600" height="900" filter="url(#grain)" opacity=".36"/>
+  <rect x="80" y="42" width="1440" height="812" rx="28" fill="none" stroke="#171317" stroke-width="8" opacity=".62"/>
+</svg>
