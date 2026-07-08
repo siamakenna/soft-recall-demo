@@ -1,0 +1,171 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-paper-warm: var(--paper-warm);
+  --color-ember: var(--ember);
+  --color-rose: var(--rose);
+  --color-dread: var(--dread);
+  --color-glow: var(--glow);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-hand: "Caveat", "Segoe Script", cursive;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.11 0.015 285);
+  --foreground: oklch(0.90 0.02 80);
+  --ink: oklch(0.10 0.015 280);
+  --paper: oklch(0.88 0.025 75);
+  --paper-warm: oklch(0.78 0.04 60);
+  --ember: oklch(0.68 0.11 55);
+  --rose: oklch(0.55 0.09 20);
+  --dread: oklch(0.32 0.07 285);
+  --glow: oklch(0.82 0.10 75);
+  --border: oklch(0.30 0.03 280 / 55%);
+  --ring: oklch(0.68 0.11 55);
+}
+
+.dark { color-scheme: dark; }
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-serif);
+    overscroll-behavior: none;
+  }
+  * { border-color: var(--color-border); }
+}
+
+/* Painterly paper background — used for the app frame */
+@utility bg-paperfield {
+  background-color: oklch(0.07 0.01 285);
+  background-image:
+    radial-gradient(ellipse at 18% 12%, oklch(0.20 0.05 285 / 55%), transparent 55%),
+    radial-gradient(ellipse at 82% 88%, oklch(0.14 0.06 300 / 45%), transparent 60%),
+    radial-gradient(circle at 50% 55%, oklch(0.10 0.02 280 / 40%), transparent 70%);
+}
+
+@utility paper-grain {
+  position: relative;
+  isolation: isolate;
+}
+@utility paper-grain-after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 12% 22%, oklch(1 0 0 / 5%) 0 1px, transparent 2px),
+    radial-gradient(circle at 78% 66%, oklch(0 0 0 / 9%) 0 1px, transparent 2px),
+    radial-gradient(circle at 44% 88%, oklch(1 0 0 / 3%) 0 1px, transparent 2px),
+    radial-gradient(circle at 30% 50%, oklch(0 0 0 / 7%) 0 1px, transparent 3px);
+  background-size: 7px 9px, 11px 13px, 5px 6px, 17px 19px;
+  mix-blend-mode: overlay;
+  opacity: 0.55;
+}
+
+/* Ink bleed drips along the top of the scene plate */
+@utility ink-drips {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 40% 8% at 20% 0%, oklch(0 0 0 / 55%), transparent 70%),
+    radial-gradient(ellipse 30% 10% at 68% 0%, oklch(0 0 0 / 45%), transparent 70%),
+    radial-gradient(ellipse 25% 6% at 88% 0%, oklch(0 0 0 / 40%), transparent 75%),
+    radial-gradient(ellipse 60% 18% at 50% 100%, oklch(0 0 0 / 60%), transparent 70%);
+  mix-blend-mode: multiply;
+}
+
+/* Rough handmade edge for scene plates */
+@utility rough-edge {
+  -webkit-mask-image: radial-gradient(ellipse 97% 94% at 50% 50%, black 72%, transparent 100%);
+          mask-image: radial-gradient(ellipse 97% 94% at 50% 50%, black 72%, transparent 100%);
+}
+
+@utility ink-vignette {
+  box-shadow:
+    inset 0 0 120px 12px oklch(0 0 0 / 45%),
+    inset 0 0 40px 4px oklch(0 0 0 / 30%);
+}
+
+/* Fine SVG film grain — subtle, animated */
+@utility film-grain {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0 0.9  0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  animation: grain-shift 1.4s steps(6) infinite;
+}
+@keyframes grain-shift {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-3%, 2%); }
+  40%  { transform: translate(2%, -3%); }
+  60%  { transform: translate(-2%, -2%); }
+  80%  { transform: translate(3%, 1%); }
+  100% { transform: translate(0, 0); }
+}
+
+@utility marker-glow {
+  box-shadow:
+    0 0 0 2px oklch(1 0 0 / 22%),
+    0 0 22px 5px var(--color-glow),
+    0 0 60px 14px oklch(0.82 0.10 75 / 35%);
+}
+
+@utility vn-panel {
+  background:
+    linear-gradient(180deg, oklch(0.10 0.02 285 / 92%), oklch(0.06 0.01 280 / 96%));
+  backdrop-filter: blur(8px);
+  border: 1px solid oklch(0.7 0.04 65 / 22%);
+  box-shadow:
+    0 -14px 60px oklch(0 0 0 / 65%),
+    inset 0 1px 0 oklch(1 0 0 / 5%);
+}
+
+@utility choice-btn {
+  font-family: var(--font-serif);
+  color: oklch(0.94 0.02 70);
+  background: linear-gradient(180deg, oklch(0.18 0.02 285 / 75%), oklch(0.10 0.015 280 / 88%));
+  border: 1px solid oklch(0.7 0.05 60 / 28%);
+  transition: transform 120ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+@keyframes drift {
+  0%, 100% { transform: scale(1.02) translate(0, 0); filter: brightness(0.98); }
+  50%      { transform: scale(1.035) translate(-0.4%, 0.3%); filter: brightness(1.02); }
+}
+@keyframes vignette-breathe {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; }
+}
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
