@@ -1,5 +1,16 @@
 const SAVE_KEY = "softRecallFiveRoomsSave";
-const HISTORY_KEY = "softRecallMorningHistory";
+
+const symptomDomains = {
+  memory: "memory",
+  language: "language",
+  visuospatial: "visuospatial",
+  executiveFunction: "executive function",
+  motor: "motor",
+  recognition: "recognition",
+  grounding: "grounding",
+  overload: "overload",
+  dread: "dread"
+};
 
 const itemData = {
   glasses: { name: "glasses", icon: "GL" },
@@ -11,16 +22,21 @@ const itemData = {
   wallet: { name: "wallet", icon: "WA" },
   mug: { name: "mug", icon: "MG" },
   tea_bag: { name: "tea bag", icon: "TB" },
-  photo: { name: "photo", icon: "IM" }
+  photo: { name: "photo", icon: "IM" },
+  laptop: { name: "laptop", icon: "LP" },
+  earbuds: { name: "earbuds", icon: "EB" },
+  transit_card: { name: "transit card", icon: "TC" },
+  tote_bag: { name: "tote bag", icon: "TO" },
+  sneakers: { name: "sneakers", icon: "SN" }
 };
 
 const checklist = [
-  { id: "glasses", label: "See the room clearly" },
-  { id: "tea", label: "Make the morning gentle" },
-  { id: "medication", label: "Confirm what matters" },
-  { id: "photo", label: "Reconnect the memory" },
-  { id: "phone", label: "Choose how to be supported" },
-  { id: "leave", label: "Decide what today can be" }
+  { id: "glasses", label: "Find glasses" },
+  { id: "tea", label: "Make tea" },
+  { id: "medication", label: "Confirm and take medication" },
+  { id: "photo", label: "Reconstruct the photo memory" },
+  { id: "phone", label: "Use the phone" },
+  { id: "leave", label: "Collect essentials and leave" }
 ];
 
 const memoryFragments = {
@@ -48,43 +64,81 @@ const memoryFragments = {
     title: "Familiar voice",
     room: "Living Room",
     text: "The voice on the phone is patient. It gives the room a second center."
+  },
+  song_basil: {
+    title: "The basil song",
+    room: "Living Room",
+    text: "The song you played while watering the basil finds the memory before the facts do."
+  },
+  half_text: {
+    title: "Half-written text",
+    room: "Bedroom",
+    text: "A half-written text still means love, even before the right words arrive."
+  },
+  tote: {
+    title: "Tote by the door",
+    room: "Hallway",
+    text: "The tote bag waits near the sneakers, ordinary and loyal, already pointed toward outside."
+  },
+  circled_twice: {
+    title: "Circled twice",
+    room: "Kitchen",
+    text: "The appointment square is circled twice: once for remembering, once for admitting it matters."
+  },
+  hard_mornings: {
+    title: "For hard mornings",
+    room: "Bedroom",
+    text: "A voice memo labeled 'for hard mornings' says: no rush, I am here."
+  },
+  basil_window: {
+    title: "Basil at the window",
+    room: "Kitchen",
+    text: "The plant remembers the window better than you do today, green leaves turning toward light."
+  },
+  hallway_shadow: {
+    title: "Hallway shadow",
+    room: "Hallway",
+    text: "The hallway grew teeth only in the shadow. When the light changed, it became a hallway again."
+  },
+  late_name: {
+    title: "The late name",
+    room: "Bathroom",
+    text: "The name came back after the feeling. Recognition did not fail; it took a different road."
   }
 };
 
-const memoryPuzzle = {
-  required: { person: "Mom", place: "Beach", anchor: "Mango tea", detail: "Blue towel and wind" },
-  slots: {
-    person: ["Mom", "Neighbor", "Nurse"],
-    place: ["Beach", "Clinic", "Kitchen"],
-    anchor: ["Mango tea", "Black coffee", "Raincoat"],
-    detail: ["Blue towel and wind", "Red umbrella", "White hallway"]
+const supportStyles = {
+  direct: {
+    label: "Direct reminder",
+    example: "Keys by the door.",
+    effect: { support: 1.1, clarity: 0.7, dread: -0.2, overload: -0.25 },
+    note: "Direct reminder chosen. The cue is plain, fast, and practical."
   },
-  hintByFragment: {
-    mango: "The smell points toward mango tea.",
-    blue_towel: "The postcard keeps the towel blue.",
-    wind: "The curtain remembers wind before the year.",
-    voice: "The voice makes the person feel less distant."
+  gentle: {
+    label: "Gentle cue",
+    example: "What do you usually take with you?",
+    effect: { support: 0.9, clarity: 0.55, dread: -0.35, overload: -0.15 },
+    note: "Gentle cue chosen. The room offers a question instead of a correction."
+  },
+  environmental: {
+    label: "Environmental support",
+    example: "Tray, color cue, object placement.",
+    effect: { support: 1.25, clarity: 0.8, dread: -0.25, overload: -0.4 },
+    note: "Environmental support chosen. The apartment carries part of the sequence."
+  },
+  relational: {
+    label: "Relational support",
+    example: "Text or call from someone trusted.",
+    effect: { support: 1.1, clarity: 0.65, dread: -0.55, overload: -0.2 },
+    note: "Relational support chosen. Care stays present without taking over."
+  },
+  self: {
+    label: "Self-support",
+    example: "Breath, pause, music, one next step.",
+    effect: { support: 0.8, clarity: 0.55, dread: -0.45, overload: -0.3 },
+    note: "Self-support chosen. The protagonist keeps authorship of the next step."
   }
 };
-
-const careNotes = [
-  {
-    title: "Cues reduce load",
-    text: "The sticky note does not solve memory loss. It moves one task out of working memory and into the room."
-  },
-  {
-    title: "Support protects autonomy",
-    text: "The phone call helps most when it stays specific, calm, and optional instead of taking over the morning."
-  },
-  {
-    title: "Sensory details matter",
-    text: "Mango, wind, and color are not trivia. Sensory anchors can make a memory easier to approach."
-  },
-  {
-    title: "A pause can be progress",
-    text: "The Not Today ending treats rescheduling as dignity-centered decision-making, not failure."
-  }
-];
 
 const rooms = {
   bedroom: {
@@ -93,9 +147,12 @@ const rooms = {
     descriptions: {
       clear: "A soft quilt, slippers, and pale morning light. The room knows the first step: glasses.",
       softened: "The room is familiar, but its edges arrive late. The bed is a shape, the table a maybe-place.",
-      supported: "The bedside label and steady light make the first step easier to hold."
+      fragmented: "The bed is here, the laptop is here, the text you started is here. The order between them is missing.",
+      supported: "The bedside label and steady light make the first step easier to hold.",
+      uncanny: "A voice memo waits on the phone like a message from a version of you who knew this would happen.",
+      dread: "The room is warm, but the unread text makes the morning feel watched by its own future."
     },
-    decor: ["bed", "window", "blanket", "slippers", "small lamp"],
+    decor: ["bed", "window", "blanket", "sneakers", "small lamp", "laptop"],
     objects: [
       {
         id: "bedside_glasses",
@@ -126,6 +183,33 @@ const rooms = {
         labels: { clear: "sticky note", softened: "yellow paper", supported: "note - morning list" },
         text: "The note says: glasses, tea, medicine, phone, appointment.",
         after: "The paper remembers without asking you to apologize."
+      },
+      {
+        id: "unread_texts",
+        kind: "group_chat",
+        x: 58,
+        y: 49,
+        labels: { clear: "unread texts", softened: "little bright demands", supported: "texts - reply simply" },
+        text: "The group chat has moved on without you: five messages, one photo, one question you may have already answered.",
+        fragment: "half_text"
+      },
+      {
+        id: "voice_memo",
+        kind: "voice_memo",
+        x: 78,
+        y: 38,
+        labels: { clear: "voice memo", softened: "for hard mornings", supported: "voice memo - play" },
+        text: "A recording labeled 'for hard mornings' waits with your own name in someone else's gentle voice.",
+        fragment: "hard_mornings"
+      },
+      {
+        id: "laptop",
+        item: "laptop",
+        kind: "laptop",
+        x: 66,
+        y: 66,
+        labels: { clear: "laptop", softened: "work light", supported: "laptop - one sentence" },
+        text: "A half-finished research note is open. The cursor blinks like it expects continuity."
       }
     ]
   },
@@ -135,7 +219,10 @@ const rooms = {
     descriptions: {
       clear: "The sink is clean, the mirror is fogged at the edges, and the pill organizer waits by the towel.",
       softened: "White tile, reflected light, small containers. The labels are close, then farther away.",
-      supported: "A plain label near the organizer gives the medication step a gentle order."
+      fragmented: "Light bounces from tile to mirror to bottle. The face arrives in pieces before it becomes yours.",
+      supported: "A plain label near the organizer gives the medication step a gentle order.",
+      uncanny: "The mirror is not wrong. It is only too accurate for a morning that feels uncertain.",
+      dread: "The bathroom light is too bright, and every small container seems to ask if you already did this."
     },
     decor: ["mirror", "sink", "towel", "tile"],
     objects: [
@@ -172,7 +259,10 @@ const rooms = {
     descriptions: {
       clear: "Warm counters, a kettle, a mug, and the tea tin. This room remembers sequence.",
       softened: "The counter is crowded by small decisions. Cup, water, packet, switch: the order slips.",
-      supported: "The kettle label and checklist hold the order outside of memory."
+      fragmented: "Mug, tea, bottle, basil, alert. Too many objects have a job at once.",
+      supported: "The kettle label and checklist hold the order outside of memory.",
+      uncanny: "The appointment is circled twice. You do not remember doing it twice.",
+      dread: "The kitchen is warmer than the rest of the apartment, as if the room kept boiling after the kettle stopped."
     },
     decor: ["counter", "window", "plant", "calendar", "warm light"],
     objects: [
@@ -217,7 +307,25 @@ const rooms = {
         x: 14,
         y: 26,
         labels: { clear: "calendar", softened: "date paper", supported: "calendar - appointment day" },
-        text: "Today has a small circle around it. Appointment, 9:30."
+        text: "Today has a small circle around it. Appointment, 9:30. There is a second circle, darker, almost impatient.",
+        fragment: "circled_twice"
+      },
+      {
+        id: "plant_shelf",
+        kind: "plant",
+        x: 35,
+        y: 24,
+        labels: { clear: "basil plant", softened: "green responsibility", supported: "basil - window water" },
+        text: "The basil leans toward the window. The plant does not need a perfect morning, only water.",
+        fragment: "basil_window"
+      },
+      {
+        id: "calendar_alert",
+        kind: "inspect",
+        x: 88,
+        y: 41,
+        labels: { clear: "calendar alert", softened: "small alarm", supported: "alert - 9:30" },
+        text: "A phone alert says: appointment in 45 minutes. Under it: ask one question at a time."
       }
     ]
   },
@@ -227,9 +335,12 @@ const rooms = {
     descriptions: {
       clear: "A couch, low table, photo frame, phone, and postcards. The room holds relationship.",
       softened: "Faces feel close but unnamed. The room is tender, not empty.",
-      supported: "Labels and the phone contact make the room easier to ask for help in."
+      fragmented: "Photo, song, postcard, project. Feeling knows the room before facts do.",
+      supported: "Labels, music, and the phone contact make the room easier to ask for help in.",
+      uncanny: "The playlist starts on a song you do not remember choosing, but your chest recognizes the first note.",
+      dread: "The couch is safe and too deep. If you sit down, the morning might become a room you cannot leave."
     },
-    decor: ["couch", "rug", "bookshelf", "radio", "photo wall"],
+    decor: ["couch", "rug", "bookshelf", "playlist", "photo wall", "creative project"],
     objects: [
       {
         id: "photo_frame",
@@ -266,6 +377,24 @@ const rooms = {
         y: 28,
         labels: { clear: "wallet", softened: "brown fold", supported: "wallet - essentials" },
         text: "The wallet is under a folded receipt. Into the pocket it goes."
+      },
+      {
+        id: "playlist",
+        item: "earbuds",
+        kind: "playlist",
+        x: 58,
+        y: 72,
+        labels: { clear: "playlist", softened: "song thread", supported: "playlist - grounding song" },
+        text: "The playlist is still open. Track three has a star beside it and no explanation.",
+        fragment: "song_basil"
+      },
+      {
+        id: "creative_project",
+        kind: "laptop",
+        x: 84,
+        y: 63,
+        labels: { clear: "creative project", softened: "unfinished bright thing", supported: "project - one sentence" },
+        text: "A half-finished zine page waits on the table. It still looks like your taste, even when the next step is missing."
       }
     ]
   },
@@ -275,9 +404,12 @@ const rooms = {
     descriptions: {
       clear: "Keys, shoes, appointment card, and the door. The outside begins here.",
       softened: "The hall narrows into objects with jobs. Some are named, some are only important.",
-      supported: "The door label, note, and checklist make leaving feel possible without rushing."
+      fragmented: "The hallway is longer than the apartment should allow. The door stays visible and not quite reachable.",
+      supported: "The door label, note, and checklist make leaving feel possible without rushing.",
+      uncanny: "The same note appears twice, almost the same: keys wallet phone card. keys phone card wallet.",
+      dread: "Outside is not danger. Outside is the question of whether the morning will hold together in public."
     },
-    decor: ["coat hook", "shoe mat", "door", "letters", "small table"],
+    decor: ["coat hook", "sneakers", "door", "letters", "small table", "tote bag"],
     objects: [
       {
         id: "keys",
@@ -296,6 +428,34 @@ const rooms = {
         y: 32,
         labels: { clear: "appointment card", softened: "small card", supported: "appointment - 9:30" },
         text: "The card gives the morning a destination without turning it into a test."
+      },
+      {
+        id: "transit_card",
+        item: "transit_card",
+        kind: "collect",
+        x: 38,
+        y: 66,
+        labels: { clear: "transit card", softened: "tap card", supported: "transit card - front pocket" },
+        text: "The transit card is in the wrong pocket and then the right one. You keep it where your hand will look first."
+      },
+      {
+        id: "sneakers",
+        item: "sneakers",
+        kind: "collect",
+        x: 18,
+        y: 72,
+        labels: { clear: "sneakers", softened: "outside shoes", supported: "sneakers - by mat" },
+        text: "The sneakers are scuffed at the toes. They look like a life that keeps moving."
+      },
+      {
+        id: "tote_bag",
+        item: "tote_bag",
+        kind: "collect",
+        x: 72,
+        y: 70,
+        labels: { clear: "tote bag", softened: "canvas thing", supported: "tote - appointment papers" },
+        text: "The tote has a pen, a receipt, and a joke pin from a friend. It is not a medical bag. It is yours.",
+        fragment: "tote"
       },
       {
         id: "hall_note",
@@ -323,7 +483,171 @@ const supportTargets = [
   { id: "door", label: "Door", room: "hallway", text: "A door note appears: keys, wallet, phone, appointment card." },
   { id: "phone", label: "Phone", room: "living", text: "The phone contact becomes easier to read." },
   { id: "kettle", label: "Kettle", room: "kitchen", text: "A kettle cue appears: mug, tea bag, water, switch." },
-  { id: "calendar", label: "Calendar", room: "kitchen", text: "The appointment day is marked in large print." }
+  { id: "calendar", label: "Calendar", room: "kitchen", text: "The appointment day is marked in large print." },
+  { id: "laptop", label: "Laptop", room: "bedroom", text: "A one-sentence project cue appears beside the laptop." },
+  { id: "playlist", label: "Playlist", room: "living", text: "The grounding song is pinned to the top of the playlist." },
+  { id: "plant", label: "Plant shelf", room: "kitchen", text: "A small water cue appears by the basil." },
+  { id: "transit", label: "Transit", room: "hallway", text: "Transit card, tote, and sneakers move into one visible leaving tray." }
+];
+
+const inspectionData = {
+  bedside_glasses: {
+    title: "Glasses",
+    visual: "glasses",
+    note: "Observation: sensory support improves orientation.",
+    look: "The frames are exactly where a past version of you put them.",
+    question: "For a moment the word comes late: the thing for seeing. Then: glasses."
+  },
+  mirror: {
+    title: "Mirror",
+    visual: "mirror",
+    note: "Observation: recognition may begin as feeling before certainty.",
+    look: "The face is yours, and also arriving in pieces: eyes, mouth, expression, morning.",
+    question: "Choose what feels true: I know this face. I know this feeling. Not today."
+  },
+  pill_organizer: {
+    title: "Pill organizer",
+    visual: "organizer",
+    note: "Observation: external cue reduced medication uncertainty.",
+    look: "The Tuesday compartment is a small square of evidence.",
+    question: "Memory alone feels slippery here. The organizer can answer without blame."
+  },
+  medication_bottle: {
+    title: "Medication bottle",
+    visual: "bottle",
+    note: "Observation: medication uncertainty increased until an external cue was used.",
+    look: "The label is legible, then too full of instructions. The organizer makes it smaller.",
+    question: "You compare bottle, day, and tea. The routine asks for sequence, not courage."
+  },
+  kettle: {
+    title: "Kettle",
+    visual: "kettle",
+    note: "Observation: sequencing support helped executive load.",
+    look: "Mug. Tea bag. Water. Switch. The order is simple when it stays visible.",
+    question: "Steam curls up like a reminder you can smell."
+  },
+  calendar: {
+    title: "Calendar",
+    visual: "calendar",
+    note: "Observation: date cue improved appointment orientation.",
+    look: "Numbers reorder when you stare too long. One small circle keeps the day in place.",
+    question: "The appointment note is not a verdict. It is only a plan."
+  },
+  photo_frame: {
+    title: "Photo",
+    visual: "photo",
+    note: "Observation: sensory anchors supported memory reconstruction.",
+    look: "The image is warm before it is named.",
+    question: "Mango. Blue towel. Wind. The person returns through pieces."
+  },
+  postcard: {
+    title: "Postcard",
+    visual: "postcard",
+    note: "Observation: color cue supported autobiographical memory.",
+    look: "A blue towel repeats the shape in the photo.",
+    question: "The clue does not demand perfect recall. It offers a path."
+  },
+  phone: {
+    title: "Phone",
+    visual: "phone",
+    note: "Observation: familiar voice reduced distress and supported orientation.",
+    look: "The contact photo is small, but it gives the voice a place to stand.",
+    question: "You can ask for help, ask for company, or keep the morning private."
+  },
+  unread_texts: {
+    title: "Unread texts",
+    visual: "phone",
+    note: "Clinical: expressive language and confidence fluctuated in group chat. Human: you knew the care before you knew the phrasing.",
+    look: "The group chat says: 'Still on for later?' You remember the warmth before the plan.",
+    question: "The reply can be small. A whole self can fit inside one honest sentence."
+  },
+  voice_memo: {
+    title: "Voice memo",
+    visual: "phone",
+    note: "Clinical: relational cue lowered dread during disorientation. Human: someone believed you before the room did.",
+    look: "The memo is labeled 'for hard mornings.' The voice says, 'No rush. I'm here.'",
+    question: "It is strange to need a message from before. It is also a kindness you accepted."
+  },
+  laptop: {
+    title: "Laptop",
+    visual: "laptop",
+    note: "Clinical: executive sequencing slowed near a familiar project. Human: the work still looked like yours.",
+    look: "The cursor blinks in a research note. The next step is missing, but the curiosity is still present.",
+    question: "You can close it, write one sentence, set a reminder, or ask for one question at a time."
+  },
+  calendar_alert: {
+    title: "Calendar alert",
+    visual: "calendar",
+    note: "Clinical: time cue increased pressure and orientation at once. Human: the alert helped and hurt.",
+    look: "Appointment in 45 minutes. Under it: 'Ask one question at a time.'",
+    question: "The alert is not a command. It is information you can reshape."
+  },
+  plant_shelf: {
+    title: "Basil plant",
+    visual: "plant",
+    note: "Clinical: simple responsibility supported grounding. Human: the plant only asked for water.",
+    look: "Leaves turn toward the window. They remember light with their whole bodies.",
+    question: "Care can be small enough to complete."
+  },
+  playlist: {
+    title: "Playlist",
+    visual: "playlist",
+    note: "Clinical: recognition improved with auditory cueing. Human: the song found the memory before the facts did.",
+    look: "Track three begins with a soft pulse. Your shoulders know it before your mind explains it.",
+    question: "The song is either a clue or a comfort. This morning, it can be both."
+  },
+  creative_project: {
+    title: "Creative project",
+    visual: "laptop",
+    note: "Clinical: task initiation improved when the next action became smaller. Human: one sentence counted.",
+    look: "A half-finished zine page waits, messy and alive. It does not look like illness. It looks like taste.",
+    question: "You can leave it unfinished without letting it become evidence against you."
+  },
+  keys: {
+    title: "Keys",
+    visual: "keys",
+    note: "Observation: fine-motor hesitation noted near departure sequence.",
+    look: "Metal against palm. A slight hesitation before the grip settles.",
+    question: "The keys are not lost. Your hand simply takes an extra second."
+  },
+  front_door: {
+    title: "Doorway",
+    visual: "door",
+    note: "Observation: spatial support improved threshold sequence.",
+    look: "The hall feels longer when the next step is too wide.",
+    question: "Door, keys, wallet, phone, card. A threshold, not a test."
+  },
+  transit_card: {
+    title: "Transit card",
+    visual: "card",
+    note: "Clinical: object placement reduced departure load. Human: your hand needs a place to look.",
+    look: "A chipped corner, a transit logo, enough fare. The city is abstract until the card is in your palm.",
+    question: "Outside can be divided into smaller doors."
+  },
+  sneakers: {
+    title: "Sneakers",
+    visual: "sneakers",
+    note: "Clinical: motor planning stabilized through familiar routine. Human: the shoes remembered the route.",
+    look: "The laces are already loose enough. Past-you made this easier.",
+    question: "Autonomy sometimes looks like leaving a knot half-ready."
+  },
+  tote_bag: {
+    title: "Tote bag",
+    visual: "tote",
+    note: "Clinical: gathered objects reduced executive load. Human: this is not a medical bag; it is a life bag.",
+    look: "A pen, receipt, lip balm, appointment papers, and a joke pin. The tote is proof of a current life.",
+    question: "The bag carries the day without defining you."
+  }
+};
+
+const memoryBookSections = [
+  { id: "fragments", label: "Fragments" },
+  { id: "songs", label: "Songs" },
+  { id: "messages", label: "Messages" },
+  { id: "symptoms", label: "Symptom Log" },
+  { id: "carePerspective", label: "Care Perspective" },
+  { id: "records", label: "Morning Records" },
+  { id: "reflections", label: "Reflections" }
 ];
 
 const roomDetailLayers = {
@@ -333,6 +657,8 @@ const roomDetailLayers = {
     { type: "quilt patchwork", label: "patchwork quilt", x: 11, y: 50, w: 30, h: 17 },
     { type: "poster moon", label: "moon print", x: 45, y: 9, w: 12, h: 17 },
     { type: "stack books", label: "bedside books", x: 42, y: 44, w: 13, h: 10 },
+    { type: "laptop glow", label: "open laptop", x: 60, y: 58, w: 20, h: 12 },
+    { type: "phone texts", label: "unread texts", x: 54, y: 42, w: 12, h: 9 },
     { type: "ink-shadow corner", label: "soft corner shadow", x: 0, y: 68, w: 23, h: 25 },
     { type: "floor-lines soft", label: "old floorboards", x: 48, y: 70, w: 36, h: 20 }
   ],
@@ -351,6 +677,8 @@ const roomDetailLayers = {
     { type: "herbs hanging", label: "hanging herbs", x: 50, y: 5, w: 18, h: 22 },
     { type: "yellow poster", label: "yellow tea poster", x: 69, y: 7, w: 18, h: 22 },
     { type: "sink dishes", label: "quiet dishes", x: 31, y: 63, w: 24, h: 13 },
+    { type: "plant shelf", label: "basil shelf", x: 31, y: 18, w: 14, h: 18 },
+    { type: "phone alert", label: "calendar alert", x: 82, y: 38, w: 12, h: 10 },
     { type: "steam curls", label: "steam curls", x: 65, y: 31, w: 18, h: 23 },
     { type: "calendar bold", label: "circled date", x: 8, y: 31, w: 17, h: 12 }
   ],
@@ -358,6 +686,8 @@ const roomDetailLayers = {
     { type: "comic panels", label: "small comic panels", x: 5, y: 7, w: 28, h: 28 },
     { type: "couch shadow", label: "deep couch shadow", x: 9, y: 58, w: 36, h: 18 },
     { type: "record sleeves", label: "record sleeves", x: 68, y: 8, w: 22, h: 22 },
+    { type: "earbuds playlist", label: "earbuds playlist", x: 52, y: 65, w: 17, h: 10 },
+    { type: "laptop project", label: "zine project", x: 78, y: 54, w: 16, h: 13 },
     { type: "postcard spread", label: "postcard spread", x: 18, y: 38, w: 22, h: 13 },
     { type: "moon lamp", label: "moon lamp", x: 55, y: 21, w: 13, h: 17 },
     { type: "plant shelf", label: "plant shelf", x: 72, y: 60, w: 18, h: 17 },
@@ -367,6 +697,9 @@ const roomDetailLayers = {
     { type: "blue arch", label: "blue hallway arch", x: 4, y: 4, w: 31, h: 54 },
     { type: "coat silhouette", label: "coat silhouette", x: 20, y: 18, w: 17, h: 32 },
     { type: "key hooks", label: "key hooks", x: 25, y: 45, w: 19, h: 10 },
+    { type: "sneakers mat", label: "sneakers", x: 12, y: 70, w: 20, h: 10 },
+    { type: "transit card", label: "transit card", x: 36, y: 65, w: 12, h: 8 },
+    { type: "tote bag", label: "tote bag", x: 68, y: 65, w: 16, h: 14 },
     { type: "door chain", label: "door chain", x: 70, y: 29, w: 16, h: 10 },
     { type: "notice board", label: "notice board", x: 46, y: 9, w: 20, h: 23 },
     { type: "letter stack", label: "letter stack", x: 42, y: 58, w: 24, h: 13 },
@@ -377,78 +710,121 @@ const roomDetailLayers = {
 const phoneChoices = [
   {
     id: "ask_help",
-    label: "Ask for help",
-    line: "Could you help me walk through the last few things?",
-    reply: "Of course. We can do one thing at a time.",
+    label: "Send simple text",
+    line: "Could you ask one question at a time?",
+    reply: "Of course. One question. Do you want me to text, call, or just wait nearby?",
     effect: { support: 1.2, clarity: 1, flag: "askedHelp" }
   },
   {
     id: "deny_help",
-    label: "Say you are okay",
+    label: "Save as draft",
     line: "I think I can do it myself.",
-    reply: "I believe you. I will keep my phone nearby.",
+    reply: "I believe you. I will keep my phone nearby. You do not have to prove anything to me.",
     effect: { support: 0.2, clarity: -0.4, flag: "deniedHelp" }
   },
   {
     id: "stay_phone",
-    label: "Ask them to stay on the phone",
+    label: "Call and stay connected",
     line: "Can you stay on the phone while I get to the door?",
-    reply: "I am here. No rush.",
+    reply: "I am here. No rush. You are not a problem I am solving.",
     effect: { support: 1.6, clarity: 1.2, flag: "callOpen" }
   },
   {
     id: "reschedule",
-    label: "Ask about rescheduling",
+    label: "Not now / reschedule",
     line: "I do not think today is the day.",
-    reply: "That is allowed. We can make the morning smaller.",
+    reply: "That is allowed. We can make today smaller.",
     effect: { support: 1, clarity: 0.8, flag: "rescheduled" }
   }
 ];
 
+const reflectionPrompts = [
+  "What helped most?",
+  "What felt hardest to read?",
+  "What kind of support preserved dignity?",
+  "What would you say to them as a friend?",
+  "What would make tomorrow smaller?"
+];
+
 const endings = {
   supported: {
-    title: "Supported Morning",
+    title: "Supported Departure",
     text: "The door opens after labels, lists, tea, a call, and the small patience of the room. Support did not erase uncertainty. It made the next step reachable.",
     points: [
-      "Environmental cues can reduce cognitive load.",
-      "Support can protect independence instead of replacing it.",
-      "Care works best when it is calm, specific, and respectful."
+      "What helped: external labels, checklist cues, and gathered essentials.",
+      "What remained difficult: sequencing still needed visible support.",
+      "Care note: support protected autonomy instead of replacing it.",
+      "Reflection: what made the morning feel possible?"
     ]
   },
   independent: {
     title: "Quiet Independence",
     text: "You leave with the essentials gathered and the call short. The morning stays quiet, private, and possible.",
     points: [
-      "Independence can include tools, habits, and preparation.",
-      "A person can choose privacy while still deserving support.",
-      "Routine can be a form of care."
+      "What helped: routine, preparation, and familiar objects.",
+      "What remained difficult: asking for support stayed complicated.",
+      "Care note: privacy and support can both be valid needs.",
+      "Reflection: where did independence feel gentle?"
     ]
   },
   callOpen: {
-    title: "The Call Stays Open",
+    title: "Shared Morning",
     text: "A familiar voice stays with you through the hallway. The apartment feels less wide when connection is allowed to remain.",
     points: [
-      "Familiar voices can support orientation.",
-      "Connection can reduce distress without taking control.",
-      "Asking someone to stay nearby is a strength."
+      "What helped: a familiar voice stayed present.",
+      "What remained difficult: the hallway still felt like a threshold.",
+      "Care note: connection reduced distress without taking control.",
+      "Reflection: what kind of help felt respectful?"
     ]
   },
   notToday: {
-    title: "Not Today",
+    title: "Smaller Morning",
     text: "The appointment can move. The morning becomes smaller, warmer, and still worthy. Rest is not a failure state.",
     points: [
-      "Plans can change without shame.",
-      "Supported autonomy includes the choice to pause.",
-      "Care should leave room for the person, not just the schedule."
+      "What helped: rescheduling made the morning smaller.",
+      "What remained difficult: the original plan still carried pressure.",
+      "Care note: supported autonomy includes the choice to pause.",
+      "Reflection: what would rest make room for?"
+    ]
+  },
+  quietProof: {
+    title: "Quiet Proof",
+    text: "You do not complete everything, but you reconnect with enough of yourself to know the morning is still yours.",
+    points: [
+      "What helped: privacy, music, one sentence, and small choices.",
+      "What remained difficult: support still felt complicated to accept.",
+      "Care note: proof of selfhood is not measured by productivity.",
+      "Reflection: what reminded you that you were still yourself?"
+    ]
+  },
+  overloadedNotAlone: {
+    title: "Overloaded but Not Alone",
+    text: "The morning becomes too loud, but the support remains. No one disappears because the day got difficult.",
+    points: [
+      "What helped: pausing, relational support, and leaving some tasks unfinished.",
+      "What remained difficult: overload and dread stayed present.",
+      "Care note: being overwhelmed is not being abandoned.",
+      "Reflection: what would make tomorrow smaller?"
+    ]
+  },
+  circledAppointment: {
+    title: "The Circled Appointment",
+    text: "The double circle is not a twist. It is a note from a braver moment: this appointment mattered because you were ready to ask what was happening.",
+    points: [
+      "What helped: calendar cue, voice memo, sensory fragments, and trusted support.",
+      "What remained difficult: knowing why did not remove the fear.",
+      "Care note: dread can grow between knowing something matters and not knowing why.",
+      "Reflection: what kind of support preserved dignity?"
     ]
   },
   unsteady: {
-    title: "Unsteady But Moving",
+    title: "Overloaded but Moving",
     text: "The door opens with a few things still uncertain. The morning is imperfect, but it is held by notes, memory, and motion.",
     points: [
-      "Memory and clarity can fluctuate.",
-      "A difficult morning can still move forward.",
-      "Gentle supports matter even when they do not solve everything."
+      "What helped: movement, notes, and partial routines.",
+      "What remained difficult: memory and spatial orientation fluctuated.",
+      "Care note: incomplete clarity is not failure.",
+      "Reflection: what support should be easier to reach next time?"
     ]
   }
 };
@@ -463,26 +839,56 @@ const initialState = () => ({
   completed: [],
   fragments: [],
   journal: [],
+  morningRecords: [],
+  careNotes: [],
+  symptomLog: [],
+  songs: [],
+  messages: [],
+  carePerspective: [],
+  reflections: [],
   supportPlaced: [],
+  supportStyle: "gentle",
+  inspectedObjects: [],
+  visitedRooms: ["bedroom"],
+  memoryBookSection: "fragments",
+  currentInspectionId: null,
+  interactionCount: 0,
+  symptoms: {
+    memory: 1.2,
+    language: 1,
+    visuospatial: 1,
+    executiveFunction: 1.2,
+    motor: 1,
+    recognition: 1.1,
+    grounding: 4.8,
+    overload: 1.4,
+    dread: 1.6
+  },
   flags: {
     organizerConfirmed: false,
     teaMade: false,
     photoRebuilt: false,
     phoneUsed: false,
+    textHandled: false,
+    laptopHandled: false,
+    playlistUsed: false,
+    plantWatered: false,
+    voiceMemoPlayed: false,
+    oneQuestionAtATime: false,
     askedHelp: false,
     deniedHelp: false,
     callOpen: false,
     rescheduled: false
   },
-  puzzleChoices: {},
-  puzzleAttempts: 0,
-  reflections: [],
   endingId: null,
   settings: {
     largeText: false,
     highContrast: false,
     reducedMotion: false,
+    reduceBlur: false,
     plainLanguage: false,
+    disableDistortion: false,
+    contentNote: true,
     muteSound: false
   }
 });
@@ -500,6 +906,7 @@ const els = {
   roomDescription: $("#roomDescription"),
   clarityLabel: $("#clarityLabel"),
   clarityMeter: $("#clarityMeter"),
+  symptomSummary: $("#symptomSummary"),
   roomStage: $("#roomStage"),
   decorLayer: $("#decorLayer"),
   supportLayer: $("#supportLayer"),
@@ -509,21 +916,25 @@ const els = {
   checklist: $("#checklist"),
   inventory: $("#inventory"),
   journalLog: $("#journalLog"),
+  supportStyleChoices: $("#supportStyleChoices"),
   supportChoices: $("#supportChoices"),
+  memoryTabs: $("#memoryTabs"),
   memoryEntries: $("#memoryEntries"),
+  symptomLogEntries: $("#symptomLogEntries"),
+  feedbackLayer: $("#feedbackLayer"),
   phoneChoices: $("#phoneChoices"),
-  examineTitle: $("#examineTitle"),
-  examineText: $("#examineText"),
-  objectAct: $("#objectAct"),
-  objectExamineMore: $("#objectExamineMore"),
-  memoryPuzzleSlots: $("#memoryPuzzleSlots"),
-  memoryPuzzleFeedback: $("#memoryPuzzleFeedback"),
-  submitMemoryPuzzle: $("#submitMemoryPuzzle"),
+  inspectionEyebrow: $("#inspectionEyebrow"),
+  inspectionTitle: $("#inspectionTitle"),
+  inspectionText: $("#inspectionText"),
+  inspectionFeeling: $("#inspectionFeeling"),
+  inspectionNote: $("#inspectionNote"),
+  inspectionVisual: $("#inspectionVisual"),
+  inspectionActions: $("#inspectionActions"),
   endingTitle: $("#endingTitle"),
   endingText: $("#endingText"),
   endingPoints: $("#endingPoints"),
-  endingReflection: $("#endingReflection"),
-  saveReflection: $("#saveReflection")
+  reflectionPrompts: $("#reflectionPrompts"),
+  reflectionInput: $("#reflectionInput")
 };
 
 function init() {
@@ -532,8 +943,23 @@ function init() {
   $("#openMemoryBookMenu").addEventListener("click", () => openModal("memoryBookModal"));
   $("#openMemoryBookGame").addEventListener("click", () => openModal("memoryBookModal"));
   $("#openAccessibility").addEventListener("click", () => openModal("accessibilityPanel"));
+  $("#openAccessibilityGame").addEventListener("click", () => openModal("accessibilityPanel"));
+  $("#openAccessibilityFromCase").addEventListener("click", () => openModal("accessibilityPanel"));
   $("#openCredits").addEventListener("click", () => openModal("creditsModal"));
   $("#openSupport").addEventListener("click", openSupport);
+  $("#openSymptomLog").addEventListener("click", () => openModal("symptomLogModal"));
+  $("#beginCaseFile").addEventListener("click", () => {
+    closeModal("caseFileModal");
+    openModal("onboardingModal");
+  });
+  $("#finishOnboarding").addEventListener("click", () => {
+    closeModal("onboardingModal");
+    showGame();
+  });
+  $("#caseReturnMenu").addEventListener("click", () => {
+    closeModal("caseFileModal");
+    showMenu();
+  });
   $("#saveGame").addEventListener("click", () => {
     saveGame();
     writeJournal("Saved. The morning can wait here.");
@@ -541,9 +967,9 @@ function init() {
   $("#returnMenu").addEventListener("click", showMenu);
   $("#endingRestart").addEventListener("click", newGame);
   $("#endingBook").addEventListener("click", () => openModal("memoryBookModal"));
+  $("#endingSymptomLog").addEventListener("click", () => openModal("symptomLogModal"));
   $("#endingMenu").addEventListener("click", showMenu);
-  els.submitMemoryPuzzle.addEventListener("click", submitMemoryPuzzle);
-  els.saveReflection.addEventListener("click", saveReflection);
+  $("#saveReflection").addEventListener("click", saveEndingReflection);
 
   $$("[data-close]").forEach((button) => {
     button.addEventListener("click", () => closeModal(button.dataset.close));
@@ -573,8 +999,11 @@ function newGame() {
   state = initialState();
   state.settings = settings;
   state.screen = "game";
-  writeJournal("The morning begins in five small rooms.");
-  showGame();
+  writeJournal("Morning File opened at 7:13 AM.");
+  addMorningRecord("Subjective report begins. External supports available.");
+  addClinicalNote("Observation is not diagnosis. Player agency and dignity remain primary.");
+  openModal("caseFileModal");
+  $("#contentNoteText").classList.toggle("hidden", !state.settings.contentNote);
   saveGame();
 }
 
@@ -624,8 +1053,7 @@ function normalizeState(saved) {
     ...initialState(),
     ...saved,
     flags: { ...initialState().flags, ...(saved.flags || {}) },
-    puzzleChoices: saved.puzzleChoices || {},
-    reflections: saved.reflections || [],
+    symptoms: { ...initialState().symptoms, ...(saved.symptoms || {}) },
     settings: { ...initialState().settings, ...(saved.settings || {}) }
   };
 }
@@ -636,6 +1064,8 @@ function updateContinueButton() {
 
 function openModal(id) {
   if (id === "memoryBookModal") renderMemoryBook();
+  if (id === "symptomLogModal") renderSymptomLog();
+  if (id === "caseFileModal") $("#contentNoteText").classList.toggle("hidden", !state.settings.contentNote);
   const modal = $(`#${id}`);
   modal.classList.remove("hidden");
   const focusable = modal.querySelector("button, input");
@@ -669,49 +1099,103 @@ function kebab(value) {
 }
 
 function currentClarityState() {
-  if (state.supportPlaced.length > 0 || state.support >= 4) return "supported";
-  if (state.clarity <= 3.2) return "softened";
+  return currentPerceptionState();
+}
+
+function symptomLoad() {
+  const { memory, language, visuospatial, executiveFunction, motor, recognition, overload, dread } = state.symptoms;
+  return (memory + language + visuospatial + executiveFunction + motor + recognition + overload + dread) / 8;
+}
+
+function currentPerceptionState() {
+  if (state.supportPlaced.length > 0 || state.support >= 4 || state.symptoms.grounding >= 5.4) return "supported";
+  if (state.symptoms.dread >= 4.7) return "dread";
+  if (state.symptoms.executiveFunction >= 4.8 || state.clarity <= 1.8) return "overloaded";
+  if (state.symptoms.dread >= 3.4 || state.inspectedObjects.includes("voice_memo")) return "uncanny";
+  if (symptomLoad() >= 3.7 || state.clarity <= 2.8) return "fragmented";
+  if (state.clarity <= 4.2 || symptomLoad() >= 2.6) return "softened";
   return "clear";
 }
 
 function roomText(room) {
   const clarity = currentClarityState();
+  if (state.settings.disableDistortion || state.settings.plainLanguage) return room.descriptions.clear;
+  if (clarity === "dread") return room.descriptions.dread || "The room is familiar and still not quite trustworthy.";
+  if (clarity === "uncanny") return room.descriptions.uncanny || room.descriptions.softened || room.descriptions.clear;
+  if (clarity === "fragmented") return distortText(room.descriptions.softened || room.descriptions.clear, "fragmented");
+  if (clarity === "overloaded") return "Too many edges in the room. Choose one next step, or place a support cue.";
   return room.descriptions[state.settings.plainLanguage ? "clear" : clarity] || room.descriptions.clear;
 }
 
+function distortText(text, mode) {
+  if (state.settings.disableDistortion || state.settings.plainLanguage) return text;
+  if (mode === "language") return text.replace(/\b(glasses|kettle|phone|keys|wallet|door|calendar|photo|mug)\b/gi, "the thing for...");
+  return text.replace(/\b(room|counter|hall|door|photo|morning|appointment)\b/gi, (word) => `${word.slice(0, 2)}...`);
+}
+
 function renderRoomMap() {
-  els.roomMap.innerHTML = `<span class="map-label">Apartment map</span>` + Object.entries(rooms).map(([id, room]) => `
-    <button class="${id === state.currentRoom ? "active" : ""}" data-room="${id}" data-map-room="${id}" type="button">${room.nav}</button>
+  els.roomMap.innerHTML = Object.entries(rooms).map(([id, room]) => `
+    <button
+      class="${id === state.currentRoom ? "active" : ""} ${state.visitedRooms.includes(id) ? "visited" : ""} ${roomStatus(id)}"
+      data-room="${id}"
+      type="button"
+      aria-label="${room.nav}, ${roomStatus(id)}${id === state.currentRoom ? ", current room" : ""}"
+    >
+      <span class="map-dot"></span>
+      <span>${room.nav}</span>
+    </button>
   `).join("");
 
   $$("#roomMap [data-room]").forEach((button) => {
     button.addEventListener("click", () => {
       state.currentRoom = button.dataset.room;
+      if (!state.visitedRooms.includes(state.currentRoom)) state.visitedRooms.push(state.currentRoom);
       soften(0.12);
+      beginRoomTransition();
+      announceFeedback("transition", `${rooms[state.currentRoom].name} washes into view.`);
       renderAll();
       saveGame();
     });
   });
 }
 
+function beginRoomTransition() {
+  document.body.classList.add("room-transitioning");
+  window.clearTimeout(beginRoomTransition.timeout);
+  beginRoomTransition.timeout = window.setTimeout(() => {
+    document.body.classList.remove("room-transitioning");
+  }, state.settings.reducedMotion ? 60 : 520);
+}
+
+function roomStatus(roomId) {
+  if (state.currentRoom === roomId && currentPerceptionState() === "supported") return "stable";
+  if (state.currentRoom === roomId && ["uncanny", "dread", "overloaded"].includes(currentPerceptionState())) return "uncertain";
+  const roomObjects = rooms[roomId].objects.map((object) => object.id);
+  const unresolved = roomObjects.some((id) => state.inspectedObjects.includes(id) && !state.collectedObjects.includes(id));
+  return unresolved ? "unresolved" : "stable";
+}
+
 function renderRoom() {
   const room = rooms[state.currentRoom];
   const clarity = currentClarityState();
+  applyPerceptionClasses(clarity);
+  if (!state.visitedRooms.includes(state.currentRoom)) state.visitedRooms.push(state.currentRoom);
   els.roomTitle.textContent = room.name;
   els.roomDescription.textContent = roomText(room);
   els.clarityLabel.textContent = {
     clear: "Grounding: clear",
     softened: "Grounding: softened",
-    supported: "Grounding: supported"
+    fragmented: "Signal: fragmented",
+    overloaded: "Morning pressure: high",
+    supported: "Grounding: supported",
+    uncanny: "Signal: uncanny",
+    dread: "Morning dread: present"
   }[clarity];
   els.clarityMeter.style.width = `${(state.clarity / 6) * 100}%`;
+  els.symptomSummary.innerHTML = renderSymptomSummary();
   els.roomStage.dataset.room = state.currentRoom;
   els.roomStage.dataset.clarity = clarity;
-  els.roomStage.classList.toggle("tea-made", state.flags.teaMade && state.currentRoom === "kitchen");
-  els.roomStage.classList.toggle("voice-supported", state.flags.phoneUsed && state.currentRoom === "living");
-  els.roomStage.classList.toggle("memory-rebuilt", state.flags.photoRebuilt && state.currentRoom === "living");
-  els.roomStage.classList.toggle("ready-to-leave", state.completed.includes("leave") && state.currentRoom === "hallway");
-  els.decorLayer.innerHTML = (roomDetailLayers[state.currentRoom] || []).map(renderDecorDetail).join("") + renderDynamicDetails();
+  els.decorLayer.innerHTML = (roomDetailLayers[state.currentRoom] || []).map(renderDecorDetail).join("");
   els.supportLayer.innerHTML = state.supportPlaced
     .filter((id) => supportTargets.find((target) => target.id === id)?.room === state.currentRoom)
     .map((id) => `<span class="support-note support-${id}">${supportTargets.find((target) => target.id === id).label} cue</span>`)
@@ -719,25 +1203,24 @@ function renderRoom() {
   els.hotspotLayer.innerHTML = room.objects.map((object) => renderHotspot(object, clarity)).join("");
 
   $$(".hotspot").forEach((button) => {
-    button.addEventListener("click", () => openObjectPanel(button.dataset.object));
+    button.addEventListener("click", () => handleObject(button.dataset.object));
   });
 }
 
-function renderDynamicDetails() {
-  const details = [];
-  if (state.currentRoom === "kitchen" && state.flags.teaMade) {
-    details.push({ type: "steam glow", label: "fresh tea steam", x: 60, y: 34, w: 20, h: 18 });
-  }
-  if (state.currentRoom === "living" && state.flags.phoneUsed) {
-    details.push({ type: "radio glow", label: "voice still nearby", x: 58, y: 48, w: 22, h: 10 });
-  }
-  if (state.currentRoom === "living" && state.flags.photoRebuilt) {
-    details.push({ type: "postcard spread", label: "photo memory settled", x: 35, y: 22, w: 24, h: 12 });
-  }
-  if (state.currentRoom === "hallway" && hasEssentials()) {
-    details.push({ type: "door glow", label: "ready when you are", x: 70, y: 44, w: 18, h: 25 });
-  }
-  return details.map(renderDecorDetail).join("");
+function applyPerceptionClasses(clarity) {
+  ["dread", "memory", "grounded", "overloaded", "uncanny", "supported"].forEach((name) => {
+    document.body.classList.remove(`state-${name}`);
+  });
+  const className = {
+    dread: "state-dread",
+    uncanny: "state-uncanny",
+    overloaded: "state-overloaded",
+    supported: "state-supported",
+    clear: "state-grounded",
+    softened: "state-memory",
+    fragmented: "state-memory"
+  }[clarity];
+  if (className) document.body.classList.add(className);
 }
 
 function renderDecorDetail(detail) {
@@ -755,7 +1238,7 @@ function renderDecorDetail(detail) {
 function renderHotspot(object, clarity) {
   const supported = state.supportPlaced.some((target) => object.id.includes(target));
   const labelState = supported ? "supported" : clarity;
-  const label = object.labels[labelState] || object.labels.clear;
+  const label = objectLabel(object, labelState);
   const done = state.collectedObjects.includes(object.id) || isObjectComplete(object);
   const helpful = isHelpfulObject(object);
   return `
@@ -763,6 +1246,37 @@ function renderHotspot(object, clarity) {
       <span>${label}</span>
     </button>
   `;
+}
+
+function objectLabel(object, labelState) {
+  if (state.settings.disableDistortion || state.settings.plainLanguage) {
+    return object.labels.clear;
+  }
+  if (labelState === "dread") return object.labels.dread || "why does this matter";
+  if (labelState === "uncanny") return object.labels.uncanny || object.labels.softened || object.labels.clear;
+  if (labelState === "overloaded") return "too many things";
+  if (labelState === "fragmented" && state.symptoms.language >= 3) return `the thing for ${object.labels.clear}`;
+  return object.labels[labelState] || object.labels.softened || object.labels.clear;
+}
+
+function renderSymptomSummary() {
+  const entries = [
+    ["Memory", state.symptoms.memory],
+    ["Language", state.symptoms.language],
+    ["Space", state.symptoms.visuospatial],
+    ["Sequence", state.symptoms.executiveFunction],
+    ["Motor", state.symptoms.motor],
+    ["Recognition", state.symptoms.recognition],
+    ["Overload", state.symptoms.overload],
+    ["Dread", state.symptoms.dread]
+  ];
+  return entries.map(([label, value]) => `<span>${label}: ${symptomWord(value)}</span>`).join("");
+}
+
+function symptomWord(value) {
+  if (value >= 4.4) return "strained";
+  if (value >= 3) return "soft";
+  return "steady";
 }
 
 function slug(value) {
@@ -787,59 +1301,29 @@ function isHelpfulObject(object) {
     medication: ["pill_organizer", "medication_bottle"],
     photo: ["photo_frame", "postcard", "bedroom_window"],
     phone: ["phone"],
-    leave: ["keys", "wallet", "appointment_card", "front_door"]
+    leave: ["keys", "wallet", "appointment_card", "transit_card", "sneakers", "tote_bag", "front_door"]
   };
   return helpful[next.id]?.includes(object.id);
 }
 
-function openObjectPanel(objectId) {
+function handleObject(objectId) {
   const object = rooms[state.currentRoom].objects.find((item) => item.id === objectId);
   if (!object) return;
-  const clarity = currentClarityState();
-  const label = object.labels[clarity] || object.labels.clear;
-  els.examineTitle.textContent = label;
-  els.examineText.textContent = objectExamineText(object);
-  els.objectAct.textContent = actionLabel(object);
-  els.objectAct.onclick = () => {
-    closeModal("examineModal");
-    performObjectAction(objectId);
-  };
-  els.objectExamineMore.onclick = () => {
-    writeJournal(object.text);
-    setCaption(object.text);
-    if (object.fragment) addFragment(object.fragment);
-    ground(0.1);
-    closeModal("examineModal");
-    renderAll();
-    saveGame();
-  };
-  playSound("page");
-  openModal("examineModal");
+  openInspection(object);
 }
 
-function objectExamineText(object) {
-  const next = nextChecklistItem();
-  const extra = next && isHelpfulObject(object) ? " It feels connected to the next step." : "";
-  const mode = currentClarityState() === "softened" ? "The object is present before it is fully named. " : "The room gives this object a small role. ";
-  return `${mode}${object.text}${extra}`;
-}
-
-function actionLabel(object) {
-  return {
-    collect: object.item && hasItem(object.item) ? "Hold again" : "Take",
-    inspect: "Notice",
-    organizer: "Confirm organizer",
-    tea: "Make tea",
-    medication: "Take medication",
-    photo: "Rebuild memory",
-    phone: state.flags.phoneUsed ? "Review call" : "Use phone",
-    leave: state.flags.rescheduled ? "Rest today" : "Try the door"
-  }[object.kind] || "Interact";
-}
-
-function performObjectAction(objectId) {
-  const object = rooms[state.currentRoom].objects.find((item) => item.id === objectId);
+function useInspectedObject() {
+  const object = findObjectById(state.currentInspectionId);
   if (!object) return;
+  closeModal("inspectionModal");
+  applyObjectUse(object);
+  renderAll();
+  saveGame();
+}
+
+function applyObjectUse(object) {
+  state.interactionCount += 1;
+  nudgeSymptom("executiveFunction", 0.08);
 
   switch (object.kind) {
     case "collect":
@@ -863,21 +1347,179 @@ function performObjectAction(objectId) {
     case "phone":
       usePhone(object);
       break;
+    case "group_chat":
+      useGroupChat(object);
+      break;
+    case "voice_memo":
+      useVoiceMemo(object);
+      break;
+    case "laptop":
+      useLaptop(object);
+      break;
+    case "playlist":
+      usePlaylist(object);
+      break;
+    case "plant":
+      waterPlant(object);
+      break;
     case "leave":
       tryLeave(object);
       break;
     default:
       inspectObject(object);
   }
+}
 
+function findObjectById(objectId) {
+  for (const room of Object.values(rooms)) {
+    const found = room.objects.find((object) => object.id === objectId);
+    if (found) return found;
+  }
+  return null;
+}
+
+function openInspection(object) {
+  state.currentInspectionId = object.id;
+  state.inspectedObjects.push(object.id);
+  state.inspectedObjects = [...new Set(state.inspectedObjects)];
+  const data = inspectionData[object.id] || {
+    title: object.labels.clear,
+    visual: object.kind,
+    note: "Observation: familiar object inspected in context.",
+    look: object.text,
+    question: "The object is familiar, but the next step still needs a little room."
+  };
+  els.inspectionTitle.textContent = data.title;
+  els.inspectionEyebrow.textContent = `${rooms[state.currentRoom].name} / close inspection`;
+  els.inspectionText.textContent = inspectionText(data.look);
+  els.inspectionFeeling.textContent = inspectionText(data.feeling || data.question || "The object feels familiar and not fully settled yet.");
+  els.inspectionNote.textContent = data.note;
+  els.inspectionVisual.className = `inspection-visual inspect-${slug(data.visual || object.kind)}`;
+  els.inspectionActions.innerHTML = inspectionActionsFor(object, data).map((action) => `
+    <button type="button" data-inspection-action="${action.id}">
+      <strong>${action.label}</strong>
+      <span>${action.text}</span>
+    </button>
+  `).join("");
+  openModal("inspectionModal");
+  if (object.id === "mirror") playSound("mirror");
+  if (object.id === "front_door" && currentPerceptionState() !== "supported") playSound("hallway");
+  $$("[data-inspection-action]").forEach((button) => {
+    button.addEventListener("click", () => runInspectionAction(button.dataset.inspectionAction, object.id));
+  });
+}
+
+function inspectionText(text) {
+  if (state.settings.disableDistortion || state.settings.plainLanguage) return text;
+  if (state.symptoms.language >= 3.4) return distortText(text, "language");
+  return text;
+}
+
+function inspectionActionsFor(object) {
+  const actions = [
+    { id: "look", label: "Look", text: "Observe without acting yet." },
+    { id: "use", label: "Use", text: "Try the practical next step." },
+    { id: "question", label: "Ask", text: "Notice uncertainty without shame." },
+    { id: "ground", label: "Ground", text: "Pause and use a steady cue." },
+    { id: "leave_it", label: "Leave it for now", text: "Make the morning smaller." }
+  ];
+  if (object.id === "mirror") {
+    actions.splice(1, 0, { id: "recognize", label: "I know this feeling", text: "Let recognition begin as sensation." });
+  }
+  if (["photo", "photo_frame", "postcard", "playlist", "voice_memo"].includes(object.kind) || ["photo_frame", "postcard", "playlist", "voice_memo"].includes(object.id)) {
+    actions.splice(2, 0, { id: "remember", label: "Remember", text: "Let a sensory anchor arrive first." });
+  }
+  return actions;
+}
+
+function runInspectionAction(actionId, objectId) {
+  const object = findObjectById(objectId);
+  const data = inspectionData[objectId] || {};
+  if (!object) return;
+
+  if (actionId === "use") {
+    useInspectedObject();
+    return;
+  }
+
+  if (actionId === "look") {
+    writeJournal(data.look || object.text);
+    addClinicalNote(data.note || "Observation: object inspected in context.");
+    nudgeSymptom(domainForObject(object), 0.18);
+    nudgeSymptom("dread", object.id === "calendar" || object.id === "front_door" ? 0.18 : 0.04);
+    playSound("page");
+  }
+
+  if (actionId === "question") {
+    const line = data.question || "The morning makes space for uncertainty.";
+    writeJournal(line);
+    addSymptomLog({
+      clinical: `Uncertainty noted near ${object.labels.clear}.`,
+      human: "You knew it mattered before you knew why."
+    });
+    nudgeSymptom("memory", 0.18);
+    nudgeSymptom("language", object.kind === "inspect" ? 0.12 : 0.04);
+    nudgeSymptom("dread", 0.12);
+  }
+
+  if (actionId === "recognize") {
+    writeJournal("I know this feeling before I know the whole face.");
+    addFragment("late_name");
+    addSymptomLog({
+      clinical: "Recognition stabilized through affective cue at mirror.",
+      human: "The name arrived late, but the feeling did not leave."
+    });
+    nudgeSymptom("recognition", -0.45);
+    ground(0.8);
+    playSound("ground");
+  }
+
+  if (actionId === "remember") {
+    if (object.fragment) addFragment(object.fragment);
+    writeJournal(data.question || "Memory arrives as smell, sound, color, or feeling before facts.");
+    addSymptomLog({
+      clinical: "Autobiographical recall improved through sensory anchoring.",
+      human: "The memory did not become perfect. It became reachable."
+    });
+    nudgeSymptom("memory", -0.25);
+    nudgeSymptom("recognition", -0.25);
+    ground(0.45);
+    playSound("memory");
+  }
+
+  if (actionId === "ground") {
+    ground(1);
+    state.support = clamp(state.support + 0.35, 1, 6);
+    addClinicalNote(`Grounding cue used near ${object.labels.clear}.`);
+    writeJournal("You narrow the room to one object, one breath, one next step.");
+    playSound("ground");
+  }
+
+  if (actionId === "leave_it") {
+    writeJournal("You leave it for now. Autonomy includes choosing which question the morning gets to ask.");
+    addCarePerspective("The goal is not a perfect morning. The goal is a morning with less fear.");
+    nudgeSymptom("overload", -0.35);
+    ground(0.25);
+  }
+
+  closeModal("inspectionModal");
   renderAll();
   saveGame();
+}
+
+function domainForObject(object) {
+  if (["photo", "phone", "playlist", "voice_memo"].includes(object.kind)) return "recognition";
+  if (object.kind === "tea" || object.kind === "medication" || object.kind === "organizer" || object.kind === "laptop" || object.kind === "group_chat") return "executiveFunction";
+  if (object.id.includes("door") || object.id.includes("hall")) return "visuospatial";
+  if (object.id.includes("keys") || object.id.includes("sneakers")) return "motor";
+  return "memory";
 }
 
 function collectObject(object) {
   if (state.collectedObjects.includes(object.id)) {
     writeJournal(afterText(object));
     setCaption(afterText(object));
+    announceFeedback("settled", "Already held. The object stays clear.");
     return;
   }
 
@@ -887,21 +1529,40 @@ function collectObject(object) {
   writeJournal(object.text);
   setCaption(afterText(object));
 
-  playSound(object.item || "collect");
-
   if (object.item === "glasses") {
     complete("glasses");
     ground(1.5);
+    nudgeSymptom("visuospatial", -0.6);
+    addSymptomLog("Visual support improved room readability after glasses were found.");
+    playSound("ground");
   } else {
     ground(0.2);
+    if (object.item === "keys") {
+      nudgeSymptom("motor", 0.2);
+      addSymptomLog({
+        clinical: "Fine-motor hesitation noted while collecting keys.",
+        human: "Your hand took an extra second and still found them."
+      });
+      playSound("keys");
+    } else if (["transit_card", "tote_bag", "sneakers"].includes(object.item)) {
+      addMorningRecord(`${itemData[object.item].name} gathered for departure.`);
+      addCarePerspective("Gathering objects in one visible place can lower pressure without removing choice.");
+      nudgeSymptom("visuospatial", -0.12);
+      playSound("page");
+    } else {
+      playSound("page");
+    }
   }
+  announceFeedback("changed", `${object.labels.clear} settles into the morning.`);
 }
 
 function inspectObject(object) {
   writeJournal(object.text);
   setCaption(object.text);
   if (object.fragment) addFragment(object.fragment);
+  nudgeSymptom(domainForObject(object), 0.12);
   ground(0.2);
+  playSound("page");
 }
 
 function confirmOrganizer(object) {
@@ -909,7 +1570,11 @@ function confirmOrganizer(object) {
   addItem("pill_organizer");
   writeJournal(object.text);
   setCaption("Medication is not taken yet. The organizer has made the instruction clearer.");
+  addSymptomLog("External cue reduced medication uncertainty.");
+  addCareNote("Pill organizer helped confirm the day without relying on memory alone.");
+  nudgeSymptom("executiveFunction", -0.5);
   ground(0.5);
+  playSound("ground");
 }
 
 function makeTea(object) {
@@ -920,16 +1585,21 @@ function makeTea(object) {
 
   if (!hasItem("mug") || !hasItem("tea_bag")) {
     soften(0.45);
+    nudgeSymptom("executiveFunction", 0.35);
+    addSymptomLog("Sequencing load increased at kettle before mug and tea bag were gathered.");
     gentlePause("The kettle waits for the mug and tea bag first.");
     return;
   }
 
   state.flags.teaMade = true;
   complete("tea");
-  playSound("kettle");
   writeJournal(object.text);
   setCaption("Tea made: mug, tea bag, water, switch. The order is outside of memory now.");
+  addMorningRecord("Tea sequence completed with visible object cues.");
+  addSymptomLog("Routine sequence stabilized through embodied steps: mug, tea, water, switch.");
+  nudgeSymptom("executiveFunction", -0.45);
   ground(0.9);
+  playSound("kettle");
 }
 
 function takeMedication(object) {
@@ -940,21 +1610,25 @@ function takeMedication(object) {
 
   if (!state.flags.teaMade) {
     soften(0.5);
+    nudgeSymptom("executiveFunction", 0.3);
     gentlePause("The bottle is here, but the morning asks for tea first.");
     return;
   }
 
   if (!state.flags.organizerConfirmed) {
     soften(0.5);
+    nudgeSymptom("memory", 0.35);
+    addSymptomLog("Medication uncertainty increased when memory was used without an external cue.");
     gentlePause("The organizer can confirm today before the bottle asks you to remember.");
     return;
   }
 
   complete("medication");
-  playSound("confirm");
   writeJournal(object.text);
   setCaption("Medication confirmed with the organizer. A routine can be supported without shame.");
+  addMorningRecord("Medication confirmed with organizer and tea sequence.");
   ground(0.8);
+  playSound("ground");
 }
 
 function reconstructPhoto(object) {
@@ -964,71 +1638,28 @@ function reconstructPhoto(object) {
   const clues = ["mango", "blue_towel", "wind"].filter((id) => state.fragments.includes(id));
   if (state.flags.photoRebuilt) {
     writeJournal("Mom, beach, 2018. Mango tea. Blue towel. Wind in her hair.");
-    setCaption("The photo stays assembled, but it still feels tender.");
     return;
   }
 
   if (clues.length < 2) {
     soften(0.35);
+    nudgeSymptom("recognition", 0.3);
+    addSymptomLog("Photo recognition remained partial until sensory anchors were gathered.");
     writeJournal(object.text);
     setCaption("The photo is close. More clues in the apartment may help the memory gather.");
     return;
   }
 
-  openMemoryPuzzle();
-}
-
-function openMemoryPuzzle() {
-  els.memoryPuzzleSlots.innerHTML = Object.entries(memoryPuzzle.slots).map(([slot, options]) => `
-    <label class="puzzle-slot">
-      <span>${titleCase(slot)}</span>
-      <select data-puzzle-slot="${slot}">
-        <option value="">Choose...</option>
-        ${options.map((option) => `<option value="${option}" ${state.puzzleChoices[slot] === option ? "selected" : ""}>${option}</option>`).join("")}
-      </select>
-    </label>
-  `).join("");
-  const hints = state.fragments.map((id) => memoryPuzzle.hintByFragment[id]).filter(Boolean);
-  els.memoryPuzzleFeedback.textContent = hints.length ? `Clues gathered: ${hints.join(" ")}` : "The apartment has not offered many clues yet.";
-  openModal("memoryPuzzleModal");
-}
-
-function submitMemoryPuzzle() {
-  $$('[data-puzzle-slot]').forEach((select) => {
-    state.puzzleChoices[select.dataset.puzzleSlot] = select.value;
-  });
-  const missing = Object.keys(memoryPuzzle.required).filter((slot) => !state.puzzleChoices[slot]);
-  if (missing.length) {
-    els.memoryPuzzleFeedback.textContent = "The memory needs every piece before it can settle.";
-    soften(0.15);
-    return;
-  }
-  const incorrect = Object.entries(memoryPuzzle.required).filter(([slot, value]) => state.puzzleChoices[slot] !== value);
-  state.puzzleAttempts += 1;
-  if (incorrect.length) {
-    const gentle = incorrect.length > 2
-      ? "That version feels like a different morning. The room offers the clues again without blame."
-      : "Almost. One piece feels out of tune with the fragments you found.";
-    els.memoryPuzzleFeedback.textContent = gentle;
-    writeJournal(gentle);
-    soften(0.25);
-    renderAll();
-    saveGame();
-    return;
-  }
   state.flags.photoRebuilt = true;
   complete("photo");
-  playSound("memory");
   writeJournal("Mom at the beach, 2018. Mango tea, blue towel, wind in her hair. The name arrives gently.");
   setCaption("The memory is reconstructed from clues, not forced.");
-  ground(1);
-  closeModal("memoryPuzzleModal");
-  renderAll();
-  saveGame();
-}
-
-function titleCase(value) {
-  return value.replace(/_/g, " ").replace(/\w/g, (letter) => letter.toUpperCase());
+  addMorningRecord("Photo memory reconstructed through sensory anchors.");
+  addReflection("Memory returned through smell, color, and motion rather than pressure.");
+  nudgeSymptom("recognition", -0.55);
+  nudgeSymptom("memory", -0.35);
+  ground(0.9);
+  playSound("memory");
 }
 
 function usePhone(object) {
@@ -1040,6 +1671,7 @@ function usePhone(object) {
 
   if (!state.completed.includes("photo")) {
     soften(0.3);
+    nudgeSymptom("recognition", 0.2);
     gentlePause("The phone is ready. The photo memory may help the contact feel less abstract first.");
     return;
   }
@@ -1052,7 +1684,126 @@ function usePhone(object) {
   openPhone();
 }
 
+function useGroupChat(object) {
+  if (state.flags.textHandled) {
+    writeJournal("The message is already small enough to send: 'Running slow. I care. Text soon.'");
+    return;
+  }
+
+  state.flags.textHandled = true;
+  addFragment("half_text");
+  addMessage("Group chat draft: Running slow. I care. Text soon.");
+  writeJournal("You send a simple text instead of the perfect one: 'Running slow. I care. Text soon.'");
+  setCaption("The reply is small, honest, and enough.");
+  addSymptomLog({
+    clinical: "Expressive language slowed near social pressure.",
+    human: "You knew what you meant before the words trusted you."
+  });
+  addCarePerspective("Support can include making communication smaller without making the person smaller.");
+  state.flags.oneQuestionAtATime = true;
+  nudgeSymptom("language", -0.35);
+  nudgeSymptom("dread", -0.25);
+  ground(0.45);
+  playSound("text");
+}
+
+function useVoiceMemo(object) {
+  if (state.flags.voiceMemoPlayed) {
+    writeJournal("The voice memo is still there: No rush. I am here.");
+    ground(0.35);
+    return;
+  }
+
+  state.flags.voiceMemoPlayed = true;
+  addFragment("hard_mornings");
+  addMessage("Voice memo: No rush. I'm here. You do not have to prove anything to me.");
+  writeJournal("The memo plays: 'No rush. I'm here. You are not a problem I am solving.'");
+  setCaption("The loved one is present without taking the morning away.");
+  addSymptomLog({
+    clinical: "Relational cue reduced dread during disorientation.",
+    human: "Someone believed you, even when the room did not."
+  });
+  addCarePerspective("Care should make the room easier to read, not make the person smaller.");
+  nudgeSymptom("dread", -0.65);
+  nudgeSymptom("overload", -0.2);
+  ground(0.75);
+  playSound("phone");
+}
+
+function useLaptop(object) {
+  if (state.flags.laptopHandled) {
+    writeJournal("The project is saved with one sentence added. That counts.");
+    return;
+  }
+
+  state.flags.laptopHandled = true;
+  addItem("laptop");
+  writeJournal("You write one sentence in the project notes, then set a reminder instead of forcing the whole task.");
+  setCaption("One sentence is a real step. Closing the laptop can be support, too.");
+  addMorningRecord("Laptop project narrowed to one sentence and one reminder.");
+  addCarePerspective("The goal is not a perfect morning. The goal is a morning with less fear.");
+  addSymptomLog({
+    clinical: "Task initiation improved when the next action became smaller.",
+    human: "The project still belonged to you, even unfinished."
+  });
+  nudgeSymptom("executiveFunction", -0.45);
+  nudgeSymptom("overload", -0.4);
+  ground(0.45);
+  playSound("page");
+}
+
+function usePlaylist(object) {
+  if (state.flags.playlistUsed) {
+    writeJournal("The grounding song is pinned now. It can be found again.");
+    return;
+  }
+
+  state.flags.playlistUsed = true;
+  addItem("earbuds");
+  addFragment("song_basil");
+  addSong("Track three: the basil song. Recognition before facts.");
+  writeJournal("The song begins. Your shoulders remember first; the story arrives after.");
+  setCaption("Music becomes a cue, not a demand.");
+  addSymptomLog({
+    clinical: "Recognition improved with auditory cueing.",
+    human: "The song found the memory before the facts did."
+  });
+  nudgeSymptom("recognition", -0.55);
+  nudgeSymptom("dread", -0.25);
+  ground(0.8);
+  playSound("song");
+}
+
+function waterPlant(object) {
+  if (state.flags.plantWatered) {
+    writeJournal("The basil is watered. Small care remains complete.");
+    return;
+  }
+
+  state.flags.plantWatered = true;
+  addFragment("basil_window");
+  writeJournal("You water the basil. The leaves shine. A responsibility becomes small enough to finish.");
+  setCaption("The plant only asked for water.");
+  addMorningRecord("Plant care completed with a small visible cue.");
+  addCarePerspective("A cue can preserve independence instead of replacing it.");
+  addSymptomLog({
+    clinical: "Simple responsibility supported grounding.",
+    human: "The plant made care small enough to complete."
+  });
+  nudgeSymptom("overload", -0.2);
+  ground(0.5);
+  playSound("ground");
+}
+
 function openPhone() {
+  const thread = $("#phoneThread");
+  if (thread) {
+    thread.innerHTML = `
+      <p class="bubble them">No rush. I am here.</p>
+      <p class="bubble them">Want me to stay on the phone, or just text?</p>
+      <p class="bubble me draft">Draft: I need one question at a time.</p>
+    `;
+  }
   els.phoneChoices.innerHTML = phoneChoices.map((choice) => `
     <button type="button" data-phone="${choice.id}">
       <strong>${choice.label}</strong>
@@ -1073,14 +1824,28 @@ function choosePhone(choiceId) {
   complete("phone");
   state.support = clamp(state.support + choice.effect.support, 1, 6);
   state.clarity = clamp(state.clarity + choice.effect.clarity, 1, 6);
+  nudgeSymptom("recognition", -0.4);
+  nudgeSymptom("memory", choice.id === "deny_help" ? 0.25 : -0.15);
+  if (choice.id === "ask_help") state.flags.oneQuestionAtATime = true;
+  addSymptomLog(choice.id === "deny_help"
+    ? {
+      clinical: "Support was declined; independence preserved while morning pressure stayed present.",
+      human: "Privacy mattered, and the door stayed open for later help."
+    }
+    : {
+      clinical: "Familiar voice reduced distress and improved orientation.",
+      human: "Care stayed beside you instead of taking the wheel."
+    });
+  addCarePerspective(choice.id === "deny_help"
+    ? "Privacy and support can both be valid needs."
+    : "Helping is not the same as correcting.");
+  addCareNote(`Phone choice: ${choice.label}.`);
+  addMessage(`Phone: ${choice.line}`);
   addFragment("voice");
   writeJournal(`You say: "${choice.line}"`);
   writeJournal(choice.reply);
-  if (choice.id === "ask_help") writeJournal("Later, the hallway will allow one extra reminder before the door.");
-  if (choice.id === "deny_help") writeJournal("The journal becomes quieter. Privacy remains a valid form of dignity.");
-  if (choice.id === "reschedule") writeJournal("The goal changes: today can be made safe for rest instead of leaving.");
-  playSound("voice");
   setCaption("The call becomes a support cue, not a test.");
+  playSound("phone");
   closeModal("phoneModal");
   renderAll();
   saveGame();
@@ -1095,15 +1860,18 @@ function tryLeave(object) {
     return;
   }
 
+  if (!state.supportPlaced.includes("door") && state.symptoms.visuospatial >= 3.2) {
+    soften(0.55);
+    nudgeSymptom("visuospatial", 0.35);
+    addSymptomLog("Hallway felt spatially unstable until a door cue was available.");
+    gentlePause("The hallway seems longer than it was. A door cue or checklist can make the threshold clearer.");
+    return;
+  }
+
   if (missing.length > 0) {
     soften(0.55);
-    if (state.flags.askedHelp) {
-      const reminder = `The familiar voice names the next item gently: ${itemData[missing[0]].name}.`;
-      writeJournal(reminder);
-      setCaption(reminder);
-    } else {
-      gentlePause(`The door waits. Still missing: ${missing.map((item) => itemData[item].name).join(", ")}.`);
-    }
+    nudgeSymptom("executiveFunction", 0.4);
+    gentlePause(`The door waits. Still missing: ${missing.map((item) => itemData[item].name).join(", ")}.`);
     return;
   }
 
@@ -1112,8 +1880,11 @@ function tryLeave(object) {
 }
 
 function selectEnding() {
+  if (state.fragments.includes("circled_twice") && state.fragments.includes("hard_mornings") && state.flags.voiceMemoPlayed) return "circledAppointment";
   if (state.flags.callOpen) return "callOpen";
+  if (state.symptoms.overload >= 4 || state.symptoms.dread >= 4.4) return "overloadedNotAlone";
   if (state.supportPlaced.length >= 3 || state.flags.askedHelp) return "supported";
+  if (state.flags.laptopHandled || state.flags.playlistUsed || state.flags.textHandled) return "quietProof";
   if (state.flags.deniedHelp && state.clarity >= 3.4) return "independent";
   if (state.clarity < 3.2) return "unsteady";
   return "independent";
@@ -1122,60 +1893,35 @@ function selectEnding() {
 function showEnding(id) {
   const ending = endings[id] || endings.unsteady;
   state.endingId = id;
+  addMorningRecord(`Ending reached: ${ending.title}.`);
+  addReflection(ending.points.at(-1) || "Reflect on what helped the morning feel held.");
   els.menuScreen.classList.add("hidden");
   els.gameScreen.classList.add("hidden");
   els.endingScreen.classList.remove("hidden");
   els.endingTitle.textContent = ending.title;
   els.endingText.textContent = ending.text;
   els.endingPoints.innerHTML = ending.points.map((point) => `<li>${point}</li>`).join("");
-  state.screen = "ending";
-  if (els.endingReflection) els.endingReflection.value = "";
-  saveMorningRecord(id);
-  saveGame();
-}
-
-function hasEssentials() {
-  return ["keys", "wallet", "phone", "appointment_card"].every(hasItem);
-}
-
-function saveMorningRecord(endingId) {
-  const records = loadMorningRecords();
-  const signature = `${endingId}-${state.completed.join("/")}-${state.fragments.join("/")}-${state.supportPlaced.join("/")}`;
-  if (records.some((record) => record.signature === signature)) return;
-  const ending = endings[endingId] || endings.unsteady;
-  records.unshift({
-    signature,
-    endingId,
-    title: ending.title,
-    date: new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }),
-    supportCount: state.supportPlaced.length,
-    fragments: state.fragments.length,
-    phoneChoice: phoneChoices.find((choice) => state.flags[choice.effect.flag])?.label || "No call choice",
-    clarity: Math.round(state.clarity * 10) / 10
+  els.reflectionPrompts.innerHTML = reflectionPrompts.map((prompt) => `
+    <button type="button" data-reflection-prompt="${prompt}">${prompt}</button>
+  `).join("");
+  els.reflectionInput.value = "";
+  $$("[data-reflection-prompt]").forEach((button) => {
+    button.addEventListener("click", () => {
+      els.reflectionInput.value = `${button.dataset.reflectionPrompt} `;
+      els.reflectionInput.focus();
+    });
   });
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(records.slice(0, 8)));
-}
-
-function loadMorningRecords() {
-  try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveReflection() {
-  const text = (els.endingReflection.value || "").trim();
-  if (!text) {
-    setCaption("The reflection box is empty. A blank pause can count too.");
-    return;
-  }
-  state.reflections.unshift({ text, date: new Date().toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) });
-  state.reflections = state.reflections.slice(0, 6);
-  writeJournal(`Reflection saved: ${text}`);
-  els.endingReflection.value = "";
+  state.screen = "ending";
   saveGame();
-  renderMemoryBook();
+}
+
+function saveEndingReflection() {
+  const text = els.reflectionInput.value.trim();
+  if (!text) return;
+  addReflection(text);
+  els.reflectionInput.value = "";
+  writeJournal("Reflection saved to the Memory Book.");
+  saveGame();
 }
 
 function addItem(itemId) {
@@ -1191,8 +1937,22 @@ function hasItem(itemId) {
 function addFragment(fragmentId, announce = true) {
   if (!memoryFragments[fragmentId] || state.fragments.includes(fragmentId)) return;
   state.fragments.push(fragmentId);
-  playSound("fragment");
+  addMorningRecord(`Memory fragment stored: ${memoryFragments[fragmentId].title}.`);
   if (announce) writeJournal(`Memory fragment added: ${memoryFragments[fragmentId].title}.`);
+  announceFeedback("memory", `Memory fragment settled: ${memoryFragments[fragmentId].title}.`);
+  playSound("memory");
+}
+
+function addSong(text) {
+  if (!text) return;
+  state.songs.unshift(text);
+  state.songs = [...new Set(state.songs)].slice(0, 30);
+}
+
+function addMessage(text) {
+  if (!text) return;
+  state.messages.unshift(text);
+  state.messages = [...new Set(state.messages)].slice(0, 30);
 }
 
 function complete(id) {
@@ -1214,14 +1974,112 @@ function gentlePause(text) {
   ];
   writeJournal(lines[Math.floor(Math.random() * lines.length)]);
   setCaption(text);
+  announceFeedback("overload", "The room offers a smaller clue.");
+  playSound("overload");
 }
 
 function ground(amount) {
   state.clarity = clamp(state.clarity + amount, 1, 6);
+  state.symptoms.grounding = clamp(state.symptoms.grounding + amount, 1, 6);
+  for (const key of ["memory", "language", "visuospatial", "executiveFunction", "motor", "recognition"]) {
+    nudgeSymptom(key, -amount * 0.08);
+  }
+  nudgeSymptom("overload", -amount * 0.18);
+  nudgeSymptom("dread", -amount * 0.12);
+  if (amount >= 0.7) announceFeedback("ground", "The text settles. The next step gets smaller.");
 }
 
 function soften(amount) {
   state.clarity = clamp(state.clarity - amount, 1, 6);
+  state.symptoms.grounding = clamp(state.symptoms.grounding - amount * 0.35, 1, 6);
+  nudgeSymptom("overload", amount * 0.22);
+  nudgeSymptom("dread", amount * 0.14);
+  if (amount >= 0.45) announceFeedback("dread", "The wash deepens. Try one smaller step.");
+}
+
+function nudgeSymptom(domain, amount) {
+  if (!(domain in state.symptoms) || domain === "grounding") return;
+  state.symptoms[domain] = clamp(state.symptoms[domain] + amount, 1, 6);
+}
+
+function addSymptomLog(text) {
+  if (!text) return;
+  const entry = typeof text === "string"
+    ? { clinical: text, human: "The room changed, and you adjusted without shame." }
+    : text;
+  const key = `${entry.clinical} ${entry.human}`;
+  if (!state.symptomLog.some((item) => `${item.clinical || item} ${item.human || ""}` === key)) {
+    state.symptomLog.unshift(entry);
+  }
+  state.symptomLog = state.symptomLog.slice(0, 40);
+}
+
+function addMorningRecord(text) {
+  if (!text) return;
+  state.morningRecords.unshift(text);
+  state.morningRecords = [...new Set(state.morningRecords)].slice(0, 40);
+}
+
+function addCareNote(text) {
+  if (!text) return;
+  state.careNotes.unshift(text);
+  state.careNotes = [...new Set(state.careNotes)].slice(0, 40);
+}
+
+function addCarePerspective(text) {
+  if (!text) return;
+  state.carePerspective.unshift(text);
+  state.carePerspective = [...new Set(state.carePerspective)].slice(0, 40);
+}
+
+function addClinicalNote(text) {
+  addCareNote(text);
+  if (text.startsWith("Observation:")) addSymptomLog(text.replace("Observation: ", ""));
+  if (text.startsWith("Clinical:")) {
+    const [clinical, human = "Human: the experience mattered beyond the observation."] = text.split(" Human:");
+    addSymptomLog({ clinical: clinical.replace("Clinical: ", ""), human: human.replace(/^ /, "") });
+  }
+}
+
+function addReflection(text) {
+  if (!text) return;
+  state.reflections.unshift(text);
+  state.reflections = [...new Set(state.reflections)].slice(0, 40);
+}
+
+let audioContext;
+
+function playSound(type) {
+  if (state.settings.muteSound) return;
+  try {
+    audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const tones = {
+      kettle: [460, 0.08],
+      page: [320, 0.05],
+      phone: [220, 0.09],
+      keys: [720, 0.06],
+      memory: [540, 0.08],
+      overload: [120, 0.05],
+      ground: [660, 0.08],
+      hallway: [96, 0.04],
+      mirror: [260, 0.05],
+      text: [180, 0.07],
+      song: [590, 0.07]
+    };
+    const [frequency, volume] = tones[type] || tones.page;
+    oscillator.frequency.value = frequency;
+    oscillator.type = type === "overload" || type === "hallway" ? "sawtooth" : "sine";
+    gain.gain.setValueAtTime(volume, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.18);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.18);
+  } catch {
+    // Audio is optional; unsupported browsers simply play silently.
+  }
 }
 
 function clamp(value, min, max) {
@@ -1234,6 +2092,16 @@ function afterText(object) {
 
 function setCaption(text) {
   els.caption.textContent = text;
+}
+
+function announceFeedback(type, text) {
+  if (!els.feedbackLayer || !text) return;
+  els.feedbackLayer.className = `feedback-layer feedback-${type}`;
+  els.feedbackLayer.innerHTML = `<span>${text}</span>`;
+  window.clearTimeout(announceFeedback.timeout);
+  announceFeedback.timeout = window.setTimeout(() => {
+    if (els.feedbackLayer) els.feedbackLayer.innerHTML = "";
+  }, state.settings.reducedMotion ? 1400 : 2400);
 }
 
 function writeJournal(text) {
@@ -1251,9 +2119,9 @@ function renderChecklist() {
 }
 
 function renderInventory() {
-  const slots = Array.from({ length: 10 }, (_, index) => state.inventory[index] || null);
-  els.inventory.innerHTML = slots.map((itemId) => {
-    if (!itemId) return `<span class="slot empty">empty</span>`;
+  const slots = Array.from({ length: 15 }, (_, index) => state.inventory[index] || null);
+  els.inventory.innerHTML = slots.map((itemId, index) => {
+    if (!itemId) return `<span class="slot empty">${state.inventory.length || index > 0 ? "open space" : "Your hands are free"}</span>`;
     const item = itemData[itemId];
     return `<span class="slot filled" title="${item.name}"><b>${item.icon}</b>${item.name}</span>`;
   }).join("");
@@ -1266,44 +2134,91 @@ function renderJournal() {
 }
 
 function renderMemoryBook() {
-  const entries = state.fragments.map((id) => memoryFragments[id]).filter(Boolean);
-  const fragmentHtml = entries.length
-    ? entries.map((entry) => `
-      <article class="memory-entry">
-        <span>${entry.room}</span>
-        <h3>${entry.title}</h3>
-        <p>${state.settings.plainLanguage ? plainMemory(entry.text) : entry.text}</p>
-      </article>
-    `).join("")
-    : `<p>No fragments collected yet. They will appear as small details return to the morning.</p>`;
+  els.memoryTabs.innerHTML = memoryBookSections.map((section) => `
+    <button type="button" class="${state.memoryBookSection === section.id ? "active" : ""}" data-book-section="${section.id}">
+      ${section.label}
+    </button>
+  `).join("");
 
-  const careHtml = state.endingId ? `
-    <article class="memory-entry memory-entry-wide">
-      <span>Care notes unlocked</span>
-      <h3>What help looked like</h3>
-      ${careNotes.map((note) => `<p><strong>${note.title}:</strong> ${note.text}</p>`).join("")}
-    </article>
-  ` : "";
+  $$("[data-book-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.memoryBookSection = button.dataset.bookSection;
+      renderMemoryBook();
+      saveGame();
+    });
+  });
 
-  const recordHtml = loadMorningRecords().length ? `
-    <article class="memory-entry memory-entry-wide">
-      <span>Morning records</span>
-      <h3>Previous routes</h3>
-      ${loadMorningRecords().map((record) => `
-        <p><strong>${record.title}</strong> (${record.date}) — fragments: ${record.fragments}, supports: ${record.supportCount}, call: ${record.phoneChoice}, grounding: ${record.clarity}/6.</p>
-      `).join("")}
-    </article>
-  ` : "";
+  const section = state.memoryBookSection;
+  if (section === "fragments") {
+    const entries = state.fragments.map((id) => memoryFragments[id]).filter(Boolean);
+    els.memoryEntries.innerHTML = entries.length
+      ? entries.map((entry) => `
+        <article class="memory-entry fragment-card mood-${slug(entry.room)}">
+          <div class="entry-tags">
+            <span>${entry.room}</span>
+            <span>${entry.text.includes("before") ? "partial" : "settled"}</span>
+            <span>${entry.text.includes("smells") || entry.text.includes("song") ? "sensory" : "memory"}</span>
+          </div>
+          <h3>${entry.title}</h3>
+          <p>${state.settings.plainLanguage ? plainMemory(entry.text) : entry.text}</p>
+        </article>
+      `).join("")
+      : `<p class="empty-state">Nothing has settled yet. Fragments will arrive as smell, color, sound, voice, place.</p>`;
+    return;
+  }
 
-  const reflectionHtml = state.reflections.length ? `
-    <article class="memory-entry memory-entry-wide">
-      <span>Reflections</span>
-      <h3>Player notes</h3>
-      ${state.reflections.map((reflection) => `<p><strong>${reflection.date}:</strong> ${reflection.text}</p>`).join("")}
-    </article>
-  ` : "";
+  const sectionData = {
+    records: state.morningRecords,
+    songs: state.songs,
+    messages: state.messages,
+    carePerspective: state.carePerspective.length
+      ? state.carePerspective
+      : [
+        "Helping is not the same as correcting.",
+        "They are not becoming less themselves. They are navigating more noise.",
+        "Dread can grow in the space between knowing something matters and not knowing why."
+      ],
+    symptoms: state.symptomLog,
+    reflections: state.reflections
+  }[section] || [];
 
-  els.memoryEntries.innerHTML = fragmentHtml + careHtml + recordHtml + reflectionHtml;
+  const emptyCopy = {
+    songs: "No song has found the room yet.",
+    messages: "No message has been saved or sent yet.",
+    carePerspective: "How care helped will gather here.",
+    symptoms: "The room is quiet for now.",
+    records: "No morning records have dried on the page yet.",
+    reflections: "You have not written back to the morning yet."
+  };
+
+  els.memoryEntries.innerHTML = sectionData.length
+    ? sectionData.map((line) => {
+      if (typeof line === "object") {
+        return `
+          <article class="memory-entry paired-note">
+            <p><strong>Clinical:</strong> ${line.clinical}</p>
+            <p><strong>Human:</strong> ${line.human}</p>
+          </article>
+        `;
+      }
+      return `<article class="memory-entry"><p>${line}</p></article>`;
+    }).join("")
+    : `<p class="empty-state">${emptyCopy[section] || "Nothing has settled yet."}</p>`;
+}
+
+function renderSymptomLog() {
+  const entries = state.symptomLog.length ? state.symptomLog : ["The room is quiet for now."];
+  els.symptomLogEntries.innerHTML = entries.map((line) => {
+    if (typeof line === "object") {
+      return `
+        <article class="entry paired-note">
+          <p><strong>Clinical:</strong> ${line.clinical}</p>
+          <p><strong>Human:</strong> ${line.human}</p>
+        </article>
+      `;
+    }
+    return `<p class="entry">${line}</p>`;
+  }).join("");
 }
 
 function plainMemory(text) {
@@ -1314,6 +2229,13 @@ function plainMemory(text) {
 }
 
 function openSupport() {
+  els.supportStyleChoices.innerHTML = Object.entries(supportStyles).map(([id, style]) => `
+    <button type="button" class="${state.supportStyle === id ? "active" : ""}" data-support-style="${id}">
+      <strong>${style.label}</strong>
+      <span>${style.example}</span>
+    </button>
+  `).join("");
+
   els.supportChoices.innerHTML = supportTargets.map((target) => {
     const placed = state.supportPlaced.includes(target.id);
     return `
@@ -1325,6 +2247,13 @@ function openSupport() {
   }).join("");
 
   openModal("supportModal");
+  $$("[data-support-style]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.supportStyle = button.dataset.supportStyle;
+      openSupport();
+      saveGame();
+    });
+  });
   $$("[data-support-target]").forEach((button) => {
     button.addEventListener("click", () => placeSupport(button.dataset.supportTarget));
   });
@@ -1332,68 +2261,57 @@ function openSupport() {
 
 function placeSupport(targetId) {
   if (!state.supportPlaced.includes(targetId)) {
+    const style = supportStyles[state.supportStyle] || supportStyles.gentle;
     state.supportPlaced.push(targetId);
-    state.support = clamp(state.support + 1, 1, 6);
-    ground(0.8);
+    state.support = clamp(state.support + style.effect.support, 1, 6);
+    state.clarity = clamp(state.clarity + style.effect.clarity, 1, 6);
+    nudgeSymptom("dread", style.effect.dread);
+    nudgeSymptom("overload", style.effect.overload);
+    ground(0.45);
     const target = supportTargets.find((item) => item.id === targetId);
-    playSound("support");
-    writeJournal(target.text);
+    writeJournal(`${target.text} Support style: ${style.label}.`);
+    addCareNote(`${style.label} placed near ${target.label}. ${style.note}`);
+    addCarePerspective(style.note);
+    addSymptomLog({
+      clinical: `${target.label} support improved readability and reduced task load.`,
+      human: style.example
+    });
+    if (targetId === "door") nudgeSymptom("visuospatial", -0.65);
+    if (targetId === "medication" || targetId === "kettle") nudgeSymptom("executiveFunction", -0.65);
+    if (targetId === "phone") nudgeSymptom("recognition", -0.45);
+    if (targetId === "calendar") nudgeSymptom("memory", -0.45);
+    if (targetId === "laptop") nudgeSymptom("executiveFunction", -0.45);
+    if (targetId === "playlist") nudgeSymptom("recognition", -0.35);
+    if (targetId === "plant") nudgeSymptom("overload", -0.25);
+    if (targetId === "transit") nudgeSymptom("visuospatial", -0.35);
     setCaption("Support placed. The room becomes easier to read, without pretending the morning is solved.");
+    announceFeedback("support", `${style.label}: ${target.label} cue placed.`);
+    playSound("ground");
   }
   closeModal("supportModal");
   renderAll();
   saveGame();
 }
 
-let audioContext;
-function playSound(name) {
-  if (state.settings.muteSound) return;
-  try {
-    audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
-    const tones = {
-      kettle: [392, 523],
-      memory: [523, 659, 784],
-      voice: [220, 277],
-      support: [440, 587],
-      fragment: [330, 440],
-      confirm: [294, 392],
-      page: [196],
-      collect: [262, 330],
-      keys: [784, 988],
-      wallet: [220],
-      phone: [330, 415],
-      glasses: [330, 392]
-    };
-    const sequence = tones[name] || tones.collect;
-    sequence.forEach((frequency, index) => {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      osc.type = "sine";
-      osc.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.0001, audioContext.currentTime + index * 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.035, audioContext.currentTime + index * 0.08 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + index * 0.08 + 0.18);
-      osc.connect(gain).connect(audioContext.destination);
-      osc.start(audioContext.currentTime + index * 0.08);
-      osc.stop(audioContext.currentTime + index * 0.08 + 0.2);
-    });
-  } catch {
-    // Audio is optional; the game remains fully playable without it.
-  }
-}
-
 window.softRecallTrailer = {
   async run() {
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     $("#newGame").click();
+    await wait(500);
+    $("#beginCaseFile").click();
     await wait(1200);
     await trailerClick("bedside_glasses", 1500);
+    await trailerClick("voice_memo", 1000);
+    await trailerClick("unread_texts", 1000);
     await trailerRoom("kitchen", 800);
     await trailerClick("mug", 900);
     await trailerClick("tea_tin", 900);
     await trailerClick("kettle", 1300);
+    await trailerClick("plant_shelf", 900);
     $("#openSupport").click();
     await wait(500);
+    $('[data-support-style="gentle"]').click();
+    await wait(300);
     $('[data-support-target="kettle"]').click();
     await wait(1300);
     await trailerRoom("bathroom", 800);
@@ -1402,9 +2320,8 @@ window.softRecallTrailer = {
     await trailerClick("medication_bottle", 1200);
     await trailerRoom("living", 700);
     await trailerClick("postcard", 900);
-    await trailerClick("photo_frame", 500);
-    await trailerPuzzle();
-    await wait(800);
+    await trailerClick("photo_frame", 1300);
+    await trailerClick("playlist", 900);
     await trailerClick("phone", 700);
     await trailerClick("phone", 900);
     $('[data-phone="stay_phone"]').click();
@@ -1412,20 +2329,12 @@ window.softRecallTrailer = {
     await trailerRoom("hallway", 700);
     await trailerClick("keys", 700);
     await trailerClick("appointment_card", 700);
+    await trailerClick("transit_card", 700);
+    await trailerClick("tote_bag", 700);
     await trailerClick("hall_note", 700);
     await wait(9000);
   }
 };
-
-async function trailerPuzzle() {
-  if ($("#memoryPuzzleModal").classList.contains("hidden")) return;
-  const choices = { person: "Mom", place: "Beach", anchor: "Mango tea", detail: "Blue towel and wind" };
-  Object.entries(choices).forEach(([slot, value]) => {
-    const select = $(`[data-puzzle-slot="${slot}"]`);
-    if (select) select.value = value;
-  });
-  $("#submitMemoryPuzzle").click();
-}
 
 async function trailerRoom(roomId, delay) {
   $(`#roomMap [data-room="${roomId}"]`).click();
@@ -1435,10 +2344,9 @@ async function trailerRoom(roomId, delay) {
 async function trailerClick(objectId, delay) {
   const button = $(`[data-object="${objectId}"]`);
   if (button) button.click();
-  await new Promise((resolve) => setTimeout(resolve, 150));
-  if (!$("#examineModal").classList.contains("hidden")) {
-    $("#objectAct").click();
-  }
+  await new Promise((resolve) => setTimeout(resolve, Math.min(450, delay)));
+  const useButton = $('[data-inspection-action="use"]');
+  if (useButton) useButton.click();
   await new Promise((resolve) => setTimeout(resolve, delay));
 }
 
