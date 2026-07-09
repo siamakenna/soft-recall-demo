@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  base: "/soft-recall-lovable-sandbox/",
+  base: "/soft-recall-demo/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

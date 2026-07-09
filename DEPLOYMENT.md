@@ -15,7 +15,7 @@ npm run dev
 ```
 
 Vite will print the local URL. In development, the app renders the current
-Lovable React game directly from `src/main.tsx` and `src/game/SoftRecall.tsx`.
+React React game directly from `src/main.tsx` and `src/game/SoftRecall.tsx`.
 
 ## Build
 
@@ -40,14 +40,14 @@ started.
 The Vite base path is configured in `vite.config.ts` as:
 
 ```ts
-base: "/soft-recall-lovable-sandbox/",
+base: "/soft-recall-demo/",
 ```
 
 The workflow at `.github/workflows/deploy.yml` uses Node 22, runs `npm ci`,
 builds the static site, uploads `dist/`, and deploys it to GitHub Pages.
 
 In GitHub, set Pages to use GitHub Actions as the source. Pushing to
-`lovable-import-pass` or manually running the workflow will publish the game.
+`main` or manually running the workflow will publish the game.
 
 ## Notes
 
