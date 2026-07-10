@@ -1,0 +1,53 @@
+name: Feature request
+description: Suggest a scoped improvement for Soft Recall Demo.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Soft Recall Demo is PC-only / desktop-first for now. Gameplay stability comes before expansion.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should change?
+    validations:
+      required: true
+  - type: textarea
+    id: player-value
+    attributes:
+      label: Player value
+      description: How would this improve the desktop demo?
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Core playability
+        - UI / UX polish
+        - Documentation
+        - Deployment
+        - Future concept only
+    validations:
+      required: true
+  - type: checkboxes
+    id: guardrails
+    attributes:
+      label: Guardrails
+      options:
+        - label: This does not require mobile/PWA work.
+          required: true
+        - label: This does not require audio, voiceover, music, or sound effects.
+          required: true
+        - label: This does not require backend, auth, or database work.
+          required: true
+        - label: This keeps the first-person visual-novel point-and-click structure.
+          required: true
+  - type: textarea
+    id: qa
+    attributes:
+      label: QA considerations
+      description: What route or interaction should be tested if this is implemented?
