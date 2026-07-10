@@ -31,6 +31,10 @@ Soft Recall is being shaped toward a Steam/PC-style first-person narrative game.
 
 The project is research-informed, not diagnostic. It focuses on metacognitive interaction: noticing certainty, partial certainty, uncertainty, cue use, and support-seeking as playable choices.
 
+## Wiki / Documentation
+
+GitHub Wiki-ready documentation lives in [docs/WIKI_INDEX.md](docs/WIKI_INDEX.md). The pages in `docs/wiki/` can be copied into the GitHub Wiki or synced later.
+
 ## Controls
 
 - Arrow keys / D-pad: turn, move, or shift focus
