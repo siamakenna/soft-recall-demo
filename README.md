@@ -1,89 +1,52 @@
-# Soft Recall
+# Soft Recall Demo
 
-**Soft Recall** is a first-person visual novel point-and-click prototype about memory, uncertainty, routine, and care. The player moves through a quiet morning from bedside to doorway while object cues, confidence checks, and support choices shape what becomes readable.
+Soft Recall Demo is a static Vite React single-page game for PC browsers. It is a first-person point-and-click visual novel demo about memory, routine, uncertainty, and care.
 
-Soft Recall explores how games can represent uncertainty, cue use, memory confidence, and support-seeking through narrative interaction.
+The active build is desktop-first and deploys to GitHub Pages. It does not use a backend, auth, database, voiceover, music, or sound effects.
 
-## Current Prototype
+## Play Locally
 
-This GitHub Pages build is a polished web vertical slice, not the final production format. It uses plain HTML, CSS, and JavaScript with no build step.
+```bash
+npm install
+npm run dev
+```
 
-Current slice:
+Build and preview the production version:
 
-- Bedroom / bedside
-- Mirror or phone close-up
-- Hallway / door
+```bash
+npm run build
+npm run preview
+```
 
-## Intended Direction
+The production build should create `dist/index.html`.
 
-Soft Recall is being shaped toward a Steam/PC-style first-person narrative game. The web version is a migration-ready prototype for testing tone, interaction rhythm, accessibility, and research framing before a possible move to Unity, Godot, or another game engine.
+## Current Scope
 
-## Core Gameplay
-
-- Move through first-person scene nodes.
-- Inspect embedded object markers.
-- Read and respond through a bottom visual novel text box.
-- Use confidence prompts to record how sure an object or next step feels.
-- Place support cues without shame or failure screens.
-- Reach one of three vertical-slice endings: Supported Departure, Smaller Morning, or Overloaded but Not Alone.
-
-## Research Angle
-
-The project is research-informed, not diagnostic. It focuses on metacognitive interaction: noticing certainty, partial certainty, uncertainty, cue use, and support-seeking as playable choices.
-
-## Wiki / Documentation
-
-GitHub Wiki-ready documentation lives in [docs/WIKI_INDEX.md](docs/WIKI_INDEX.md). The pages in `docs/wiki/` can be copied into the GitHub Wiki or synced later.
+- Static Vite React SPA
+- First-person scene art and point-and-click hotspots
+- Doorways navigation fallback
+- Memory Book
+- Three-ending demo route
+- PC-only manual QA route
+- GitHub Pages deployment with base path `/soft-recall-demo/`
 
 ## Professional Documentation
 
 - [Wiki index](docs/WIKI_INDEX.md)
 - [Runners](docs/RUNNERS.md)
+- [Repository settings checklist](docs/process/REPO_SETTINGS_CHECKLIST.md)
+- [Playthrough QA](docs/qa/PLAYTHROUGH_QA.md)
+- [Release process](docs/release/RELEASE_PROCESS.md)
+- [Agent guidance](docs/agents/AGENTS_OVERVIEW.md)
 - [Contributing](CONTRIBUTING.md)
 - [Support](SUPPORT.md)
 - [Security](SECURITY.md)
 - [Changelog](CHANGELOG.md)
 
-## Controls
+## Required QA Route
 
-- Arrow keys / D-pad: turn, move, or shift focus
-- Tab / shoulder buttons: cycle interactable focus
-- Enter / A: inspect or confirm
-- Escape / B: back or close
-- S / X: support
-- M / Y: Memory Book
-- Space: confirm focused choice
-
-Mouse and touch remain supported.
-
-## Accessibility
-
-Options include larger text, high contrast, reduced motion, reduced blur, plain language, disabled text distortion, content note toggle, mute sound, visible focus states, keyboard navigation, and no timers, jump scares, combat, shame language, or failure screens.
-
-This build does not include voiceover, music, or sound effects.
+Title -> Begin -> Tutorial -> Bedroom -> glasses -> note -> phone choice -> Hallway -> Kitchen -> Hallway -> Bathroom -> Hallway -> Memory Book -> Front Door -> Ending
 
 ## Disclaimer
 
-Soft Recall is a narrative neuroeducation and interaction design prototype. It is not medical advice, diagnosis, treatment, or a clinical assessment tool.
-
-## Local Play
-
-Open `index.html` directly, or run:
-
-```bash
-npm start
-```
-
-Then visit `http://localhost:4173`.
-
-## Checks
-
-```bash
-npm run check
-```
-
-Trailer capture:
-
-```bash
-npm run capture:trailer
-```
+Soft Recall Demo is narrative and research-informed. It is not medical advice, diagnosis, screening, treatment, or a clinical assessment tool.
