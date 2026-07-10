@@ -35,6 +35,15 @@ The project is research-informed, not diagnostic. It focuses on metacognitive in
 
 GitHub Wiki-ready documentation lives in [docs/WIKI_INDEX.md](docs/WIKI_INDEX.md). The pages in `docs/wiki/` can be copied into the GitHub Wiki or synced later.
 
+## Professional Documentation
+
+- [Wiki index](docs/WIKI_INDEX.md)
+- [Runners](docs/RUNNERS.md)
+- [Contributing](CONTRIBUTING.md)
+- [Support](SUPPORT.md)
+- [Security](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+
 ## Controls
 
 - Arrow keys / D-pad: turn, move, or shift focus

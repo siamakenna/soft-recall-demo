@@ -1,0 +1,70 @@
+name: Bug report
+description: Report a gameplay, UI, or deployment bug in Soft Recall Demo.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a Soft Recall Demo issue. Please include enough detail to reproduce the problem on desktop.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Gameplay
+        - UI
+        - Deployment
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: "Chrome, Firefox, Safari, Edge..."
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS, Windows, Linux..."
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: URL
+      placeholder: "https://siamakenna.github.io/soft-recall-demo/"
+  - type: textarea
+    id: route
+    attributes:
+      label: Route / steps to reproduce
+      description: Include the room, interaction, and route you took.
+      placeholder: "Title -> Begin -> Bedroom -> Phone -> ..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or video
+      description: Drag and drop screenshots or a short recording if helpful.
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      description: Paste any browser console errors if available.
