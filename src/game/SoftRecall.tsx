@@ -1,23 +1,31 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import bedroomImg from "@/assets/scene-bedroom.jpg";
-import phoneImg from "@/assets/scene-phone.jpg";
-import hallwayImg from "@/assets/scene-hallway.jpg";
-import kitchenImg from "@/assets/scene-kitchen.jpg";
-import bathroomImg from "@/assets/scene-bathroom.jpg";
+import { ADJACENCY, ROOM_LABEL, SCENE_IMG, roomEnterLine } from "./data/rooms";
 import {
-  playChime, playDissonant, playSoftClick, playPageTurn,
-  playBreathIn, playBreathOut,
-  startAmbient, stopAmbient, setMuted as audioSetMuted, setVolume as audioSetVolume,
-} from "./audio";
+  BATH_MIN,
+  BATH_TASKS,
+  KITCHEN_MIN,
+  KITCHEN_TASKS,
+  REVISIT_THOUGHTS,
+  TOTAL_TASKS,
+} from "./data/interactions";
+import { ENDING_COPY, ENDING_ORDER } from "./data/endings";
+import {
+  GAME_SAVE_VERSION,
+  clearGameSave,
+  createInitialGameSave,
+  hasGameSave,
+  loadGameSave,
+  writeGameSave,
+  type EndingId,
+  type MemoryEntry,
+  type PackedItems,
+  type RoomId,
+} from "./state";
 
 
 /* ------------------------------------------------------------------ */
 /* Types & data                                                        */
 /* ------------------------------------------------------------------ */
-
-type RoomId = "bedroom" | "hallway" | "kitchen" | "bathroom";
-type SceneId = RoomId | "phone" | "frontdoor";
-type EndingId = "supported" | "hurried" | "withdrawn";
 
 interface Hotspot {
   id: string;
@@ -29,12 +37,6 @@ interface Hotspot {
   onInspect: () => void;
 }
 
-interface MemoryEntry {
-  section: "Fragments" | "Messages" | "Routines" | "Reflections";
-  title: string;
-  body: string;
-}
-
 interface Settings {
   reducedMotion: boolean;
   grain: number;
@@ -42,8 +44,6 @@ interface Settings {
   markerScale: number;   // 0.5 – 1.5, affects marker visual + hit-area
   debugHotspots: boolean; // toggle with `~`
   foliage: number;       // 0 – 1 Ghibli greenery overlay strength
-  muted: boolean;
-  volume: number;        // 0 – 1
   subtitleScale: number; // 0.85 – 1.6
   dyslexiaFont: boolean;
   parallax: boolean;
@@ -52,78 +52,96 @@ interface Settings {
 interface VNLine { speaker: string; text: string; }
 interface VNChoice { id: string; label: string; onPick: () => void; tone?: "neutral" | "wrong" | "kind"; }
 
-const SAVE_KEY = "soft-recall.save.v4";
+function isEditableTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
+}
+
 const SETTINGS_KEY = "soft-recall.settings.v3";
 const HOTSPOT_OVERRIDES_KEY = "soft-recall.hotspots.v1";
 const ONBOARD_KEY = "soft-recall.onboarded.v1";
 const DEFAULT_SETTINGS: Settings = {
   reducedMotion: false, grain: 0.5, fuzzCap: 1, markerScale: 1.15,
   debugHotspots: false, foliage: 0.8,
-  muted: false, volume: 0.6, subtitleScale: 1, dyslexiaFont: false, parallax: true,
-};
-/* Total number of hotspot-tasks in the game — drives the progressive clarity curve. */
-const TOTAL_TASKS = 13;
-
-/* Second-visit thoughts — surface on hover of an already-inspected hotspot */
-const REVISIT_THOUGHTS: Record<string, string[]> = {
-  glasses: ["The frames are warm now.", "You could clean them, but not today."],
-  note:    ["The handwriting looks less scared today.", "One step. Then the next."],
-  alarm:   ["The lamp is patient.", "It has waited longer than this."],
-  curtains:["The light is a shade less grey.", "The room agrees to be seen."],
-  phone:   ["The screen is dim again. Good."],
-  coat:    ["It remembers the shape of your arm."],
-  keys:    ["Two, still. That's enough."],
-  mail:    ["It'll wait. It always waits."],
-  "k-fridge": ["Sunday-you did well."],
-  "k-kettle": ["Steam still, faintly."],
-  "k-toast":  ["Crumbs. Small evidence of a morning."],
-  "b-mirror": ["Hello again."],
-  "b-meds":   ["The little compartment is empty and honest."],
-  "b-tap":    ["The basin holds a trace of cold."],
-  "b-teeth":  ["Mint, faint."],
+  subtitleScale: 1, dyslexiaFont: false, parallax: true,
 };
 
 type HotspotOverrides = Record<string, Record<string, { x: number; y: number }>>;
 // shape: { [sceneId]: { [hotspotId]: {x,y} } }
 
-const SCENE_IMG: Record<SceneId, string> = {
-  bedroom: bedroomImg,
-  hallway: hallwayImg,
-  kitchen: kitchenImg,
-  bathroom: bathroomImg,
-  phone: phoneImg,
-  frontdoor: hallwayImg,
-};
-
-const ROOM_LABEL: Record<RoomId, string> = {
-  bedroom: "Bedroom",
-  hallway: "Hallway",
-  kitchen: "Kitchen",
-  bathroom: "Bathroom",
-};
-
-const ADJACENCY: Record<RoomId, RoomId[]> = {
-  bedroom:  ["hallway"],
-  hallway:  ["bedroom", "kitchen", "bathroom"],
-  kitchen:  ["hallway"],
-  bathroom: ["hallway"],
-};
-
-/* Sub-tasks required per routine (doubles the interaction density) */
-const KITCHEN_TASKS = ["k-kettle", "k-fridge", "k-toast"] as const;
-const BATH_TASKS    = ["b-mirror", "b-meds", "b-tap", "b-teeth"] as const;
-const KITCHEN_MIN = 2;
-const BATH_MIN = 2;
-
 /* ------------------------------ mini-games ------------------------- */
-type MiniKind = "brush" | "sip" | "knob" | "splash" | "pour";
+type MiniKind = "brush" | "sip" | "knob" | "splash" | "pour" | "combo" | "pairs" | "reflection" | "unscramble" | "slide";
 interface MiniSpec {
   kind: MiniKind;
   title: string;
   hint: string;
   onDone: () => void;
   onCancel?: () => void;
+  /** puzzle payload — combo: 3-digit code; pairs: item->target map. */
+  combo?: number[];
+  pairs?: { items: { id: string; label: string; emoji?: string }[]; targets: { id: string; label: string }[]; correctMap: Record<string, string> };
+  /** unscramble: target word + optional hint letter positions */
+  unscramble?: { word: string; caption: string };
+  /** slide: image url + rows/cols grid to reassemble */
+  slide?: { image: string; caption: string };
+  onMisstep?: () => void;
 }
+
+/* ------------------------------ richer interactions ---------------- */
+/* These are non-hotspot flows layered on top of the click-hotspot loop.
+   Every one of them has at least one wrong branch so a perfect run
+   requires real attention, not just clicking through. */
+type InteractionSpec =
+  | {
+      kind: "drag";
+      title: string;
+      hint: string;
+      item: string;
+      targets: { id: string; label: string; tone: "correct" | "neutral" | "wrong" }[];
+      onPick: (targetId: string, tone: "correct" | "neutral" | "wrong") => void;
+      /** if true, wrong-tone picks don't dismiss — they trigger onMisstep and let the player retry */
+      retryOnWrong?: boolean;
+      onMisstep?: () => void;
+      onCancel?: () => void;
+    }
+  | {
+      kind: "sequence";
+      title: string;
+      hint: string;
+      items: { id: string; label: string }[];
+      correctOrder: string[];
+      onDone: (order: string[], correct: boolean) => void;
+      onMisstep?: () => void;
+      onCancel?: () => void;
+      /** optional soft time limit (ms). When it runs out, current order is submitted and a misstep is logged. */
+      timeLimit?: number;
+    }
+  | {
+      kind: "checklist";
+      title: string;
+      hint: string;
+      options: { id: string; label: string; correct: boolean }[];
+      onDone: (picked: string[], allCorrect: boolean, wrongCount: number) => void;
+      onMisstep?: () => void;
+      onCancel?: () => void;
+      timeLimit?: number;
+      /** optional illustrated preview of what's really there (e.g. fridge shelves) */
+      preview?: { title: string; items: { label: string; emoji: string }[] };
+    }
+  | {
+      kind: "confidence";
+      title: string;
+      hint: string;
+      /** what the honest answer should be, given progress */
+      honestLevel: 1 | 2 | 3;
+      onPick: (level: 1 | 2 | 3, misaligned: boolean) => void;
+      onCancel?: () => void;
+    };
+
 
 /* ------------------------------------------------------------------ */
 /* Root component                                                      */
@@ -157,6 +175,16 @@ export default function SoftRecall() {
   const [dragging, setDragging] = useState<{ scene: string; id: string } | null>(null);
   const [mini, setMini] = useState<MiniSpec | null>(null);
   const startMini = useCallback((spec: MiniSpec) => setMini(spec), []);
+  const [interaction, setInteraction] = useState<InteractionSpec | null>(null);
+  const startInteraction = useCallback((spec: InteractionSpec) => setInteraction(spec), []);
+  /* Pass 2 tracking — richer telemetry the endings will use in Pass 3. */
+  const [interactionOrder, setInteractionOrder] = useState<string[]>([]);
+  const [confidenceChoices, setConfidenceChoices] = useState<number[]>([]);
+  const [supportCueUseCount, setSupportCueUseCount] = useState(0);
+  const [packed, setPacked] = useState<PackedItems>({ keys: false, bag: false, phone: false });
+  /* Pass 3 — room visit order shapes which of the 5 endings you reach. */
+  const [roomVisitOrder, setRoomVisitOrder] = useState<RoomId[]>(["bedroom"]);
+
   /* New: clarity/dissonance, onboarding, hint cooldown, breathe ritual, parallax, hover thought */
   const [clarity, setClarity] = useState(0);
   const [dissonance, setDissonance] = useState(0);
@@ -170,6 +198,10 @@ export default function SoftRecall() {
   /* Hold-mouse-and-drag to actively pan the scene perspective */
   const [dragPan, setDragPan] = useState({ x: 0, y: 0 });
   const dragPanRef = useRef({ active: false, startX: 0, startY: 0, baseX: 0, baseY: 0 });
+  /* Physical room transitions — brief overlay while the scene swaps. */
+  const [transition, setTransition] = useState<null | { to: RoomId | "frontdoor"; from: RoomId | null; kind: "doorway" | "threshold" }>(null);
+  const transitionTimer = useRef<number | null>(null);
+
 
 
   /* ---------------------- persistence ----------------------------- */
@@ -177,7 +209,7 @@ export default function SoftRecall() {
     try {
       const s = localStorage.getItem(SETTINGS_KEY);
       if (s) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(s) });
-      setHasSave(!!localStorage.getItem(SAVE_KEY));
+      setHasSave(hasGameSave(localStorage));
       const o = localStorage.getItem(HOTSPOT_OVERRIDES_KEY);
       if (o) setHotspotOverrides(JSON.parse(o));
       setOnboarded(!!localStorage.getItem(ONBOARD_KEY));
@@ -185,35 +217,39 @@ export default function SoftRecall() {
   }, []);
   useEffect(() => {
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
-    audioSetMuted(settings.muted);
-    audioSetVolume(settings.volume);
   }, [settings]);
   useEffect(() => {
     try { localStorage.setItem(HOTSPOT_OVERRIDES_KEY, JSON.stringify(hotspotOverrides)); } catch {}
   }, [hotspotOverrides]);
   /* Debounced save — fixes stutter from writing on every state change */
   useEffect(() => {
-    if (screen !== "game") return;
+    if (screen === "title") return;
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
     saveTimer.current = window.setTimeout(() => {
       try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify({
-          room, visited: [...visited], unlocked: [...unlocked],
-          frontDoorUnlocked, done: [...done], memory, wrongCount, clarity, dissonance,
-        }));
+        writeGameSave(localStorage, {
+          schemaVersion: GAME_SAVE_VERSION,
+          currentRoom: room,
+          visitedRooms: [...visited],
+          unlockedRooms: [...unlocked],
+          completedInteractions: [...done],
+          interactionOrder,
+          memoryEntries: memory,
+          roomVisitOrder,
+          confidenceChoices,
+          supportCueUseCount,
+          packedItems: packed,
+          frontDoorUnlocked,
+          wrongCount,
+          clarity,
+          dissonance,
+          endingState: ending,
+        });
         setHasSave(true);
       } catch {}
     }, 400);
     return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
-  }, [screen, room, visited, unlocked, frontDoorUnlocked, done, memory, wrongCount, clarity, dissonance]);
-
-  /* Ambient bed per scene */
-  useEffect(() => {
-    if (screen !== "game" || settings.muted) { stopAmbient(); return; }
-    startAmbient(closeup ?? room);
-    return () => { /* keep running across renders */ };
-  }, [screen, room, closeup, settings.muted]);
-  useEffect(() => () => stopAmbient(), []);
+  }, [screen, room, visited, unlocked, frontDoorUnlocked, done, memory, wrongCount, clarity, dissonance, roomVisitOrder, confidenceChoices, supportCueUseCount, packed, ending]);
 
   const remember = useCallback((entry: MemoryEntry) => {
     setMemory((prev) => {
@@ -221,16 +257,16 @@ export default function SoftRecall() {
       if (toastTimer.current) window.clearTimeout(toastTimer.current);
       setToast({ section: entry.section, title: entry.title, id: Date.now() });
       toastTimer.current = window.setTimeout(() => setToast(null), 2800);
-      playChime();
       setClarity(c => c + 1);
-      return [...prev, entry];
+      const stamped: MemoryEntry = { ...entry, at: entry.at ?? Date.now(), room: entry.room ?? room };
+      return [...prev, stamped];
     });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room]);
 
   const say = useCallback((speaker: string, text: string) => {
     setVnLine({ speaker, text });
     setVnChoices([]);
-    playSoftClick();
   }, []);
 
   const markDone = useCallback((id: string) => {
@@ -243,25 +279,33 @@ export default function SoftRecall() {
   const misstep = useCallback((line?: { speaker: string; text: string }) => {
     setWrongCount(w => Math.min(6, w + 1));
     setDissonance(d => d + 1);
-    playDissonant();
     if (line) setVnLine(line);
   }, []);
 
   const gotoRoom = useCallback((r: RoomId) => {
     setCloseup(null);
-    setRoom(r);
-    setVisited(prev => {
-      if (prev.has(r)) return prev;
-      const n = new Set(prev); n.add(r); return n;
-    });
-    setVnLine({ speaker: ROOM_LABEL[r], text: roomEnterLine(r) });
-    setVnChoices([]);
-    playPageTurn();
-  }, []);
+    const applySwap = () => {
+      setRoom(r);
+      setVisited(prev => {
+        if (prev.has(r)) return prev;
+        const n = new Set(prev); n.add(r); return n;
+      });
+      setRoomVisitOrder(prev => prev[prev.length - 1] === r ? prev : [...prev, r]);
+      setVnLine({ speaker: ROOM_LABEL[r], text: roomEnterLine(r) });
+      setVnChoices([]);
+    };
+    if (settings.reducedMotion) { applySwap(); return; }
+    setTransition({ to: r, from: room, kind: "doorway" });
+    if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+    window.setTimeout(applySwap, 260);
+    transitionTimer.current = window.setTimeout(() => setTransition(null), 720);
+  }, [room, settings.reducedMotion]);
+
 
 
   /* ---------------------- start / load ---------------------------- */
   const beginNew = () => {
+    const initial = createInitialGameSave();
     setRoom("bedroom");
     setVisited(new Set(["bedroom"]));
     setUnlocked(new Set(["bedroom"]));
@@ -273,6 +317,13 @@ export default function SoftRecall() {
     setWrongCount(0);
     setClarity(0);
     setDissonance(0);
+    setInteraction(null);
+    setInteractionOrder([]);
+    setConfidenceChoices([]);
+    setSupportCueUseCount(0);
+    setPacked(initial.packedItems);
+    setRoomVisitOrder(["bedroom"]);
+
     setVnLine({ speaker: "Morning", text: "The room is still deciding what shape to be." });
     setVnChoices([]);
     setTutorialActive(true);
@@ -280,28 +331,32 @@ export default function SoftRecall() {
   };
   const continueSave = () => {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (!raw) { beginNew(); return; }
-      const s = JSON.parse(raw);
-      setRoom(s.room ?? "bedroom");
-      setVisited(new Set(s.visited ?? ["bedroom"]));
-      setUnlocked(new Set(s.unlocked ?? ["bedroom"]));
-      setFrontDoorUnlocked(!!s.frontDoorUnlocked);
-      setDone(new Set(s.done ?? []));
-      setMemory(s.memory ?? []);
-      setWrongCount(s.wrongCount ?? 0);
-      setClarity(s.clarity ?? 0);
-      setDissonance(s.dissonance ?? 0);
-      setEnding(null);
+      const s = loadGameSave(localStorage);
+      if (!s) { beginNew(); return; }
+      setRoom(s.currentRoom);
+      setVisited(new Set(s.visitedRooms));
+      setUnlocked(new Set(s.unlockedRooms));
+      setFrontDoorUnlocked(s.frontDoorUnlocked);
+      setDone(new Set(s.completedInteractions));
+      setMemory(s.memoryEntries);
+      setWrongCount(s.wrongCount);
+      setClarity(s.clarity);
+      setDissonance(s.dissonance);
+      setInteractionOrder(s.interactionOrder);
+      setConfidenceChoices(s.confidenceChoices);
+      setSupportCueUseCount(s.supportCueUseCount);
+      setPacked(s.packedItems);
+      setRoomVisitOrder(s.roomVisitOrder);
+      setEnding(s.endingState);
       setCloseup(null);
       setTutorialActive(false);
-      setVnLine({ speaker: ROOM_LABEL[(s.room ?? "bedroom") as RoomId], text: "You pick up where you left off." });
+      setVnLine(s.endingState ? null : { speaker: ROOM_LABEL[s.currentRoom], text: "You pick up where you left off." });
       setVnChoices([]);
-      setScreen("game");
+      setScreen(s.endingState ? "ending" : "game");
     } catch { beginNew(); }
   };
   const restartDemo = () => {
-    try { localStorage.removeItem(SAVE_KEY); } catch {}
+    try { clearGameSave(localStorage); } catch {}
     setHasSave(false);
     beginNew();
   };
@@ -337,11 +392,38 @@ export default function SoftRecall() {
     remember({ section: "Fragments", title: "Glasses on the sill", body: "Cold arms. Fingerprints. The world snaps into edges." });
     say("Glasses", "The room sharpens at the edges first.");
   };
+  const logInter = (id: string) => setInteractionOrder(o => [...o, id]);
+
   const inspectNote = () => {
-    markDone("note");
-    remember({ section: "Messages", title: "Note by the bed", body: "\"One step. Then the next.\" — your own handwriting, from some earlier morning." });
-    say("Note", "One step. Then the next.");
+    startInteraction({
+      kind: "drag",
+      title: "The folded note",
+      hint: "Drag it somewhere you'll actually see it later.",
+      item: "\"One step. Then the next.\"",
+      retryOnWrong: true,
+      onMisstep: () => misstep({ speaker: "Note", text: "In the drawer it disappears from you by lunchtime. Try somewhere it'll catch your eye." }),
+      targets: [
+        { id: "door",   label: "Prop it by the door",  tone: "correct" },
+        { id: "pillow", label: "Back on the pillow",   tone: "neutral" },
+        { id: "drawer", label: "Tuck it in the drawer", tone: "wrong" },
+      ],
+      onPick: (id, tone) => {
+        setInteraction(null);
+        logInter("note:" + id);
+        markDone("note");
+        if (tone === "correct") {
+          setSupportCueUseCount(n => n + 1);
+          remember({ section: "Messages", title: "Note by the door", body: "Placed where the coat waits. A cue for the version of you that leaves." });
+          say("Note", "One step. Then the next. Where you'll pass it on the way out.");
+        } else {
+          remember({ section: "Messages", title: "Note on the pillow", body: "Warm from the fold. May or may not follow you into the day." });
+          say("Note", "The pillow keeps it warm. It may not follow you out.");
+        }
+      },
+      onCancel: () => { setInteraction(null); say("Note", "You leave it half-lifted. It'll wait."); },
+    });
   };
+
   const inspectAlarm = () => {
     markDone("alarm");
     remember({ section: "Fragments", title: "Alarm clock", body: "7:12. Later than you meant. Not late enough to panic." });
@@ -352,27 +434,210 @@ export default function SoftRecall() {
     remember({ section: "Reflections", title: "Curtains, opened", body: "The room agrees to be seen. Grey light, but honest." });
     say("Curtains", "Light. Grey and honest.");
   };
+
+  /* Optional diegetic seeds record how the player meets an object
+     without forcing a single correct reading. */
+
+  /** shared helper — apply a seed's chosen tone to the run state. */
+  const applySeedChoice = (
+    idKey: string,
+    tone: "kind" | "honest" | "dismiss",
+    entries: { kind: MemoryEntry; honest: MemoryEntry; dismiss: MemoryEntry },
+    speaker: string,
+    lines: { kind: string; honest: string; dismiss: string },
+  ) => {
+    markDone(idKey);
+    setVnChoices([]);
+    logInter(`seed:${idKey}:${tone}`);
+    if (tone === "kind") {
+      setConfidenceChoices(c => [...c, 3]);
+      setSupportCueUseCount(n => n + 1);
+      setClarity(v => v + 1);
+      remember(entries.kind);
+      say(speaker, lines.kind);
+    } else if (tone === "honest") {
+      setConfidenceChoices(c => [...c, 2]);
+      remember(entries.honest);
+      say(speaker, lines.honest);
+    } else {
+      setConfidenceChoices(c => [...c, 1]);
+      remember(entries.dismiss);
+      misstep({ speaker, text: lines.dismiss });
+    }
+  };
+
+  const inspectNightstandBook = () => {
+    setVnLine({
+      speaker: "Library book",
+      text: "Bookmarked at a chapter you keep almost finishing. Three pages have softened at the corner. What do you do with it, right now?",
+    });
+    setVnChoices([
+      {
+        id: "read",
+        tone: "kind",
+        label: "Read a paragraph before you leave.",
+        onPick: () => applySeedChoice("night-book", "kind",
+          {
+            kind:    { section: "Reflections", title: "A paragraph you read",           body: "You made it three sentences in. Enough to know you're not the only one whose Tuesday and Wednesday disagree. Something in the chest loosens by a notch." },
+            honest:  { section: "Fragments",   title: "Library book, bookmarked",       body: "Still bookmarked. Still waiting. But you saw it, and you named it." },
+            dismiss: { section: "Fragments",   title: "Library book, face down",        body: "You turned it face down. It is easier not to see the title from the door." },
+          },
+          "Library book",
+          {
+            kind:    "Three sentences. Enough to remember you are not the only one.",
+            honest:  "You touch the cover. Later, then. Not never.",
+            dismiss: "Face down on the nightstand. The title stops looking back.",
+          },
+        ),
+      },
+      { id: "note",  tone: "neutral", label: "Slide the bookmark forward one page.", onPick: () => applySeedChoice("night-book", "honest",
+          { kind:    { section: "Reflections", title: "A paragraph you read",           body: "…" },
+            honest:  { section: "Fragments",   title: "Library book, bookmarked",       body: "Still bookmarked. Still waiting. But you saw it, and you named it." },
+            dismiss: { section: "Fragments",   title: "Library book, face down",        body: "You turned it face down. It is easier not to see the title from the door." } },
+          "Library book",
+          { kind: "", honest: "You touch the cover. Later, then. Not never.", dismiss: "" }) },
+      { id: "hide",  tone: "wrong",   label: "Turn it face down.", onPick: () => applySeedChoice("night-book", "dismiss",
+          { kind:    { section: "Reflections", title: "A paragraph you read",           body: "…" },
+            honest:  { section: "Fragments",   title: "Library book, bookmarked",       body: "…" },
+            dismiss: { section: "Fragments",   title: "Library book, face down",        body: "You turned it face down. It is easier not to see the title from the door." } },
+          "Library book",
+          { kind: "", honest: "", dismiss: "Face down. The title stops looking back. Something behind your sternum tightens instead." }) },
+    ]);
+  };
+
+  const inspectCollegePhoto = () => {
+    setVnLine({
+      speaker: "Photo",
+      text: "You at nineteen, in a stadium jacket. Ana wrote on the back: before everything got complicated. Neither of you knew it would become a before.",
+    });
+    setVnChoices([
+      { id: "own",  tone: "kind",    label: "Say the word out loud: before.",
+        onPick: () => applySeedChoice("hall-photo", "kind",
+          { kind:    { section: "Reflections", title: "The word before",           body: "You said it out loud, just once. The word takes its shape in the hallway. What comes after is still being written, and you're the one writing it." },
+            honest:  { section: "Reflections", title: "Framed photo, hallway",     body: "Nineteen. Stadium jacket. Ana's pencil on the back. You look, and let it be true." },
+            dismiss: { section: "Fragments",   title: "Framed photo, turned",      body: "You turned it toward the wall. The hallway is quieter that way. Slightly." } },
+          "Photo",
+          { kind:    "Before. Said aloud, it is only a word.",
+            honest:  "Nineteen. You let the photo look back.",
+            dismiss: "" }) },
+      { id: "look", tone: "neutral", label: "Look at it a moment longer.",
+        onPick: () => applySeedChoice("hall-photo", "honest",
+          { kind:    { section: "Reflections", title: "The word before",           body: "…" },
+            honest:  { section: "Reflections", title: "Framed photo, hallway",     body: "Nineteen. Stadium jacket. Ana's pencil on the back. You look, and let it be true." },
+            dismiss: { section: "Fragments",   title: "Framed photo, turned",      body: "…" } },
+          "Photo",
+          { kind: "", honest: "Nineteen. You let the photo look back.", dismiss: "" }) },
+      { id: "flip", tone: "wrong",   label: "Turn it to the wall.",
+        onPick: () => applySeedChoice("hall-photo", "dismiss",
+          { kind:    { section: "Reflections", title: "The word before",           body: "…" },
+            honest:  { section: "Reflections", title: "Framed photo, hallway",     body: "…" },
+            dismiss: { section: "Fragments",   title: "Framed photo, turned",      body: "You turned it toward the wall. The hallway is quieter that way. Slightly." } },
+          "Photo",
+          { kind: "", honest: "", dismiss: "The photo faces the wall now. The hallway is quieter. Slightly." }) },
+    ]);
+  };
+
+  const inspectFridgeMagnet = () => {
+    setVnLine({
+      speaker: "Magnet",
+      text: "Appointment · Thursday 2pm · bring the blue folder. A transit note is clipped underneath, still unopened. What now?",
+    });
+    setVnChoices([
+      { id: "open", tone: "kind",    label: "Open the envelope. Read it properly.",
+        onPick: () => applySeedChoice("k-magnet", "kind",
+          { kind:    { section: "Routines", title: "Route, unfolded",         body: "You opened it. A date, a floor, a bus stop. The unknown got one page smaller." },
+            honest:  { section: "Routines", title: "Thursday reminder",       body: "Thursday, 2pm. You touched the magnet. You know what today is. That is a form of showing up." },
+            dismiss: { section: "Fragments", title: "Envelope, unopened",     body: "Still clipped, still sealed. It waits in the same place it always waits." } },
+          "Magnet",
+          { kind:    "Approved. A date. A floor number. The unknown loses a page.",
+            honest:  "Thursday. Two o'clock. You know what day it is.",
+            dismiss: "" }) },
+      { id: "ack",  tone: "neutral", label: "Just touch the magnet. Acknowledge.",
+        onPick: () => applySeedChoice("k-magnet", "honest",
+          { kind:    { section: "Routines", title: "Route, unfolded",         body: "…" },
+            honest:  { section: "Routines", title: "Thursday reminder",       body: "Thursday, 2pm. You touched the magnet. You know what today is. That is a form of showing up." },
+            dismiss: { section: "Fragments", title: "Envelope, unopened",     body: "…" } },
+          "Magnet",
+          { kind: "", honest: "Thursday. Two o'clock. You know what day it is.", dismiss: "" }) },
+      { id: "skip", tone: "wrong",   label: "Cover it with the takeout menu.",
+        onPick: () => applySeedChoice("k-magnet", "dismiss",
+          { kind:    { section: "Routines", title: "Route, unfolded",         body: "…" },
+            honest:  { section: "Routines", title: "Thursday reminder",       body: "…" },
+            dismiss: { section: "Fragments", title: "Envelope, unopened",     body: "You slid the takeout menu over the magnet. Out of sight is a fragile kind of quiet." } },
+          "Magnet",
+          { kind: "", honest: "", dismiss: "Takeout menu over the top. Out of sight is a fragile kind of quiet." }) },
+    ]);
+  };
+
+  const inspectMirrorJournal = () => {
+    setVnLine({
+      speaker: "Journal",
+      text: "Tuesday: word-finding, tired. Wednesday: clear. Thursday: — the entry stops mid-line. Do you finish it?",
+    });
+    setVnChoices([
+      { id: "write", tone: "kind",   label: "Write today's line, honestly.",
+        onPick: () => applySeedChoice("b-journal", "kind",
+          { kind:    { section: "Reflections", title: "Thursday's line",       body: "You wrote it. 'Thursday: slow start, coffee helps, appointment at 2.' Just a pattern, tracked in your own hand." },
+            honest:  { section: "Reflections", title: "Journal, held",         body: "You held the journal. You saw the pattern. You did not fix it. That is enough for now." },
+            dismiss: { section: "Fragments",   title: "Journal, shut",         body: "You closed it before finishing the Thursday line. You will remember, or you will not." } },
+          "Journal",
+          { kind:    "Slow start. Coffee helps. Appointment at 2. Tracked in your own hand.",
+            honest:  "You held it. You saw the pattern. You did not fix it.",
+            dismiss: "" }) },
+      { id: "read",  tone: "neutral", label: "Read the last week without adding.",
+        onPick: () => applySeedChoice("b-journal", "honest",
+          { kind:    { section: "Reflections", title: "Thursday's line",       body: "…" },
+            honest:  { section: "Reflections", title: "Journal, held",         body: "You held the journal. You saw the pattern. You did not fix it. That is enough for now." },
+            dismiss: { section: "Fragments",   title: "Journal, shut",         body: "…" } },
+          "Journal",
+          { kind: "", honest: "You held it. You saw the pattern. You did not fix it.", dismiss: "" }) },
+      { id: "shut",  tone: "wrong",   label: "Close it. Not today.",
+        onPick: () => applySeedChoice("b-journal", "dismiss",
+          { kind:    { section: "Reflections", title: "Thursday's line",       body: "…" },
+            honest:  { section: "Reflections", title: "Journal, held",         body: "…" },
+            dismiss: { section: "Fragments",   title: "Journal, shut",         body: "You closed it before finishing the Thursday line. You will remember, or you will not." } },
+          "Journal",
+          { kind: "", honest: "", dismiss: "Closed. Not today. You will remember, or you will not." }) },
+    ]);
+  };
   const openPhone = () => {
     setCloseup("phone");
-    setVnLine({ speaker: "Phone", text: "The screen wakes. A message is half-typed, from you to someone who is waiting." });
-    setVnChoices([
-      { id: "send",   label: "Send: \"I'm slow this morning. On my way.\"",   onPick: phoneSend, tone: "kind" },
-      { id: "later",  label: "Put the phone down for now.",                    onPick: phoneLater, tone: "neutral" },
-      { id: "ignore", label: "Delete it. She'll figure it out.",               onPick: phoneIgnore, tone: "wrong" },
-    ]);
+    // Unlock screen: drag the six letter tiles into order to spell today's
+    // name. Wrong reads still let you through eventually, but leave a mark.
+    startMini({
+      kind: "unscramble",
+      title: "Phone · unlock",
+      hint: "Six tiles. Slide them until the word feels right — today's name.",
+      unscramble: { word: "THURSDAY", caption: "The hint on the lock screen: today." },
+      onMisstep: () => misstep({ speaker: "Phone", text: "Wrong word. The screen shivers, then waits." }),
+      onDone: () => {
+        setMini(null);
+        remember({ section: "Fragments", title: "The lock word", body: "THURSDAY. You almost missed the day. The phone opens." });
+        setVnLine({ speaker: "Phone", text: "The screen wakes. A message is half-typed, from you to someone who is waiting." });
+        setVnChoices([
+          { id: "send",   label: "Send: \"I'm slow this morning. On my way.\"",   onPick: phoneSend, tone: "kind" },
+          { id: "later",  label: "Put the phone down for now.",                    onPick: phoneLater, tone: "neutral" },
+          { id: "ignore", label: "Delete it. She'll figure it out.",               onPick: phoneIgnore, tone: "wrong" },
+        ]);
+      },
+      onCancel: () => { setMini(null); setCloseup(null); say("Phone", "You put it face-down. The word is still there, waiting."); },
+    });
   };
   const phoneSend = () => {
     markDone("phone");
+    setPacked(p => ({ ...p, phone: true }));
     remember({ section: "Messages", title: "Sent to Ana", body: "\"I'm slow this morning. On my way.\" — delivered." });
     unlockHallwayFromPhone("The sentence is still hard, but the morning has heard you.");
   };
   const phoneLater = () => {
     markDone("phone");
+    setPacked(p => ({ ...p, phone: true }));
     remember({ section: "Reflections", title: "Put it down", body: "The message can wait a minute longer. The morning still moved." });
     unlockHallwayFromPhone("You set it down. The hallway is waiting.");
   };
   const phoneIgnore = () => {
     markDone("phone");
+    setPacked(p => ({ ...p, phone: true }));
     misstep({ speaker: "Phone", text: "Deleted. The room dims a shade. Something small tilts out of place." });
     setWrongCount(w => Math.min(6, w + 1));
     setTimeout(() => unlockHallwayFromPhone("You leave the room without answering. The hallway feels further than it is."), 1200);
@@ -399,21 +664,61 @@ export default function SoftRecall() {
     say("Coat", "It's where it always is. That helps.");
   };
   const inspectKeys = () => {
-    markDone("keys");
-    remember({ section: "Routines", title: "Keys, checked", body: "Two on the ring. The heavier one is home." });
-    say("Keys", "You weigh them once. Both there.");
+    startInteraction({
+      kind: "drag",
+      title: "The keys",
+      hint: "Where do they belong before the door?",
+      item: "House keys · 2 on the ring",
+      retryOnWrong: true,
+      onMisstep: () => misstep({ speaker: "Keys", text: "Loose in a pocket, they'll ride down between coins. Try somewhere they'll stay with you." }),
+      targets: [
+        { id: "bag",    label: "Into the bag",         tone: "correct" },
+        { id: "bowl",   label: "Back in the bowl",     tone: "neutral" },
+        { id: "pocket", label: "Loose in a pocket",    tone: "wrong" },
+      ],
+      onPick: (id, tone) => {
+        setInteraction(null);
+        logInter("keys:" + id);
+        markDone("keys");
+        if (id === "bag") {
+          setPacked(p => ({ ...p, keys: true, bag: true }));
+          remember({ section: "Routines", title: "Keys packed", body: "Two on the ring, zipped into the bag. They'll travel together." });
+          say("Keys", "Zipped in with the bag. Both there.");
+        } else {
+          remember({ section: "Routines", title: "Keys, checked", body: "Two on the ring, back in the bowl. You'll double-check at the door." });
+          say("Keys", "In the bowl, where they always are. Double-check at the door.");
+        }
+        void tone;
+      },
+      onCancel: () => { setInteraction(null); say("Keys", "You set them down again. They aren't going anywhere."); },
+    });
   };
+
   const inspectMail = () => {
-    markDone("mail");
-    remember({ section: "Fragments", title: "Yesterday's post", body: "A bill, a flyer, a card in handwriting you almost place." });
-    say("Post", "Nothing urgent. Nothing to open now.");
+    // The card in the bowl was torn along old creases. Reassemble the
+    // four quadrants to make out the handwriting.
+    startMini({
+      kind: "slide",
+      title: "The card in the bowl",
+      hint: "Four pieces. Drag them into the right corners.",
+      slide: { image: "postcard", caption: "A card in handwriting you almost place." },
+      onMisstep: () => misstep({ speaker: "Post", text: "The pieces don't quite meet. Try another arrangement." }),
+      onDone: () => {
+        setMini(null);
+        markDone("mail");
+        remember({ section: "Messages", title: "Yesterday's card, reassembled", body: "Ana's handwriting: 'Warmth to you today. Small things count. — A.' You almost placed her before you saw the initial." });
+        say("Post", "Warmth to you today. — A.");
+      },
+      onCancel: () => {
+        setMini(null);
+        markDone("mail");
+        remember({ section: "Fragments", title: "Yesterday's post, unopened", body: "A bill, a flyer, a torn card you didn't quite piece together." });
+        say("Post", "Nothing urgent. Nothing to open now.");
+      },
+    });
   };
-  const inspectFrontDoor = () => {
-    if (!frontDoorUnlocked) {
-      say("Front Door", "Not yet — you'd walk out empty. Warm something in the kitchen and wash up in the bathroom first.");
-      return;
-    }
-    setVnLine({ speaker: "Front Door", text: "Keys. Coat. Phone. The list is short today, and complete." });
+  const openFrontDoorChoices = () => {
+    setVnLine({ speaker: "Front Door", text: "Keys. Coat. Phone. Or close enough. The door is still willing." });
     setVnChoices([
       {
         id: "go",
@@ -422,31 +727,167 @@ export default function SoftRecall() {
         onPick: () => {
           setVnChoices([]);
           startMini({
-            kind: "knob",
-            title: "Open the door",
-            hint: "Press and hold, then turn the knob a full quarter.",
-            onDone: () => { setMini(null); resolveEnding(); },
-            onCancel: () => { setMini(null); say("Front Door", "Your hand slips off. Try again when you're ready."); },
+            kind: "combo",
+            title: "The deadbolt",
+            hint: "Three dials. The numbers pencilled inside the frame read 4 · 7 · 3.",
+            combo: [4, 7, 3],
+            onMisstep: () => misstep({ speaker: "Deadbolt", text: "The dial clicks past. Something's off — check the numbers again." }),
+            onDone: () => {
+              setMini(null);
+              startMini({
+                kind: "knob",
+                title: "Open the door",
+                hint: "Press and hold, then turn the knob a full quarter.",
+                onDone: () => { setMini(null); resolveEnding("leave"); },
+                onCancel: () => { setMini(null); say("Front Door", "Your hand slips off. Try again when you're ready."); },
+              });
+            },
+            onCancel: () => { setMini(null); say("Deadbolt", "You let go of the dials. The bolt stays home."); },
           });
         },
       },
       {
-        id: "rush",
-        label: "Yank it open. You're late already.",
-        tone: "wrong",
-        onPick: () => { misstep(); setWrongCount(w=>w+1); setTimeout(() => resolveEnding(), 700); },
+        id: "smaller",
+        label: "Make the morning smaller. One errand, then home.",
+        tone: "neutral",
+        onPick: () => resolveEnding("smaller"),
+      },
+      {
+        id: "support",
+        label: "Message Ana before stepping through.",
+        tone: "kind",
+        onPick: () => {
+          setSupportCueUseCount(n => n + 1);
+          resolveEnding("support");
+        },
       },
       { id: "wait", label: "Wait a moment longer.", onPick: () => say("Hallway", "The door isn't going anywhere.") },
     ]);
   };
 
+  const inspectFrontDoor = () => {
+    if (!frontDoorUnlocked) {
+      say("Front Door", "Not yet — you'd walk out empty. Warm something in the kitchen and wash up in the bathroom first.");
+      return;
+    }
+    /* Memory-book gate: the door will not open on someone who hasn't
+       actually held any of the morning. This turns the book from a
+       collectible into a required tool — you have to have paid
+       attention to the objects you found. */
+    const MIN_MEMORIES = 8;
+    if (memory.length < MIN_MEMORIES) {
+      misstep({
+        speaker: "Front Door",
+        text: `You'd forget the morning the moment it closed behind you. Open the Memory Book (M) and hold what you've found so far — you've kept ${memory.length} of ${MIN_MEMORIES}. Revisit a room and notice one more thing.`,
+      });
+      setShowBook(true);
+      return;
+    }
+
+    /* Recall check: pull real entries the player wrote down and mix in
+       one plausible decoy that was never seen. */
+    const kept = memory.slice(-6);
+    const decoyPool = [
+      "Neighbour's dog in the hallway",
+      "Voicemail from the pharmacy",
+      "Broken tile by the tap",
+      "A shopping receipt on the counter",
+      "Ana's voice on the intercom",
+      "A missed call from Mum",
+    ];
+    const decoy = decoyPool[Math.floor(Math.random() * decoyPool.length)];
+    const recallOptions = [
+      ...kept.map(m => ({ id: `k:${m.title}`, label: m.title, correct: true })),
+      { id: `d:${decoy}`, label: decoy, correct: false },
+    ]
+      // shuffle so the fake isn't always last
+      .map(o => ({ o, r: Math.random() }))
+      .sort((a, b) => a.r - b.r)
+      .map(x => x.o);
+
+    startInteraction({
+      kind: "checklist",
+      title: "Before you go — what do you actually remember?",
+      hint: "Tick only the things you kept in the Memory Book this morning. One of these was never real. Guessing counts against you.",
+      options: recallOptions,
+      onMisstep: () => misstep({ speaker: "Front Door", text: "That one wasn't yours. The morning isn't quite gathered." }),
+      onDone: (picked, _allCorrect, wrongPicks) => {
+        setInteraction(null);
+        logInter("door-recall:" + picked.length + "/" + wrongPicks);
+        /* Now the physical readiness check — same as before. */
+        const readiness: { id: string; label: string; correct: boolean }[] = [
+          { id: "keys",  label: "Keys",  correct: packed.keys },
+          { id: "phone", label: "Phone", correct: done.has("phone") },
+          { id: "bag",   label: "Bag",   correct: packed.bag },
+        ];
+        if (done.has("k-kettle")) readiness.push({ id: "kettle", label: "Kettle switched off", correct: true });
+        if (interactionOrder.includes("note:door")) readiness.push({ id: "note", label: "The note by the door", correct: true });
+        if (done.has("b-meds")) readiness.push({ id: "meds", label: "Organizer checked", correct: true });
+        readiness.push({ id: "wallet", label: "Wallet — you never touched it this morning", correct: false });
+
+        setTimeout(() => startInteraction({
+          kind: "checklist",
+          title: "Readiness — what comes with you?",
+          hint: "Only check things you actually have on you. Guessing extras counts against a clean morning.",
+          options: readiness,
+          onMisstep: () => misstep({ speaker: "Front Door", text: "You pat your pockets. Something you named isn't there." }),
+          onDone: (picked2, _all2, wrong2) => {
+            setInteraction(null);
+            logInter("door-ready:" + picked2.length + "/" + wrong2);
+            if (picked2.length === 0) {
+              misstep({ speaker: "Front Door", text: "Nothing checked. You'd step out carrying only your hands." });
+            }
+            setTimeout(openFrontDoorChoices, 400);
+          },
+          onCancel: () => { setInteraction(null); say("Front Door", "You step back from it. There's still time."); },
+        }), 400);
+      },
+      onCancel: () => { setInteraction(null); say("Front Door", "You step back. Not everything is held yet."); },
+    });
+  };
+
   /* ---------------------- kitchen interactions -------------------- */
 
   const inspectFridge = () => {
-    markDone("k-fridge");
-    remember({ section: "Routines", title: "Fridge, opened", body: "Milk, half a lemon, a note from a version of you that shopped on Sunday." });
-    say("Fridge", "Something to eat. Something to hold.");
-    maybeUnlockFrontDoor();
+    /* Visual sort — you actually see what's on the shelf and drag each item
+       into "It's there" or "Not there". No imagined contents; everything
+       the interaction names is shown as a card you can look at. */
+    startInteraction({
+      kind: "checklist",
+      title: "The fridge — sort what's actually on the shelf",
+      hint: "Look inside first. Then drag each card into 'It's there' or 'Not there'. 28 seconds — before the door drifts shut and the cold escapes.",
+      timeLimit: 28000,
+      preview: {
+        title: "You open the fridge:",
+        items: [
+          { label: "Carton of milk",   emoji: "🥛" },
+          { label: "Half a lemon",     emoji: "🍋" },
+          { label: "Sunday's note",    emoji: "📝" },
+        ],
+      },
+      options: [
+        { id: "milk",       label: "A carton of milk",         correct: true  },
+        { id: "lemon",      label: "Half a lemon",             correct: true  },
+        { id: "sunote",     label: "Sunday-you's note",        correct: true  },
+        { id: "leftovers",  label: "Someone else's leftovers", correct: false },
+        { id: "eggs",       label: "A dozen eggs",             correct: false },
+        { id: "wine",       label: "An open bottle of wine",   correct: false },
+      ],
+      onMisstep: () => misstep({ speaker: "Fridge", text: "That doesn't match what's on the shelf. Look again." }),
+      onDone: (picked, allCorrect, wrongPicks) => {
+        setInteraction(null);
+        logInter("fridge:" + picked.length + "/" + wrongPicks);
+        markDone("k-fridge");
+        if (wrongPicks > 0) {
+          remember({ section: "Routines", title: "Fridge, misremembered", body: "You reached for things that weren't there. The shelf holds less than you thought." });
+        } else {
+          remember({ section: "Routines", title: "Fridge, opened", body: "Milk, half a lemon, a note from a version of you that shopped on Sunday." });
+        }
+        say("Fridge", allCorrect ? "Only what's there. A kind of clear." : "Something to eat. Something to hold.");
+        maybeUnlockFrontDoor();
+      },
+      onCancel: () => { setInteraction(null); say("Fridge", "You close the door on the cold. Maybe later."); },
+    });
   };
   const inspectKettle = () => {
     say("Kettle", "Steam rising. Pour, then sip until the cup is warm in your hand.");
@@ -465,26 +906,107 @@ export default function SoftRecall() {
     });
   };
   const inspectToast = () => {
-    markDone("k-toast");
-    remember({ section: "Routines", title: "Toast, buttered", body: "Two slices. The knife knows the jar." });
-    say("Toast", "Bread. Butter. A small pleasure that keeps.");
-    maybeUnlockFrontDoor();
+    startInteraction({
+      kind: "sequence",
+      title: "Make the toast",
+      hint: "Drag the steps into the order that will actually work — 22 seconds before the butter cools.",
+      timeLimit: 22000,
+      items: [
+        { id: "bread",   label: "Slice the bread" },
+        { id: "toaster", label: "Into the toaster" },
+        { id: "butter",  label: "Butter it" },
+        { id: "plate",   label: "Onto the plate" },
+      ],
+      correctOrder: ["bread", "toaster", "butter", "plate"],
+      onMisstep: () => misstep({ speaker: "Toast", text: "Out of order. Butter melts crooked. Try again." }),
+      onDone: (order, correct) => {
+        setInteraction(null);
+        logInter("toast:" + (correct ? "ok" : order.join(">")));
+        markDone("k-toast");
+        if (correct) {
+          remember({ section: "Routines", title: "Toast, buttered", body: "Two slices. The knife knows the jar." });
+          say("Toast", "Bread. Butter. A small pleasure that keeps.");
+        } else {
+          remember({ section: "Routines", title: "Toast, out of order", body: "The butter melted crooked. Still edible. Still yours." });
+          say("Toast", "The morning bends around it. Still edible, still yours.");
+        }
+        maybeUnlockFrontDoor();
+      },
+      onCancel: () => { setInteraction(null); say("Toast", "You leave the bread on the board. Later, maybe."); },
+    });
   };
 
   /* ---------------------- bathroom interactions ------------------- */
 
   const inspectMirror = () => {
     markDone("b-mirror");
-    remember({ section: "Reflections", title: "The face in the mirror", body: "Warm brown hair. Cream sleep shirt. Eyes that recognise you back, even on the mornings you don't." });
-    say("Mirror", "There you are. Hello. Good morning, you.");
-    maybeUnlockFrontDoor();
+    // Old-demo mirror moment: a painterly reflection panel, then the
+    // confidence question. The reflection itself is the memory; the
+    // choice below is only how honestly you can name it.
+    startMini({
+      kind: "reflection",
+      title: "The mirror",
+      hint: "Look for a moment. There you are — mostly.",
+      onDone: () => {
+        setMini(null);
+        remember({ section: "Reflections", title: "The face in the mirror", body: "Warm brown skin. Curly hair, still slept-in. Cream sleep shirt. Eyes that recognise you back, even on the mornings you don't." });
+        const honest: 1 | 2 | 3 = wrongCount <= 1 ? 3 : wrongCount <= 3 ? 2 : 1;
+        startInteraction({
+          kind: "confidence",
+          title: "How clear does the morning feel?",
+          hint: "Honestly. Not brave, not small. Just where you are.",
+          honestLevel: honest,
+          onPick: (level, misaligned) => {
+            setInteraction(null);
+            setConfidenceChoices(c => [...c, level]);
+            logInter("mirror-conf:" + level);
+            if (misaligned && level > honest) {
+              misstep({ speaker: "Mirror", text: "The mouth in the mirror doesn't quite believe you. That's information too." });
+            } else if (misaligned && level < honest) {
+              say("Mirror", "Gentler than the morning deserves. You can name a little more.");
+            } else {
+              say("Mirror", "There you are. Hello. Good morning, you.");
+            }
+            maybeUnlockFrontDoor();
+          },
+          onCancel: () => { setInteraction(null); say("Mirror", "You look away. Later, then."); },
+        });
+      },
+      onCancel: () => { setMini(null); say("Mirror", "You turn away without looking. That's a choice too."); },
+    });
   };
   const inspectMeds = () => {
-    markDone("b-meds");
-    remember({ section: "Routines", title: "Morning pills", body: "Thursday. The little compartment is empty by the time you close the lid." });
-    say("Cabinet", "Thursday. Done.");
-    maybeUnlockFrontDoor();
+    startMini({
+      kind: "pairs",
+      title: "The weekly pill organiser",
+      hint: "Three pills. Three days. Drag each pill to the day it belongs to — the labels are on the caddy.",
+      pairs: {
+        items: [
+          { id: "blue",  label: "Blue oval — morning", emoji: "💊" },
+          { id: "white", label: "White round — with food", emoji: "⚪" },
+          { id: "amber", label: "Amber capsule — night", emoji: "🟠" },
+        ],
+        targets: [
+          { id: "wed", label: "Wed" },
+          { id: "thu", label: "Thu · today" },
+          { id: "fri", label: "Fri" },
+        ],
+        // today is Thursday — only the "today" pairing counts; decoys are the previous/next day
+        correctMap: { blue: "thu", white: "thu", amber: "thu" },
+      },
+      onMisstep: () => misstep({ speaker: "Cabinet", text: "Wrong day. The pill goes back. Look at the label again." }),
+      onDone: () => {
+        setMini(null);
+        logInter("meds:paired");
+        markDone("b-meds");
+        remember({ section: "Routines", title: "Morning pills", body: "Thursday. Three compartments empty by the time you close the lid." });
+        say("Cabinet", "Thursday. Done.");
+        maybeUnlockFrontDoor();
+      },
+      onCancel: () => { setMini(null); say("Cabinet", "You close the lid without choosing. Later."); },
+    });
   };
+
   const inspectTap = () => {
     say("Tap", "Cold water in the basin. Splash — twice, three times.");
     startMini({
@@ -521,15 +1043,26 @@ export default function SoftRecall() {
 
   /* ---------------------- ending resolution ----------------------- */
 
-  const resolveEnding = () => {
-    // Endings weighted by clarity vs dissonance
+  const resolveEnding = (via: "leave" | "smaller" | "support") => {
+    const avgConf = confidenceChoices.length
+      ? confidenceChoices.reduce((s, v) => s + v, 0) / confidenceChoices.length
+      : 2;
     const score = clarity - dissonance * 2;
-    let id: EndingId = "supported";
-    if (wrongCount >= 3 || score < 0) id = "hurried";
-    else if (memory.length <= 5 || score < 3) id = "withdrawn";
-    setEnding(id);
-    setScreen("ending");
+    const strained = wrongCount >= 4 || score <= -2 || avgConf <= 1.4;
+    const id: EndingId = via === "smaller"
+      ? "smaller"
+      : via === "support" || strained
+        ? "overloaded"
+        : "supported";
+
+    const commit = () => { setEnding(id); setScreen("ending"); };
+    if (settings.reducedMotion) { commit(); return; }
+    setTransition({ to: "frontdoor", from: room, kind: "threshold" });
+    if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
+    window.setTimeout(commit, 620);
+    transitionTimer.current = window.setTimeout(() => setTransition(null), 900);
   };
+
 
 
   /* ---------------------- hotspots per scene ---------------------- */
@@ -551,12 +1084,14 @@ export default function SoftRecall() {
             { id: "alarm",    label: "Bedside lamp", x: 92, y: 55, onInspect: inspectAlarm },
             { id: "note",     label: "Note on the bed", x: 62, y: 78, onInspect: inspectNote },
             { id: "phone",    label: "Phone on the nightstand", x: 92, y: 70, onInspect: openPhone },
+            { id: "night-book", label: "Library book on the nightstand", x: 84, y: 62, onInspect: inspectNightstandBook },
           ]; break;
         case "hallway":
           base = [
             { id: "coat",      label: "Coat on the hook", x: 90, y: 22, onInspect: inspectCoat },
             { id: "keys",      label: "Keys on the hook", x: 87, y: 32, onInspect: inspectKeys },
             { id: "mail",      label: "Bowl on the side table", x: 14, y: 72, onInspect: inspectMail },
+            { id: "hall-photo", label: "Framed photo on the wall", x: 32, y: 26, onInspect: inspectCollegePhoto },
             { id: "frontdoor", label: frontDoorUnlocked ? "Front Door" : "Front Door (not yet)", x: 63, y: 46, onInspect: inspectFrontDoor },
           ]; break;
         case "kitchen":
@@ -564,6 +1099,7 @@ export default function SoftRecall() {
             { id: "k-fridge", label: "Shelves & pantry",  x: 40, y: 34, onInspect: inspectFridge },
             { id: "k-kettle", label: "Kettle on the stove",  x: 15, y: 55, onInspect: inspectKettle },
             { id: "k-toast",  label: "Cutting board", x: 78, y: 68, onInspect: inspectToast },
+            { id: "k-magnet", label: "Fridge magnet & clipped letter", x: 46, y: 46, onInspect: inspectFridgeMagnet },
           ]; break;
         case "bathroom":
           base = [
@@ -571,6 +1107,7 @@ export default function SoftRecall() {
             { id: "b-mirror", label: "You, in the mirror", x: 56, y: 22, onInspect: inspectMirror },
             { id: "b-meds",   label: "Shelf jar & bottle", x: 27, y: 28, onInspect: inspectMeds },
             { id: "b-teeth",  label: "Toothbrush by the basin", x: 55, y: 50, onInspect: inspectTeeth },
+            { id: "b-journal", label: "Small journal by the sink", x: 74, y: 62, onInspect: inspectMirrorJournal },
           ]; break;
         default: base = [];
       }
@@ -628,18 +1165,18 @@ export default function SoftRecall() {
       if (!phase) return;
       const elapsed = performance.now() - downAt;
       if (phase === "in" && elapsed >= 3600) {
-        phase = "out"; downAt = performance.now(); setBreathing("out"); playBreathOut();
+        phase = "out"; downAt = performance.now(); setBreathing("out");
       } else if (phase === "out" && elapsed >= 3600) {
         setWrongCount(w => Math.max(0, w - 1));
         setDissonance(d => Math.max(0, d - 1));
-        phase = "in"; downAt = performance.now(); setBreathing("in"); playBreathIn();
+        phase = "in"; downAt = performance.now(); setBreathing("in");
       }
       raf = requestAnimationFrame(cycle);
     };
     const down = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() !== "b" || phase) return;
       if (showHelp || showBook || showSettings || mini) return;
-      phase = "in"; downAt = performance.now(); setBreathing("in"); playBreathIn();
+      phase = "in"; downAt = performance.now(); setBreathing("in");
       raf = requestAnimationFrame(cycle);
     };
     const up = (e: KeyboardEvent) => {
@@ -721,7 +1258,17 @@ export default function SoftRecall() {
     const totalTargets = hotspots.length + availableExits.length;
 
     const onKey = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
       const k = e.key.toLowerCase();
+      if (k === "escape" || k === "backspace") {
+        if (mini) { mini.onCancel?.(); return; }
+        if (interaction) { interaction.onCancel?.(); return; }
+        if (showHelp) { setShowHelp(false); return; }
+        if (showBook) { setShowBook(false); return; }
+        if (showSettings) { setShowSettings(false); return; }
+        if (closeup) { setCloseup(null); setVnChoices([]); return; }
+        return;
+      }
       if (k === "h") { setShowHelp(v => !v); return; }
       if (k === "m") { setShowBook(v => !v); return; }
       if (k === ",") { setShowSettings(v => !v); return; }
@@ -729,14 +1276,7 @@ export default function SoftRecall() {
       if (k === "n") { requestHint(); return; }
       if (e.key === "`" || e.key === "~") { setSettings(s => ({ ...s, debugHotspots: !s.debugHotspots })); return; }
 
-      if (k === "escape" || k === "backspace") {
-        if (showHelp) { setShowHelp(false); return; }
-        if (showBook) { setShowBook(false); return; }
-        
-        if (showSettings) { setShowSettings(false); return; }
-        if (closeup) { setCloseup(null); setVnChoices([]); return; }
-        return;
-      }
+      if (mini || interaction || showHelp || showBook || showSettings) return;
       if (vnChoices.length > 0) {
         if (k === "arrowdown" || k === "arrowright" || k === "s" || k === "d") {
           e.preventDefault();
@@ -764,7 +1304,7 @@ export default function SoftRecall() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, hotspots, availableExits, vnChoices, focusIdx, closeup, showHelp, showBook, showSettings, gotoRoom]);
+  }, [screen, hotspots, availableExits, vnChoices, focusIdx, closeup, showHelp, showBook, showSettings, mini, interaction, gotoRoom]);
 
   /* ---------------------- soft hint if stuck ---------------------- */
   useEffect(() => {
@@ -817,10 +1357,10 @@ export default function SoftRecall() {
     return <TitleScreen hasSave={hasSave} onBegin={beginNew} onContinue={continueSave} onHelp={() => setShowHelp(true)} showHelp={showHelp} closeHelp={() => setShowHelp(false)} />;
   }
   if (screen === "ending" && ending) {
-    return <EndingScreen id={ending} memory={memory} wrongCount={wrongCount} onRestart={restartDemo} />;
+    return <EndingScreen id={ending} memory={memory} wrongCount={wrongCount} roomVisitOrder={roomVisitOrder} confidenceChoices={confidenceChoices} packed={packed} clarity={clarity} dissonance={dissonance} supportCueUseCount={supportCueUseCount} interactionOrder={interactionOrder} onRestart={restartDemo} />;
   }
 
-  const sceneImg = closeup === "phone" ? phoneImg : SCENE_IMG[room];
+  const sceneImg = SCENE_IMG[closeup ?? room];
 
   /* ---------------------- guided walkthrough ---------------------- */
   const tutorialStep: null | { room: RoomId; hotspotId?: string; doorwayTo?: RoomId; prompt: string } = (() => {
@@ -858,7 +1398,7 @@ export default function SoftRecall() {
   const px = settings.parallax && !settings.reducedMotion ? parallax : { x: 0, y: 0 };
 
   return (
-    <div className={`fixed inset-0 bg-black text-foreground select-none overflow-hidden cursor-open ${settings.dyslexiaFont ? "dyslexia-font" : ""}`}>
+    <div data-testid="game-screen" data-room={room} className={`fixed inset-0 bg-black text-foreground select-none overflow-hidden cursor-open ${settings.dyslexiaFont ? "dyslexia-font" : ""}`}>
       {/* Full-bleed scene (ref used for hotspot drag coordinate mapping) */}
       <div ref={sceneRef} className="absolute inset-0">
         <img
@@ -955,7 +1495,7 @@ export default function SoftRecall() {
           {wrongCount > 0 && <span className="ml-3 text-[11px] text-rose-300/80 italic">the morning feels blurred</span>}
         </div>
         <div className="flex gap-2 text-xs">
-          <TopBtn onClick={() => setShowBook(v => !v)} label="Memory Book" hint="M" />
+          <TopBtn onClick={() => setShowBook(v => !v)} label="Memory Book" hint="M" testId="memory-book-button" />
           
           <TopBtn onClick={() => setShowHelp(v => !v)} label="Help" hint="H" />
           <TopBtn onClick={() => setShowSettings(v => !v)} label="Settings" hint="," />
@@ -989,7 +1529,7 @@ export default function SoftRecall() {
       )}
 
       {/* Hotspot layer */}
-      <div className="absolute inset-0 z-10">
+      <div className="pointer-events-none absolute inset-0 z-30">
         {hotspots.map((h, i) => {
           const isDone = done.has(h.id);
           return (
@@ -1019,7 +1559,7 @@ export default function SoftRecall() {
         )}
 
         {settings.debugHotspots && (
-          <div className="absolute top-14 left-3 z-40 rounded border border-emerald-400/60 bg-black/80 px-3 py-2 text-xs text-emerald-200 font-mono max-w-xs">
+          <div className="pointer-events-auto absolute top-14 left-3 z-40 rounded border border-emerald-400/60 bg-black/80 px-3 py-2 text-xs text-emerald-200 font-mono max-w-xs">
             <div className="flex items-center gap-2">
               <span className="font-serif not-italic">Hotspot debug ({sceneKey})</span>
               <span className="opacity-60">[~]</span>
@@ -1058,9 +1598,11 @@ export default function SoftRecall() {
                 <button
                   key={r}
                   onClick={() => gotoRoom(r)}
+                  data-testid={`doorway-${r}`}
+                  aria-current={room === r ? "location" : undefined}
                   className={`choice-btn rounded px-3 py-1 text-sm hover:brightness-110 ${
                     focusIdx === hotspots.length + i ? "ring-2 ring-[color:var(--color-glow)]" : ""
-                  } ${tutorialStep?.doorwayTo === r ? "ring-2 ring-[color:var(--color-glow)] animate-[pulse-soft_1.6s_ease-in-out_infinite]" : ""}`}
+                  } ${tutorialStep?.doorwayTo === r ? `ring-2 ring-[color:var(--color-glow)] ${settings.reducedMotion ? "" : "animate-[pulse-soft_1.6s_ease-in-out_infinite]"}` : ""}`}
                 >
                   → {ROOM_LABEL[r]} {visited.has(r) ? "" : <span className="opacity-60 text-[11px]">(new)</span>}
                 </button>
@@ -1090,6 +1632,7 @@ export default function SoftRecall() {
                   <button
                     key={c.id}
                     onClick={c.onPick}
+                    data-testid={`choice-${c.id}`}
                     className={`choice-btn rounded px-3 py-2 text-left text-sm ${
                       focusIdx === i ? "ring-2 ring-[color:var(--color-glow)]" : ""
                     } ${c.tone === "wrong" ? "opacity-80" : ""}`}
@@ -1106,11 +1649,54 @@ export default function SoftRecall() {
         </div>
       </div>
 
+      {transition && (
+        (() => {
+          const TINT: Record<RoomId | "frontdoor", string> = {
+            bedroom:  "radial-gradient(ellipse 60% 90% at 50% 55%, rgba(255,205,140,0.95), rgba(180,120,70,0.3) 60%, rgba(0,0,0,0) 78%)",
+            hallway:  "radial-gradient(ellipse 60% 90% at 50% 55%, rgba(230,220,200,0.9),  rgba(120,110,100,0.3) 60%, rgba(0,0,0,0) 78%)",
+            kitchen:  "radial-gradient(ellipse 60% 90% at 50% 55%, rgba(255,220,150,1),    rgba(200,140,80,0.35) 60%, rgba(0,0,0,0) 78%)",
+            bathroom: "radial-gradient(ellipse 60% 90% at 50% 55%, rgba(220,235,255,0.95), rgba(140,170,200,0.3) 60%, rgba(0,0,0,0) 78%)",
+            frontdoor:"radial-gradient(ellipse 70% 100% at 50% 50%, rgba(255,240,200,1),   rgba(255,210,150,0.5) 55%, rgba(0,0,0,0) 82%)",
+          };
+          const isThresh = transition.kind === "threshold";
+          return (
+            <div className="pointer-events-none absolute inset-0 z-50" aria-hidden>
+              <div
+                className="absolute inset-0 bg-black"
+                style={{ animation: `room-swap ${isThresh ? 880 : 700}ms ease-in-out forwards` }}
+              />
+              <div
+                className="absolute left-1/2 top-1/2"
+                style={{
+                  width: "120%", height: "140%",
+                  background: TINT[transition.to],
+                  mixBlendMode: "screen",
+                  animation: `doorway-open ${isThresh ? 860 : 680}ms cubic-bezier(.2,.7,.2,1) forwards`,
+                }}
+              />
+              {isThresh && (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: "linear-gradient(180deg, rgba(255,240,200,0.0), rgba(255,240,200,0.35) 50%, rgba(255,240,200,0.0))",
+                    animation: "threshold-flare 880ms ease-out forwards",
+                    mixBlendMode: "screen",
+                  }}
+                />
+              )}
+            </div>
+          );
+        })()
+      )}
+
       {showBook && <MemoryBook memory={memory} onClose={() => setShowBook(false)} />}
+
       
       {showHelp && <HelpOverlay onClose={() => setShowHelp(false)} onRestart={restartDemo} />}
       {showSettings && <SettingsOverlay settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} onRestart={restartDemo} />}
       {mini && <MiniGameOverlay spec={mini} />}
+      {interaction && <InteractionOverlay spec={interaction} confusionLevel={wrongCount} />}
+
       {!onboarded && <OnboardingOverlay onDone={finishOnboarding} />}
       {breathing && <BreatheOverlay phase={breathing} />}
       {dissonance >= 2 && !breathing && (
@@ -1143,45 +1729,107 @@ function TitleScreen({ hasSave, onBegin, onContinue, onHelp, showHelp, closeHelp
           A quiet morning. A room that has to be re-learned, gently. This is a short PC demo.
         </p>
         <div className="mt-8 flex flex-col gap-3 items-center">
-          <button onClick={onBegin} className="choice-btn rounded px-6 py-3 text-lg w-64">Begin</button>
+          <button data-testid="begin-button" onClick={onBegin} className="choice-btn rounded px-6 py-3 text-lg w-64">Begin</button>
           {hasSave && (
-            <button onClick={onContinue} className="choice-btn rounded px-6 py-3 w-64">Continue the morning</button>
+            <button data-testid="continue-button" onClick={onContinue} className="choice-btn rounded px-6 py-3 w-64">Continue the morning</button>
           )}
           <button onClick={onHelp} className="choice-btn rounded px-6 py-2 w-64 text-sm opacity-80">Controls</button>
         </div>
         <p className="mt-6 text-xs opacity-50">PC-only demo · mouse + keyboard</p>
+      </div>
+      {/* Content & care — small boxed note, pinned lower */}
+      <div className="fixed bottom-2 inset-x-0 mx-auto max-w-sm px-4">
+        <div className="rounded border border-[color:var(--color-ember)]/35 bg-black/25 px-2.5 py-1.5 text-center">
+          <div className="text-[13px] uppercase tracking-widest opacity-55">Content &amp; care</div>
+          <p className="text-[12px] opacity-75 leading-snug mt-0.5">
+            A fictional morning about memory, uncertainty, and accepting support. Optional context lives in the Memory Book.
+          </p>
+        </div>
       </div>
       {showHelp && <HelpOverlay onClose={closeHelp} />}
     </div>
   );
 }
 
-function EndingScreen({ id, memory, wrongCount, onRestart }:{
-  id: EndingId; memory: MemoryEntry[]; wrongCount: number; onRestart: () => void;
+function EndingScreen({ id, memory, wrongCount, roomVisitOrder, confidenceChoices, packed, clarity, dissonance, supportCueUseCount, interactionOrder, onRestart }:{
+  id: EndingId;
+  memory: MemoryEntry[];
+  wrongCount: number;
+  roomVisitOrder: RoomId[];
+  confidenceChoices: number[];
+  packed: PackedItems;
+  clarity: number;
+  dissonance: number;
+  supportCueUseCount: number;
+  interactionOrder: string[];
+  onRestart: () => void;
 }) {
-  const copy = {
-    supported: {
-      title: "Supported Departure",
-      body: "You leave with the small things you needed: keys, coat, phone. The morning didn't win. It was met.",
-    },
-    hurried: {
-      title: "Hurried Out",
-      body: "The door slams a beat too hard. You are outside. You are not yet with yourself.",
-    },
-    withdrawn: {
-      title: "Quiet Exit",
-      body: "You leave without saying much to the morning, and it lets you go. There is still tomorrow to try again.",
-    },
-  }[id];
+  const copy = ENDING_COPY[id];
+  const num = ENDING_ORDER.indexOf(id) + 1;
+  const avgConf = confidenceChoices.length
+    ? (confidenceChoices.reduce((s, v) => s + v, 0) / confidenceChoices.length).toFixed(1)
+    : "—";
+  const packedList = [packed.keys && "keys", packed.bag && "bag", packed.phone && "phone"].filter(Boolean).join(", ") || "nothing";
+
+  const downloadTelemetry = () => {
+    const payload = {
+      schema: "soft-recall.telemetry.v1",
+      exportedAt: new Date().toISOString(),
+      ending: { id, index: num, of: ENDING_ORDER.length, title: copy.title },
+      scores: {
+        memoriesKept: memory.length,
+        missteps: wrongCount,
+        clarity,
+        dissonance,
+        supportCueUseCount,
+        confidenceChoices,
+        avgConfidence: confidenceChoices.length ? confidenceChoices.reduce((s, v) => s + v, 0) / confidenceChoices.length : null,
+      },
+      packed,
+      roomVisitOrder,
+      interactionOrder,
+      memories: memory.map((m) => ({
+        at: m.at, room: m.room, section: m.section, title: m.title, body: m.body,
+      })),
+      notes: "Local-only run log. No network calls, no identifiers. Intended for personal replay analysis or classroom/research discussion of decision patterns.",
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `soft-recall_run_${id}_${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   return (
-    <div className="fixed inset-0 bg-paperfield flex items-center justify-center px-6 overflow-auto">
+    <div data-testid="ending-screen" className="fixed inset-0 bg-paperfield flex items-center justify-center px-6 overflow-auto">
       <div className="max-w-2xl text-center py-10">
-        <div className="font-hand text-2xl opacity-70">ending</div>
+        <div className="font-hand text-2xl opacity-70">ending {num} / {ENDING_ORDER.length}</div>
         <h2 className="font-serif text-5xl mt-1">{copy.title}</h2>
+        <p className="mt-2 text-sm italic opacity-70">{copy.tone}</p>
         <p className="mt-6 font-serif text-lg opacity-85 leading-snug">{copy.body}</p>
-        <div className="mt-4 text-xs opacity-60">
-          Kept: {memory.length} · Missteps: {wrongCount}
+
+        <div className="mt-6 grid grid-cols-2 gap-2 text-xs opacity-75 max-w-md mx-auto">
+          <div className="rounded border border-white/15 p-2"><b>{memory.length}</b> memories kept</div>
+          <div className="rounded border border-white/15 p-2"><b>{wrongCount}</b> missteps</div>
+          <div className="rounded border border-white/15 p-2">Avg confidence: <b>{avgConf}</b> / 3</div>
+          <div className="rounded border border-white/15 p-2">Packed: <b>{packedList}</b></div>
         </div>
+
+        <div className="mt-6 max-w-md mx-auto">
+          <div className="text-xs opacity-60 uppercase tracking-wide mb-1">The path you took</div>
+          <div className="font-serif text-sm opacity-85 flex flex-wrap justify-center gap-1">
+            {roomVisitOrder.map((r, i) => (
+              <span key={i}>
+                {ROOM_LABEL[r]}{i < roomVisitOrder.length - 1 && <span className="mx-1 opacity-50">→</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <div className="mt-8 text-left max-w-md mx-auto">
           <h3 className="font-serif text-xl mb-2">Kept from this morning</h3>
           <ul className="space-y-1 text-sm opacity-85">
@@ -1189,9 +1837,24 @@ function EndingScreen({ id, memory, wrongCount, onRestart }:{
               memory.map((m, i) => <li key={i}>· <b>{m.title}</b> <span className="opacity-60">— {m.section}</span></li>)}
           </ul>
         </div>
-        <div className="mt-8 flex justify-center gap-2">
-          <button onClick={onRestart} className="choice-btn rounded px-5 py-2">Play again</button>
+
+        <div className="mt-6 text-xs opacity-60 max-w-md mx-auto">
+          Three endings exist. The final choice changes what the threshold asks of you.
         </div>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <button onClick={onRestart} className="choice-btn rounded px-5 py-2">Play again</button>
+          <button
+            onClick={downloadTelemetry}
+            className="choice-btn rounded px-5 py-2"
+            title="Download a local JSON log of every choice, score, and memory from this run. No network calls."
+          >
+            Download run log
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] opacity-55 max-w-md mx-auto">
+          The run log is a local JSON file saved by your browser. Nothing is uploaded or synced.
+        </p>
       </div>
     </div>
   );
@@ -1201,9 +1864,9 @@ function EndingScreen({ id, memory, wrongCount, onRestart }:{
 /* Overlays & bits                                                     */
 /* ------------------------------------------------------------------ */
 
-function TopBtn({ onClick, label, hint }:{ onClick: () => void; label: string; hint: string; }) {
+function TopBtn({ onClick, label, hint, testId }:{ onClick: () => void; label: string; hint: string; testId?: string; }) {
   return (
-    <button onClick={onClick} className="rounded border border-white/15 bg-white/5 px-2 py-1 hover:bg-white/10">
+    <button data-testid={testId} onClick={onClick} className="rounded border border-white/15 bg-white/5 px-2 py-1 hover:bg-white/10">
       {label} <span className="opacity-50 ml-1">[{hint}]</span>
     </button>
   );
@@ -1263,7 +1926,7 @@ const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, don
   return (
     <div
       data-hotspot
-      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-inspect"
+      className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 cursor-inspect"
       style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%`, width: size, height: size, zIndex: debug ? 30 : undefined }}
       onMouseEnter={() => { setHover(true); onHoverThought?.(); }}
       onMouseLeave={() => { setHover(false); cancelHold(); onLeaveThought?.(); }}
@@ -1282,25 +1945,8 @@ const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, don
           animation: hover && !pulse ? "wobble 900ms ease-in-out infinite" : undefined,
         }}
       />
-      {/* Guiding arrow — points down at the interactive object, only until inspected */}
-      {!done && !debug && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 -translate-x-1/2 hotspot-arrow"
-          style={{ bottom: `calc(100% + 4px)` }}
-        >
-          <svg width="18" height="22" viewBox="0 0 18 22" fill="none">
-            <path
-              d="M9 2 L9 16 M3 12 L9 18 L15 12"
-              stroke="rgba(255,230,170,0.95)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              filter="drop-shadow(0 0 4px rgba(255,220,150,0.6))"
-            />
-          </svg>
-        </span>
-      )}
+      {/* Decorative per-hotspot arrows removed in Pass 1 — the marker glow is the sole cue. */}
+
       {/* progress ring while holding */}
       {holding && (
         <svg aria-hidden className="pointer-events-none absolute inset-0" viewBox="0 0 36 36">
@@ -1312,6 +1958,7 @@ const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, don
       )}
       {/* tight center hit-target */}
       <button
+        data-testid={`hotspot-${hotspot.id}`}
         onPointerDown={debug ? undefined : startHold}
         onPointerUp={debug ? undefined : endHold}
         onPointerCancel={debug ? undefined : cancelHold}
@@ -1358,6 +2005,8 @@ function MiniMap({ current, visited, unlocked, onJump }:{
             <button
               key={r}
               onClick={() => onJump(r)}
+              disabled={!isUnl || isCur}
+              aria-current={isCur ? "location" : undefined}
               className={`rounded px-2 py-0.5 text-[11px] border transition
                 ${isCur ? "border-[color:var(--color-glow)] bg-white/10" : "border-white/10"}
                 ${!isUnl ? "opacity-30 cursor-not-allowed" : "hover:bg-white/10"}
@@ -1374,48 +2023,105 @@ function MiniMap({ current, visited, unlocked, onJump }:{
 
 function MemoryBook({ memory, onClose }:{ memory: MemoryEntry[]; onClose: () => void; }) {
   const sections: MemoryEntry["section"][] = ["Fragments", "Messages", "Routines", "Reflections"];
+  const [filter, setFilter] = useState<"All" | MemoryEntry["section"]>("All");
+  const [search, setSearch] = useState("");
+  const latestAt = useMemo(() => memory.reduce((m, e) => Math.max(m, e.at ?? 0), 0), [memory]);
+  const bySection = (s: MemoryEntry["section"]) =>
+    memory
+      .filter(m => m.section === s)
+      .filter(m => search.trim() === "" || `${m.title} ${m.body}`.toLowerCase().includes(search.toLowerCase()));
+  const total = memory.length;
+  const relTime = (at?: number) => {
+    if (!at) return null;
+    const diff = Date.now() - at;
+    if (diff < 60_000)   return "just now";
+    if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
+    return `${Math.round(diff / 3_600_000)}h ago`;
+  };
   return (
-    <Overlay onClose={onClose} title="Memory Book" hint="M">
-      {sections.map(s => {
-        const items = memory.filter(m => m.section === s);
-        if (items.length === 0) return null;
-        return (
-          <div key={s} className="mb-4">
-            <div className="font-hand text-lg opacity-70">{s}</div>
-            <ul className="mt-1 space-y-3">
-              {items.map((m, i) => {
-                const cites = findCitationsFor(`${m.title} ${m.body}`);
-                return (
-                  <li key={i}>
-                    <div className="font-serif font-semibold">{m.title}</div>
-                    <div className="text-sm opacity-80">{m.body}</div>
-                    {cites.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]">
-                        <span className="opacity-50 italic">sources:</span>
-                        {cites.map(c => (
-                          <a
-                            key={c.url}
-                            href={c.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline decoration-dotted underline-offset-2 opacity-80 hover:opacity-100 hover:text-[color:var(--color-glow)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] rounded-sm px-1"
-                            aria-label={`${c.venue} — ${c.title} (opens in a new tab)`}
-                            title={c.title}
-                          >
-                            {c.venue}
-                          </a>
-                        ))}
+    <Overlay onClose={onClose} title={`Memory Book · ${total}`} hint="M">
+      <div data-testid="memory-book">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {(["All", ...sections] as const).map(s => {
+          const count = s === "All" ? total : memory.filter(m => m.section === s).length;
+          const active = filter === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              className={`text-xs rounded-full px-3 py-1 border transition ${active ? "bg-[color:var(--color-glow)]/20 border-[color:var(--color-glow)] text-[color:var(--color-glow)]" : "border-white/20 opacity-70 hover:opacity-100"}`}
+            >
+              {s} <span className="opacity-60">{count}</span>
+            </button>
+          );
+        })}
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="search entries…"
+          className="ml-auto text-xs bg-black/30 border border-white/15 rounded px-2 py-1 outline-none focus:border-[color:var(--color-glow)]"
+        />
+      </div>
+      {sections
+        .filter(s => filter === "All" || filter === s)
+        .map(s => {
+          const items = bySection(s);
+          if (items.length === 0) return null;
+          return (
+            <div key={s} className="mb-4">
+              <div className="font-hand text-lg opacity-70 flex items-baseline gap-2">
+                <span>{s}</span>
+                <span className="text-xs opacity-50">{items.length}</span>
+              </div>
+              <ul className="mt-1 space-y-3">
+                {items.map((m, i) => {
+                  const cites = findCitationsFor(`${m.title} ${m.body}`);
+                  const isFresh = m.at != null && m.at === latestAt;
+                  return (
+                    <li
+                      key={i}
+                      className={`rounded p-2 -mx-2 transition ${isFresh ? "bg-[color:var(--color-glow)]/10 ring-1 ring-[color:var(--color-glow)]/40 animate-[fade-in_0.4s_ease-out]" : ""}`}
+                    >
+                      <div className="flex items-baseline gap-2">
+                        <div className="font-serif font-semibold">{m.title}</div>
+                        {isFresh && <span className="text-[10px] uppercase tracking-wide text-[color:var(--color-glow)]">new</span>}
+                        <span className="ml-auto text-[10px] opacity-50">
+                          {m.room && <span className="italic mr-1">· {m.room}</span>}
+                          {relTime(m.at)}
+                        </span>
                       </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
-      {memory.length === 0 && <p className="italic opacity-60">Empty for now. Inspect things to keep them.</p>}
-      <ResearchSection defaultOpen />
+                      <div className="text-sm opacity-80 mt-0.5">{m.body}</div>
+                      {cites.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]">
+                          <span className="opacity-50 italic">sources:</span>
+                          {cites.map(c => (
+                            <a
+                              key={c.url}
+                              href={c.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline decoration-dotted underline-offset-2 opacity-80 hover:opacity-100 hover:text-[color:var(--color-glow)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] rounded-sm px-1"
+                              aria-label={`${c.venue} — ${c.title} (opens in a new tab)`}
+                              title={c.title}
+                            >
+                              {c.venue}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      {total === 0 && <p className="italic opacity-60">Empty for now. Inspect things to keep them.</p>}
+      {total > 0 && search.trim() !== "" && sections.every(s => bySection(s).length === 0) && (
+        <p className="italic opacity-60 text-sm">Nothing matches "{search}".</p>
+      )}
+      <ResearchSection />
+      </div>
     </Overlay>
   );
 }
@@ -1437,6 +2143,7 @@ function findCitationsFor(text: string): ResearchEntry[] {
   push(/door|hallway|room|kitchen|bathroom|bedroom|way|lost/.test(t), "Orientation");
   push(/ana|photo|note|letter|memory|remember|hand|writing/.test(t), "Reminiscence");
   push(/breath|calm|panic|steady|slow/.test(t), "Regulation");
+  push(/young|concussion|thursday|word-finding|neurology|prior auth|screening|before|fluctuation|appointment|library book|journal/.test(t), "Young-onset");
   return hits.slice(0, 3);
 }
 
@@ -1449,7 +2156,8 @@ type ResearchCategory =
   | "Daily routine"
   | "Orientation"
   | "Reminiscence"
-  | "Regulation";
+  | "Regulation"
+  | "Young-onset";
 
 type ResearchEntry = {
   category: ResearchCategory;
@@ -1551,6 +2259,82 @@ const RESEARCH_ENTRIES: ResearchEntry[] = [
     venue: "Complementary Therapies in Medicine, 2021 (PMID 33639543)",
     url: "https://pubmed.ncbi.nlm.nih.gov/33639543/",
     takeaway: "Paced breathing measurably lowers stress load in dementia contexts — the breathe ritual is a nod to that evidence base.",
+  },
+  /* ------------- Young-onset ----------------------------------------
+     Soft Recall centers a young protagonist. These sources ground the
+     game's premise that neurocognitive change is not only an elder's
+     experience — it also appears in adolescents and young adults. */
+  {
+    category: "Young-onset",
+    feature: "The protagonist herself — young adult experiencing cognitive change",
+    title: "Young-Onset Dementia: A Global Analysis of Prevalence",
+    authors: "Hendriks S, Peetoom K, Bakker C, et al.",
+    venue: "JAMA Neurology, 2021 (PMID 34424935)",
+    url: "https://pubmed.ncbi.nlm.nih.gov/34424935/",
+    takeaway: "About 3.9 million people under 65 live with dementia worldwide — the game refuses the idea that memory illness is only late-life.",
+  },
+  {
+    category: "Young-onset",
+    feature: "Word-finding pauses in kitchen & phone unlock",
+    title: "Frontotemporal dementia: latest evidence and clinical implications",
+    authors: "Bang J, Spina S, Miller BL.",
+    venue: "The Lancet, 2015 (PMC5325132)",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5325132/",
+    takeaway: "FTD commonly begins in the 40s but is documented as early as the 20s — language and behavior shifts precede memory loss.",
+  },
+  {
+    category: "Young-onset",
+    feature: "Fluctuating clarity, dropped sequences, executive dials at the door",
+    title: "The Huntington's disease prodrome: cognitive and motor signs in gene carriers",
+    authors: "Paulsen JS, Long JD, et al. (PREDICT-HD)",
+    venue: "The Lancet Neurology, 2014 (PMC4187685)",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4187685/",
+    takeaway: "Subtle executive and motor changes appear 10–15 years before clinical Huntington's — the combo lock at the door mirrors that prodromal load.",
+  },
+  {
+    category: "Young-onset",
+    feature: "Working-memory pressure under the fridge & toast timers",
+    title: "Cognitive dysfunction in multiple sclerosis: a review of neuropsychological features",
+    authors: "Chiaravalloti ND, DeLuca J.",
+    venue: "The Lancet Neurology, 2008 (PMID 18970977)",
+    url: "https://pubmed.ncbi.nlm.nih.gov/18970977/",
+    takeaway: "MS cognitive symptoms affect ~40–65% of patients (peak diagnosis 20–40) — the short timers dramatize the fatigueable working memory MS clinicians describe.",
+  },
+  {
+    category: "Young-onset",
+    feature: "Sudden onset & the mirror moment (self-recognition drift)",
+    title: "Clinical experience and laboratory investigations in patients with anti-NMDAR encephalitis",
+    authors: "Dalmau J, Gleichman AJ, et al.",
+    venue: "The Lancet Neurology, 2011 (PMC3158385)",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3158385/",
+    takeaway: "Anti-NMDA receptor encephalitis strikes a median age of ~21 with rapid cognitive & behavioral change — treatable, but often misread as psychiatric.",
+  },
+  {
+    category: "Young-onset",
+    feature: "Post-concussive cognitive fog · the college photo 'before the concussion, 19'",
+    title: "Clinicopathological Evaluation of CTE in Players of American Football",
+    authors: "Mez J, Daneshvar DH, et al.",
+    venue: "JAMA, 2017 (PMC5677819)",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5677819/",
+    takeaway: "Repetitive head impact in adolescence and early adulthood is associated with later neurodegeneration — the framed photo carries that quiet weight.",
+  },
+  {
+    category: "Young-onset",
+    feature: "Fluctuating clarity between days · the mirror journal (Tue/Wed/Thu)",
+    title: "Posterior cortical atrophy: a rare presentation of Alzheimer's disease in younger patients",
+    authors: "Crutch SJ, Lehmann M, Schott JM, et al.",
+    venue: "The Lancet Neurology, 2012 (PMC3740271)",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3740271/",
+    takeaway: "PCA is a young-onset visual-cognitive variant of Alzheimer's — day-to-day fluctuation and 'good day / bad day' patterns are core clinical features.",
+  },
+  {
+    category: "Young-onset",
+    feature: "Confidence picker outcomes · metacognition when nothing has been named yet",
+    title: "Functional cognitive disorder: differential diagnosis of common clinical presentations",
+    authors: "Ball HA, McWhirter L, Ballard C, et al.",
+    venue: "Brain, 2020 (PMC7783408)",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7783408/",
+    takeaway: "Functional cognitive disorder is common in adults under 40 — self-reported failure often exceeds objective testing, and validation matters more than dismissal.",
   },
 ];
 
@@ -1719,17 +2503,6 @@ function SettingsOverlay({ settings, onChange, onClose, onRestart }:{
         <input type="range" min={0} max={1} step={0.05} value={settings.foliage} onChange={(e) => onChange({ ...settings, foliage: parseFloat(e.target.value) })} className="w-full" />
       </div>
       <div className="mt-4 border-t border-black/10 pt-3">
-        <div className="font-hand text-base opacity-70">Audio</div>
-        <label className="mt-1 flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={settings.muted} onChange={(e) => onChange({ ...settings, muted: e.target.checked })} />
-          Mute
-        </label>
-        <div className="mt-2 text-sm">
-          <div>Volume: {Math.round(settings.volume * 100)}%</div>
-          <input type="range" min={0} max={1} step={0.05} value={settings.volume} onChange={(e) => onChange({ ...settings, volume: parseFloat(e.target.value) })} className="w-full" disabled={settings.muted} />
-        </div>
-      </div>
-      <div className="mt-4 border-t border-black/10 pt-3">
         <div className="font-hand text-base opacity-70">Accessibility</div>
         <div className="mt-2 text-sm">
           <div>Subtitle size: {Math.round(settings.subtitleScale * 100)}%</div>
@@ -1781,25 +2554,12 @@ function Section({ title, children }:{ title: string; children: React.ReactNode;
 }
 
 /* ------------------------------------------------------------------ */
-/* Copy helpers                                                        */
-/* ------------------------------------------------------------------ */
-
-function roomEnterLine(r: RoomId): string {
-  switch (r) {
-    case "bedroom":  return "The bed, still warm on one side.";
-    case "hallway":  return "A short hallway. Coat hook, front door, two rooms to either side.";
-    case "kitchen":  return "Kitchen light. The morning has a smell here.";
-    case "bathroom": return "Cold tile. The tap drips once, then stops.";
-  }
-}
-
-/* ------------------------------------------------------------------ */
 /* Mini-games                                                          */
 /* ------------------------------------------------------------------ */
 
 function MiniGameOverlay({ spec }: { spec: MiniSpec }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.25s_ease-out]">
+    <div data-testid={`mini-${spec.kind}`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-[fade-in_0.25s_ease-out]">
       <div className="vn-panel rounded-lg px-6 py-5 w-[min(92vw,440px)] text-center">
         <div className="font-hand text-[color:var(--color-glow)] text-xl leading-none">{spec.title}</div>
         <div className="mt-1 font-serif text-sm opacity-80">{spec.hint}</div>
@@ -1809,6 +2569,11 @@ function MiniGameOverlay({ spec }: { spec: MiniSpec }) {
           {spec.kind === "pour"  && <HoldMini label="Pour" durationMs={1800} onDone={spec.onDone} />}
           {spec.kind === "knob"  && <KnobMini onDone={spec.onDone} />}
           {spec.kind === "splash" && <TapMini target={4} onDone={spec.onDone} />}
+          {spec.kind === "combo" && spec.combo && <ComboMini code={spec.combo} onDone={spec.onDone} onMisstep={spec.onMisstep} />}
+          {spec.kind === "pairs" && spec.pairs && <PairsMini data={spec.pairs} onDone={spec.onDone} onMisstep={spec.onMisstep} />}
+          {spec.kind === "reflection" && <ReflectionMini onDone={spec.onDone} />}
+          {spec.kind === "unscramble" && spec.unscramble && <UnscrambleMini data={spec.unscramble} onDone={spec.onDone} onMisstep={spec.onMisstep} />}
+          {spec.kind === "slide" && spec.slide && <SlideMini data={spec.slide} onDone={spec.onDone} onMisstep={spec.onMisstep} />}
         </div>
         {spec.onCancel && (
           <button
@@ -1849,12 +2614,12 @@ function BrushMini({ onDone }: { onDone: () => void }) {
       <div className="flex gap-3 justify-center">
         <button
           onClick={() => press("L")}
-          className={`choice-btn rounded px-6 py-3 text-lg ${side === "L" ? "ring-2 ring-[color:var(--color-glow)] animate-[pulse-soft_1s_ease-in-out_infinite]" : "opacity-40"}`}
+          className={`choice-btn rounded px-6 py-3 text-lg ${side === "L" ? "ring-2 ring-[color:var(--color-glow)] brightness-110" : "opacity-40"}`}
           disabled={side !== "L"}
         >← Left</button>
         <button
           onClick={() => press("R")}
-          className={`choice-btn rounded px-6 py-3 text-lg ${side === "R" ? "ring-2 ring-[color:var(--color-glow)] animate-[pulse-soft_1s_ease-in-out_infinite]" : "opacity-40"}`}
+          className={`choice-btn rounded px-6 py-3 text-lg ${side === "R" ? "ring-2 ring-[color:var(--color-glow)] brightness-110" : "opacity-40"}`}
           disabled={side !== "R"}
         >Right →</button>
       </div>
@@ -1893,9 +2658,16 @@ function HoldMini({ label, durationMs, onDone }: { label: string; durationMs: nu
   return (
     <div>
       <button
+        data-testid="hold-action"
         onPointerDown={start}
         onPointerUp={stop}
         onPointerLeave={() => holding && stop()}
+        onKeyDown={(e) => {
+          if ((e.key === "Enter" || e.key === " ") && !e.repeat) start();
+        }}
+        onKeyUp={(e) => {
+          if (e.key === "Enter" || e.key === " ") stop();
+        }}
         className={`choice-btn w-full rounded px-6 py-4 text-lg select-none ${holding ? "brightness-125" : ""}`}
       >{holding ? `${label}ing…` : `Hold to ${label}`}</button>
       <div className="mt-4 h-2 w-full overflow-hidden rounded bg-white/10">
@@ -1927,11 +2699,28 @@ function KnobMini({ onDone }: { onDone: () => void }) {
     if (next >= 90) { setHolding(false); setTimeout(onDone, 250); }
   };
   const onUp = () => setHolding(false);
+  const turnBy = (amount: number) => {
+    setAngle(current => {
+      const next = Math.max(0, Math.min(90, current + amount));
+      if (next >= 90) setTimeout(onDone, 250);
+      return next;
+    });
+  };
   const pct = (angle / 90) * 100;
   return (
     <div>
       <div className="mx-auto relative" style={{ width: 140, height: 140 }}>
         <div
+          data-testid="door-knob"
+          role="slider"
+          tabIndex={0}
+          aria-label="Turn the door knob"
+          aria-valuemin={0}
+          aria-valuemax={90}
+          aria-valuenow={Math.round(angle)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); turnBy(15); }
+          }}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
@@ -1952,34 +2741,455 @@ function KnobMini({ onDone }: { onDone: () => void }) {
 
 function TapMini({ target, onDone }: { target: number; onDone: () => void }) {
   const [count, setCount] = useState(0);
-  const [pos, setPos] = useState({ x: 50, y: 50 });
-  const hit = () => {
+  const [drop, setDrop] = useState<{ id: number; x: number }>({ id: 0, x: 25 + Math.random() * 50 });
+  const [overFace, setOverFace] = useState(false);
+  const catchDrop = () => {
     const next = count + 1;
     setCount(next);
-    if (next >= target) { setTimeout(onDone, 200); return; }
-    setPos({ x: 15 + Math.random() * 70, y: 20 + Math.random() * 60 });
+    if (next >= target) { setTimeout(onDone, 220); return; }
+    setDrop({ id: next, x: 15 + Math.random() * 70 });
   };
   return (
     <div>
-      <div className="relative mx-auto rounded bg-gradient-to-b from-sky-900/40 to-sky-700/30 border border-white/10" style={{ width: "100%", height: 160 }}>
-        <button
-          onClick={hit}
-          aria-label="splash"
-          className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-200/80 hover:bg-white marker-glow animate-[pulse-soft_1.2s_ease-in-out_infinite]"
-          style={{ left: `${pos.x}%`, top: `${pos.y}%`, width: 44, height: 44 }}
+      <div className="relative mx-auto rounded bg-gradient-to-b from-sky-900/50 to-sky-700/30 border border-white/10 overflow-hidden" style={{ width: "100%", height: 200 }}>
+        <div className="absolute left-1/2 top-0 h-3 w-24 -translate-x-1/2 rounded-b bg-zinc-400/70" />
+        <div
+          key={drop.id}
+          draggable
+          onDragStart={(e) => { e.dataTransfer.setData("text/plain", "drop"); e.dataTransfer.effectAllowed = "move"; }}
+          aria-label="water droplet — drag onto your face"
+          className="absolute -translate-x-1/2 cursor-grab active:cursor-grabbing bg-sky-200/90 shadow-[0_0_14px_rgba(150,220,255,0.7)] animate-[pulse-soft_1.4s_ease-in-out_infinite]"
+          style={{ left: `${drop.x}%`, top: 12, width: 30, height: 40, borderRadius: "40% 40% 50% 50%" }}
         />
+        <div
+          data-testid="water-target"
+          role="button"
+          tabIndex={0}
+          aria-label="Catch a handful of water"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); catchDrop(); }
+          }}
+          onDragOver={(e) => { e.preventDefault(); setOverFace(true); }}
+          onDragLeave={() => setOverFace(false)}
+          onDrop={(e) => { e.preventDefault(); setOverFace(false); catchDrop(); }}
+          onClick={catchDrop}
+          className={`absolute left-1/2 -translate-x-1/2 rounded-full border-2 border-dashed flex items-center justify-center select-none cursor-pointer overflow-hidden ${overFace ? "border-[color:var(--color-glow)] bg-white/10" : "border-white/40 bg-black/20"}`}
+          style={{ bottom: 12, width: 120, height: 120 }}
+          title="drop water here"
+        >
+          <FaceSilhouette />
+        </div>
       </div>
       <div className="mt-3 h-2 w-full overflow-hidden rounded bg-white/10">
         <div className="h-full bg-[color:var(--color-glow)]" style={{ width: `${(count / target) * 100}%` }} />
       </div>
-      <div className="mt-1 text-xs opacity-60">{count}/{target} handfuls</div>
+      <div className="mt-1 text-xs opacity-60">{count}/{target} handfuls — drag each droplet onto your face</div>
+    </div>
+  );
+}
+
+/* Painterly silhouette — matches the original prototype's warm-tone,
+   three-quarter portrait: brown skin, curly hair, calm expression. */
+function FaceSilhouette() {
+  return (
+    <svg viewBox="0 0 120 120" className="w-full h-full">
+      <defs>
+        <radialGradient id="skinGrad" cx="50%" cy="55%" r="60%">
+          <stop offset="0%" stopColor="#b47a53" />
+          <stop offset="70%" stopColor="#8a5638" />
+          <stop offset="100%" stopColor="#5c3720" />
+        </radialGradient>
+        <radialGradient id="hairGrad" cx="50%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#3a2418" />
+          <stop offset="100%" stopColor="#1a0e08" />
+        </radialGradient>
+      </defs>
+      {/* neck */}
+      <path d="M45 96 Q60 108 75 96 L78 120 L42 120 Z" fill="url(#skinGrad)" opacity="0.9" />
+      {/* face oval */}
+      <ellipse cx="60" cy="62" rx="28" ry="34" fill="url(#skinGrad)" />
+      {/* curly hair cloud */}
+      <g fill="url(#hairGrad)">
+        <circle cx="42" cy="38" r="12" />
+        <circle cx="55" cy="30" r="13" />
+        <circle cx="70" cy="30" r="12" />
+        <circle cx="82" cy="40" r="11" />
+        <circle cx="36" cy="52" r="9" />
+        <circle cx="86" cy="54" r="9" />
+        <circle cx="48" cy="26" r="8" />
+        <circle cx="76" cy="24" r="7" />
+      </g>
+      {/* soft cheek warmth */}
+      <ellipse cx="46" cy="72" rx="6" ry="4" fill="#a86348" opacity="0.5" />
+      <ellipse cx="74" cy="72" rx="6" ry="4" fill="#a86348" opacity="0.5" />
+      {/* closed calm eyes */}
+      <path d="M46 64 Q50 61 55 64" stroke="#2a170d" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      <path d="M65 64 Q70 61 74 64" stroke="#2a170d" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      {/* gentle mouth */}
+      <path d="M53 82 Q60 85 67 82" stroke="#3a1e12" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      {/* nose hint */}
+      <path d="M60 66 Q58 74 61 78" stroke="#5c3720" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.7" />
+    </svg>
+  );
+}
+
+/* Combination lock — three dials, each 0–9. Player drags each dial (or clicks
+   ▲ / ▼). Submitting a wrong code triggers a misstep; correct opens the bolt. */
+function ComboMini({ code, onDone, onMisstep }: { code: number[]; onDone: () => void; onMisstep?: () => void }) {
+  const [dials, setDials] = useState<number[]>(code.map(() => 0));
+  const [wrong, setWrong] = useState(0);
+  const [shake, setShake] = useState(false);
+  const bump = (i: number, d: number) => setDials(prev => prev.map((v, idx) => idx === i ? (v + d + 10) % 10 : v));
+  const submit = () => {
+    if (dials.every((v, i) => v === code[i])) {
+      setTimeout(onDone, 260);
+    } else {
+      onMisstep?.();
+      setWrong(w => w + 1);
+      setShake(true); setTimeout(() => setShake(false), 350);
+    }
+  };
+  return (
+    <div>
+      <div className={`flex justify-center gap-3 ${shake ? "animate-[pulse-soft_0.35s_ease-out]" : ""}`}>
+        {dials.map((v, i) => (
+          <div key={i} className="flex flex-col items-center gap-1">
+            <button data-testid={`combo-up-${i}`} aria-label={`Increase dial ${i + 1}`} onClick={() => bump(i, +1)} className="choice-btn rounded px-3 py-1 text-sm">▲</button>
+            <div
+              draggable
+              onDragStart={(e) => { e.dataTransfer.setData("text/plain", "d"+i); }}
+              onWheel={(e) => { e.preventDefault(); bump(i, e.deltaY > 0 ? +1 : -1); }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => bump(i, +1)}
+              className="w-14 h-16 rounded bg-black/60 border border-white/25 flex items-center justify-center font-mono text-3xl text-[color:var(--color-glow)] cursor-grab select-none"
+              title="scroll, drag, or use arrows"
+            >
+              {v}
+            </div>
+            <button aria-label={`Decrease dial ${i + 1}`} onClick={() => bump(i, -1)} className="choice-btn rounded px-3 py-1 text-sm">▼</button>
+          </div>
+        ))}
+      </div>
+      <button data-testid="combo-submit" onClick={submit} className="mt-4 choice-btn rounded px-5 py-2">Try the bolt</button>
+      {wrong >= 2 && (
+        <div className="mt-3 text-xs text-[color:var(--color-glow)]/90 italic">
+          hint: the pencilled numbers are {code.join(" · ")}.
+        </div>
+      )}
+      <div className="mt-1 text-xs opacity-60">scroll · drag · or ▲▼ each dial · {wrong} wrong</div>
+    </div>
+  );
+}
+
+/* Pairs matching — drag each item onto a target. All items must land on their
+   correct target to complete. Wrong drops snap back and log a misstep. */
+function PairsMini({
+  data, onDone, onMisstep,
+}: {
+  data: { items: { id: string; label: string; emoji?: string }[]; targets: { id: string; label: string }[]; correctMap: Record<string, string> };
+  onDone: () => void;
+  onMisstep?: () => void;
+}) {
+  const [placed, setPlaced] = useState<Record<string, string>>({});
+  const [wrong, setWrong] = useState(0);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const handleDrop = (targetId: string) => {
+    if (!dragId) return;
+    if (data.correctMap[dragId] === targetId) {
+      setPlaced(p => {
+        const next = { ...p, [dragId]: targetId };
+        if (Object.keys(next).length === data.items.length) setTimeout(onDone, 300);
+        return next;
+      });
+    } else {
+      onMisstep?.();
+      setWrong(w => w + 1);
+    }
+    setDragId(null);
+  };
+  const remaining = data.items.filter(it => !placed[it.id]);
+  return (
+    <div>
+      <div className="flex justify-center gap-2 flex-wrap min-h-[70px] p-2 rounded bg-black/20 border border-white/10">
+        {remaining.length === 0 && <div className="text-xs opacity-60">all placed…</div>}
+        {remaining.map(it => (
+          <div
+            key={it.id}
+            draggable
+            onDragStart={() => setDragId(it.id)}
+            onDragEnd={() => setDragId(null)}
+            className="cursor-grab active:cursor-grabbing choice-btn rounded px-3 py-2 text-sm flex items-center gap-2"
+          >
+            <span className="text-lg">{it.emoji ?? "•"}</span>
+            <span>{it.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {data.targets.map(t => {
+          const landed = Object.entries(placed).filter(([, tid]) => tid === t.id).map(([iid]) => data.items.find(i => i.id === iid)?.emoji ?? "•");
+          return (
+            <div
+              key={t.id}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(t.id)}
+              className="rounded border-2 border-dashed border-white/30 bg-black/30 p-2 min-h-[70px] text-center hover:border-[color:var(--color-glow)] transition-colors"
+            >
+              <div className="text-xs opacity-70">{t.label}</div>
+              <div className="mt-1 text-2xl leading-none">{landed.join(" ")}</div>
+            </div>
+          );
+        })}
+      </div>
+      {wrong >= 2 && (
+        <div className="mt-3 text-xs text-[color:var(--color-glow)]/90 italic">
+          hint: today is the only column that should end up with pills. The other days are decoys.
+        </div>
+      )}
+      <div className="mt-1 text-xs opacity-60">drag each pill onto a day · {Object.keys(placed).length}/{data.items.length} placed · {wrong} wrong</div>
+    </div>
+  );
+}
+
+/* -------- Mirror reflection — the old-demo painterly portrait ------ */
+/* A framed, lit reflection of the character: warm brown skin, curly
+   hair, cream sleep shirt. Player clicks "There you are" to advance. */
+function ReflectionMini({ onDone }: { onDone: () => void }) {
+  return (
+    <div>
+      <div
+        className="relative mx-auto rounded-md overflow-hidden"
+        style={{
+          width: "100%", height: 260,
+          background: "radial-gradient(ellipse at 50% 40%, #d9c8b3 0%, #a08a70 55%, #4a3a2a 100%)",
+          boxShadow: "inset 0 0 40px rgba(0,0,0,0.55), 0 0 0 6px #5c412a, 0 0 0 8px #2b1c11",
+        }}
+      >
+        {/* soft mirror bloom */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,240,220,0.35),transparent_55%)]" />
+        {/* reflection portrait — bust in a cream sleep shirt */}
+        <svg viewBox="0 0 200 260" className="absolute inset-0 w-full h-full">
+          <defs>
+            <radialGradient id="mSkin" cx="50%" cy="45%" r="55%">
+              <stop offset="0%" stopColor="#c48a63" />
+              <stop offset="70%" stopColor="#8a5638" />
+              <stop offset="100%" stopColor="#4d2f1f" />
+            </radialGradient>
+            <radialGradient id="mHair" cx="50%" cy="30%" r="70%">
+              <stop offset="0%" stopColor="#3a2418" />
+              <stop offset="100%" stopColor="#150b06" />
+            </radialGradient>
+            <linearGradient id="mShirt" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="#f4e7cf" />
+              <stop offset="100%" stopColor="#b8a184" />
+            </linearGradient>
+          </defs>
+          {/* sleep shirt / shoulders */}
+          <path d="M20 260 Q30 200 70 190 Q100 210 130 190 Q170 200 180 260 Z" fill="url(#mShirt)" />
+          <path d="M70 190 Q100 200 130 190 L128 205 Q100 215 72 205 Z" fill="#e8d6b5" opacity="0.7" />
+          {/* neck */}
+          <path d="M82 190 Q100 200 118 190 L120 170 L80 170 Z" fill="url(#mSkin)" />
+          {/* face */}
+          <ellipse cx="100" cy="120" rx="46" ry="56" fill="url(#mSkin)" />
+          {/* curly hair — bigger cloud */}
+          <g fill="url(#mHair)">
+            <circle cx="70" cy="80" r="20" />
+            <circle cx="92" cy="65" r="22" />
+            <circle cx="115" cy="65" r="22" />
+            <circle cx="138" cy="82" r="20" />
+            <circle cx="60" cy="100" r="15" />
+            <circle cx="146" cy="102" r="15" />
+            <circle cx="82" cy="58" r="14" />
+            <circle cx="125" cy="55" r="12" />
+            <circle cx="105" cy="52" r="14" />
+          </g>
+          {/* cheek warmth */}
+          <ellipse cx="76" cy="138" rx="11" ry="7" fill="#b0654a" opacity="0.45" />
+          <ellipse cx="124" cy="138" rx="11" ry="7" fill="#b0654a" opacity="0.45" />
+          {/* eyes — soft open, warm */}
+          <ellipse cx="82" cy="122" rx="4.5" ry="3" fill="#1b0e07" />
+          <ellipse cx="118" cy="122" rx="4.5" ry="3" fill="#1b0e07" />
+          <path d="M74 118 Q82 112 90 118" stroke="#2a170d" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          <path d="M110 118 Q118 112 126 118" stroke="#2a170d" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+          {/* nose */}
+          <path d="M100 128 Q97 145 101 152" stroke="#4d2f1f" strokeWidth="1.4" fill="none" strokeLinecap="round" opacity="0.7" />
+          {/* mouth */}
+          <path d="M88 162 Q100 168 112 162" stroke="#3a1e12" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+          {/* light streak on the mirror */}
+          <rect x="150" y="10" width="8" height="240" fill="rgba(255,255,255,0.18)" transform="rotate(12 150 130)" />
+        </svg>
+      </div>
+      <button onClick={onDone} className="mt-4 choice-btn rounded px-5 py-2">There you are.</button>
+      <div className="mt-1 text-xs opacity-60">The old mirror — same face, same morning.</div>
+    </div>
+  );
+}
+
+/* -------- Unscramble — letter-tile drag puzzle -------------------- */
+function UnscrambleMini({
+  data, onDone, onMisstep,
+}: {
+  data: { word: string; caption: string };
+  onDone: () => void;
+  onMisstep?: () => void;
+}) {
+  const target = data.word.toUpperCase();
+  const initial = useMemo(() => {
+    const arr = target.split("");
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    // guarantee it starts scrambled
+    if (arr.join("") === target && arr.length > 1) { [arr[0], arr[1]] = [arr[1], arr[0]]; }
+    return arr;
+  }, [target]);
+  const [tiles, setTiles] = useState<string[]>(initial);
+  const [wrong, setWrong] = useState(0);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const swap = (i: number, j: number) => {
+    setTiles(prev => {
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+  const submit = () => {
+    if (tiles.join("") === target) setTimeout(onDone, 250);
+    else { onMisstep?.(); setWrong(w => w + 1); }
+  };
+  return (
+    <div>
+      <div className="text-xs opacity-70 italic mb-2">{data.caption}</div>
+      <div className="flex justify-center gap-2 flex-wrap">
+        {tiles.map((t, i) => (
+          <button
+            key={i}
+            type="button"
+            data-testid={`phone-tile-${i}`}
+            draggable
+            onDragStart={() => setDragIdx(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => { if (dragIdx !== null && dragIdx !== i) swap(dragIdx, i); setDragIdx(null); }}
+            onClick={() => {
+              if (selectedIdx === null) { setSelectedIdx(i); return; }
+              if (selectedIdx !== i) swap(selectedIdx, i);
+              setSelectedIdx(null);
+            }}
+            aria-label={`Letter ${t}, position ${i + 1}`}
+            aria-pressed={selectedIdx === i}
+            className={`w-10 h-12 rounded bg-black/60 border flex items-center justify-center font-mono text-2xl text-[color:var(--color-glow)] cursor-grab select-none ${selectedIdx === i ? "border-[color:var(--color-glow)] ring-2 ring-[color:var(--color-glow)]/50" : "border-white/25"}`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      <button data-testid="phone-word-submit" onClick={submit} className="mt-4 choice-btn rounded px-5 py-2">Read the word</button>
+      {wrong >= 2 && (
+        <div className="mt-3 text-xs text-[color:var(--color-glow)]/90 italic">
+          hint: it starts with <b>{target[0]}</b> and ends with <b>{target[target.length - 1]}</b> — {target.length} letters.
+        </div>
+      )}
+      <div className="mt-1 text-xs opacity-60">drag tiles to swap · {wrong} wrong</div>
+    </div>
+  );
+}
+
+/* -------- Slide — 4-tile card reassembly puzzle ------------------- */
+function SlideMini({
+  data, onDone, onMisstep,
+}: {
+  data: { image: string; caption: string };
+  onDone: () => void;
+  onMisstep?: () => void;
+}) {
+  // 4 quadrants labelled 0-3. Player must land each on its home slot.
+  const homes = [0, 1, 2, 3];
+  const initial = useMemo(() => {
+    const arr = [...homes];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    if (arr.every((v, i) => v === i)) { [arr[0], arr[1]] = [arr[1], arr[0]]; }
+    return arr;
+  }, []);
+  const [tiles, setTiles] = useState<number[]>(initial); // tiles[slotIdx] = pieceId
+  const [wrong, setWrong] = useState(0);
+  const [dragSlot, setDragSlot] = useState<number | null>(null);
+  const swap = (i: number, j: number) => {
+    setTiles(prev => {
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+  useEffect(() => {
+    if (tiles.every((piece, slot) => piece === slot)) {
+      setTimeout(onDone, 300);
+    }
+  }, [tiles, onDone]);
+  // Piece renderer — hand-painted "torn card" quadrants with cursive ink.
+  const piece = (id: number) => {
+    const bg = ["#e8d9b5", "#dcc99a", "#d1bc85", "#c6ae70"][id];
+    const inks: Record<number, React.ReactElement> = {
+      0: <text x="10" y="55" fontFamily="cursive" fontSize="26" fill="#3a2818">War</text>,
+      1: <text x="0" y="55" fontFamily="cursive" fontSize="26" fill="#3a2818">mth</text>,
+      2: <text x="10" y="45" fontFamily="cursive" fontSize="22" fill="#3a2818">to yo</text>,
+      3: <text x="0" y="45" fontFamily="cursive" fontSize="22" fill="#3a2818">u — A.</text>,
+    };
+    return (
+      <svg viewBox="0 0 100 80" className="w-full h-full" preserveAspectRatio="none">
+        <rect width="100" height="80" fill={bg} />
+        <path d="M0 0 L100 0 L100 80 L0 80 Z" fill="none" stroke="#8a7458" strokeWidth="1" strokeDasharray="2 3" opacity="0.5" />
+        {inks[id]}
+      </svg>
+    );
+  };
+  return (
+    <div>
+      <div className="text-xs opacity-70 italic mb-2">{data.caption}</div>
+      <div
+        className="mx-auto grid grid-cols-2 gap-1 p-1 bg-[#5c412a] rounded"
+        style={{ width: 220, height: 176 }}
+      >
+        {tiles.map((pieceId, slot) => {
+          const correct = pieceId === slot;
+          return (
+            <div
+              key={slot}
+              draggable
+              onDragStart={() => setDragSlot(slot)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => {
+                if (dragSlot === null || dragSlot === slot) { setDragSlot(null); return; }
+                const wasRight = tiles[dragSlot] === dragSlot && tiles[slot] === slot;
+                swap(dragSlot, slot);
+                // only log a misstep if the player broke a correct pair
+                if (wasRight) { onMisstep?.(); setWrong(w => w + 1); }
+                setDragSlot(null);
+              }}
+              className={`overflow-hidden cursor-grab active:cursor-grabbing rounded-sm ${correct ? "ring-2 ring-[color:var(--color-glow)]/60" : ""}`}
+            >
+              {piece(pieceId)}
+            </div>
+          );
+        })}
+      </div>
+      {wrong >= 2 && (
+        <div className="mt-3 text-xs text-[color:var(--color-glow)]/90 italic">
+          hint: the top-left reads "War", top-right "mth", bottom-left "to yo", bottom-right "u — A."
+        </div>
+      )}
+      <div className="mt-2 text-xs opacity-60">drag tiles to swap · {tiles.filter((p, s) => p === s).length}/4 in place</div>
     </div>
   );
 }
 
 
-/* ------------------------------------------------------------------ */
 /* Onboarding & Breathe overlays                                       */
+
 /* ------------------------------------------------------------------ */
 
 function OnboardingOverlay({ onDone }: { onDone: () => void }) {
@@ -1999,7 +3209,7 @@ function OnboardingOverlay({ onDone }: { onDone: () => void }) {
         <div className="mt-5 flex items-center justify-between">
           <span className="text-xs opacity-50">{i + 1} / {steps.length}</span>
           <div className="flex gap-2">
-            <button onClick={onDone} className="choice-btn rounded px-3 py-1 text-xs opacity-70">Skip</button>
+            <button data-testid="tutorial-skip" onClick={onDone} className="choice-btn rounded px-3 py-1 text-xs opacity-70">Skip</button>
             {i < steps.length - 1 ? (
               <button onClick={() => setI(i + 1)} className="choice-btn rounded px-4 py-1.5 text-sm">Next</button>
             ) : (
@@ -2026,6 +3236,458 @@ function BreatheOverlay({ phase }: { phase: "in" | "out" }) {
       />
       <div className="absolute bottom-24 font-hand text-2xl text-[color:var(--color-glow)]/90">
         {phase === "in" ? "inhale…" : "exhale…"}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* InteractionOverlay — drag / sequence / checklist / confidence      */
+/* Rules the pickers honor:                                            */
+/*   - Every activity supports drag & drop (click stays as fallback)   */
+/*   - Wrong answers do NOT dismiss — they call onMisstep and let      */
+/*     the player retry                                                */
+/*   - After the 2nd local misstep in an interaction, a hint appears   */
+/*     showing what fits where                                         */
+/*   - When global wrongCount >= 3, labels get "confused" (fuzzier     */
+/*     synonyms) to simulate word-finding drift                        */
+/* ------------------------------------------------------------------ */
+
+const CONFUSE_SWAPS: Array<[RegExp, string]> = [
+  [/A carton of milk/gi, "carton (something white?)"],
+  [/Half a lemon/gi, "half a bright thing"],
+  [/Sunday-you's note/gi, "a note from a Sunday you"],
+  [/Someone else's leftovers/gi, "a covered plate (whose?)"],
+  [/A dozen eggs/gi, "a box that might rattle"],
+  [/An open bottle of wine/gi, "a dark bottle"],
+  [/\bKeys\b/g, "the jangling ring"],
+  [/\bPhone\b/g, "the glass rectangle"],
+  [/\bBag\b/g, "the sag on the hook"],
+  [/note by the door/gi, "the folded paper"],
+  [/Kettle switched off/gi, "the metal thing, quieted"],
+  [/Morning pill taken/gi, "the small round thing, swallowed"],
+  [/Wallet — you never touched it this morning/gi, "the small folded thing"],
+  [/Slice the bread/gi, "cut the loaf"],
+  [/Into the toaster/gi, "into the slotted box"],
+  [/Butter it/gi, "spread the yellow"],
+  [/Onto the plate/gi, "onto the round dish"],
+  [/Prop it by the door/gi, "leave it near the way out"],
+  [/Back on the pillow/gi, "back where you slept"],
+  [/Tuck it in the drawer/gi, "hide it in the box that slides"],
+  [/Into the bag/gi, "into the sag"],
+  [/Back in the bowl/gi, "into the little dish"],
+  [/Loose in a pocket/gi, "somewhere on your body"],
+  [/\bWed\b/g, "day before"],
+  [/\bThu\b/g, "today (?)"],
+  [/\bFri\b/g, "day after"],
+  [/\bBlurred\b/g, "not-there"],
+  [/\bUneven\b/g, "half-there"],
+  [/\bClear enough\b/g, "here-enough"],
+];
+function confuseLabel(label: string, level: number): string {
+  if (level < 3) return label;
+  let out = label;
+  for (const [re, v] of CONFUSE_SWAPS) out = out.replace(re, v);
+  return level >= 4 ? out + " — maybe" : out;
+}
+
+function InteractionOverlay({ spec, confusionLevel }: { spec: InteractionSpec; confusionLevel: number }) {
+  return (
+    <div data-testid={`interaction-${spec.kind}`} className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm animate-[fade-in_0.25s_ease-out]">
+      <div className="vn-panel rounded-lg px-6 py-5 w-[min(94vw,580px)]">
+        <div className="font-hand text-[color:var(--color-glow)] text-xl leading-none">{spec.title}</div>
+        <div className="mt-1 font-serif text-sm opacity-80">{spec.hint}</div>
+        {confusionLevel >= 3 && (
+          <div className="mt-1 text-[11px] italic opacity-60">Words go soft when the morning's crowded. Take your time.</div>
+        )}
+        <div className="mt-4">
+          {spec.kind === "drag"       && <DragToTarget spec={spec} confusionLevel={confusionLevel} />}
+          {spec.kind === "sequence"   && <SequenceDrag spec={spec} confusionLevel={confusionLevel} />}
+          {spec.kind === "checklist"  && <ChecklistDrag spec={spec} confusionLevel={confusionLevel} />}
+          {spec.kind === "confidence" && <ConfidenceDrag spec={spec} confusionLevel={confusionLevel} />}
+        </div>
+        {spec.onCancel && (
+          <button
+            onClick={spec.onCancel}
+            className="mt-4 text-xs opacity-60 hover:opacity-100 underline underline-offset-2"
+          >
+            step away
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function HintBanner({ show, text }: { show: boolean; text: string }) {
+  if (!show) return null;
+  return (
+    <div className="mb-3 rounded border border-[color:var(--color-glow)]/60 bg-[color:var(--color-glow)]/10 px-3 py-2 text-xs font-serif text-[color:var(--color-glow)] animate-[fade-in_0.3s_ease-out]">
+      <span className="font-hand text-base mr-2">Hint:</span>{text}
+    </div>
+  );
+}
+
+function TimerBar({ limitMs, onExpire, paused }: { limitMs: number; onExpire: () => void; paused?: boolean }) {
+  const [left, setLeft] = useState(limitMs);
+  const startRef = useRef(performance.now());
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (paused) return;
+    let raf = 0;
+    const tick = () => {
+      const remaining = Math.max(0, limitMs - (performance.now() - startRef.current));
+      setLeft(remaining);
+      if (remaining <= 0 && !firedRef.current) { firedRef.current = true; onExpire(); return; }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [limitMs, paused]);
+  const pct = (left / limitMs) * 100;
+  const secs = Math.ceil(left / 1000);
+  const warn = pct < 30;
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between text-[11px] opacity-70 mb-1">
+        <span>Time</span><span className={warn ? "text-rose-300" : ""}>{secs}s</span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded bg-white/10">
+        <div className={`h-full transition-[width] duration-100 ${warn ? "bg-rose-400" : "bg-[color:var(--color-glow)]"}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function DragToTarget({ spec, confusionLevel }: { spec: Extract<InteractionSpec, { kind: "drag" }>; confusionLevel: number }) {
+  const [over, setOver] = useState<string | null>(null);
+  const [wrong, setWrong] = useState(0);
+  const [shake, setShake] = useState(false);
+  const correctId = spec.targets.find(t => t.tone === "correct")?.id ?? null;
+  const correctLabel = spec.targets.find(t => t.tone === "correct")?.label ?? "";
+  const showHint = wrong >= 2;
+  const handlePick = (id: string, tone: "correct" | "neutral" | "wrong") => {
+    if (tone === "wrong" && spec.retryOnWrong) {
+      spec.onMisstep?.();
+      setWrong(w => w + 1);
+      setShake(true); window.setTimeout(() => setShake(false), 380);
+      return;
+    }
+    spec.onPick(id, tone);
+  };
+  return (
+    <div>
+      <HintBanner show={showHint} text={`Try "${confuseLabel(correctLabel, confusionLevel)}" — the glowing target is the fit.`} />
+      <div
+        draggable
+        onDragStart={(e) => { e.dataTransfer.setData("text/plain", "item"); e.dataTransfer.effectAllowed = "move"; }}
+        className={`mx-auto mb-4 select-none cursor-grab active:cursor-grabbing rounded border border-[color:var(--color-glow)]/40 bg-black/40 px-3 py-2 text-center font-serif text-sm ${shake ? "animate-[wobble_0.4s_ease]" : ""}`}
+      >
+        {confuseLabel(spec.item, confusionLevel)}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {spec.targets.map(t => {
+          const isHint = showHint && t.id === correctId;
+          return (
+            <button
+              key={t.id}
+              data-testid={`interaction-target-${t.id}`}
+              onDragOver={(e) => { e.preventDefault(); setOver(t.id); }}
+              onDragLeave={() => setOver(o => (o === t.id ? null : o))}
+              onDrop={(e) => { e.preventDefault(); setOver(null); handlePick(t.id, t.tone); }}
+              onClick={() => handlePick(t.id, t.tone)}
+              className={`choice-btn rounded px-3 py-3 text-sm text-left transition ${over === t.id ? "ring-2 ring-[color:var(--color-glow)]" : ""} ${isHint ? "marker-glow" : ""}`}
+            >
+              {confuseLabel(t.label, confusionLevel)}
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-3 text-[11px] opacity-60 italic">Drag the card into a target — or click one.</div>
+    </div>
+  );
+}
+
+function SequenceDrag({ spec, confusionLevel }: { spec: Extract<InteractionSpec, { kind: "sequence" }>; confusionLevel: number }) {
+  const [order, setOrder] = useState<(string | null)[]>(() => Array(spec.items.length).fill(null));
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+  const [wrong, setWrong] = useState(0);
+  const [shake, setShake] = useState(false);
+  const showHint = wrong >= 2;
+  const placedIds = new Set(order.filter(Boolean) as string[]);
+  const remaining = spec.items.filter(i => !placedIds.has(i.id));
+  const filledCount = order.filter(x => x !== null).length;
+  const done = filledCount === spec.items.length;
+  const dropAt = (idx: number, id: string) => {
+    setOrder(o => {
+      const n = [...o];
+      const existingIdx = n.indexOf(id);
+      if (existingIdx >= 0) n[existingIdx] = null;
+      n[idx] = id;
+      return n;
+    });
+    setDragId(null); setOverIdx(null);
+  };
+  const check = () => {
+    const arr = order as string[];
+    const correct = arr.every((id, i) => id === spec.correctOrder[i]);
+    if (!correct) {
+      spec.onMisstep?.();
+      setWrong(w => w + 1);
+      setShake(true); window.setTimeout(() => setShake(false), 380);
+      // After 3 wrong tries, accept the current order and move on so the player isn't stuck.
+      if (wrong + 1 >= 3) spec.onDone(arr, false);
+      return;
+    }
+    spec.onDone(arr, true);
+  };
+  const onExpire = () => {
+    const arr = order as string[];
+    spec.onMisstep?.();
+    spec.onDone(arr, false);
+  };
+  return (
+    <div>
+      {spec.timeLimit && <TimerBar limitMs={spec.timeLimit} onExpire={onExpire} />}
+      <HintBanner show={showHint} text={`Correct order: ${spec.correctOrder.map(id => confuseLabel(spec.items.find(i => i.id === id)?.label || id, confusionLevel)).join(" → ")}.`} />
+      <div className={`mb-3 grid grid-cols-4 gap-2 ${shake ? "animate-[wobble_0.4s_ease]" : ""}`}>
+        {order.map((id, idx) => {
+          const item = spec.items.find(x => x.id === id) || null;
+          const correctItem = spec.items.find(x => x.id === spec.correctOrder[idx]);
+          const hintLabel = showHint && !item ? correctItem?.label : null;
+          const misplaced = showHint && item && item.id !== spec.correctOrder[idx];
+          return (
+            <div
+              key={idx}
+              data-testid={`sequence-slot-${idx}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`Sequence position ${idx + 1}`}
+              onDragOver={(e) => { e.preventDefault(); setOverIdx(idx); }}
+              onDragLeave={() => setOverIdx(o => o === idx ? null : o)}
+              onDrop={(e) => { e.preventDefault(); if (dragId) dropAt(idx, dragId); }}
+              onClick={() => { if (dragId) dropAt(idx, dragId); }}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && dragId) { e.preventDefault(); dropAt(idx, dragId); }
+              }}
+              className={`min-h-[64px] rounded border-2 border-dashed p-1.5 text-xs text-center flex flex-col items-center justify-center ${overIdx === idx ? "border-[color:var(--color-glow)] bg-white/5" : "border-white/20"} ${misplaced ? "border-rose-400/60" : ""}`}
+            >
+              <div className="opacity-50 text-[10px]">{idx + 1}</div>
+              {item ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setOrder(o => { const n = [...o]; n[idx] = null; return n; }); }}
+                  className="mt-1 rounded bg-black/40 px-1.5 py-0.5 text-xs"
+                  title="click to remove"
+                >
+                  {confuseLabel(item.label, confusionLevel)}
+                </button>
+              ) : hintLabel ? (
+                <div className="mt-1 text-[10px] italic opacity-40">hint: {confuseLabel(hintLabel, confusionLevel)}</div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+      <div className="mb-2 text-[11px] opacity-60 italic">Drag steps into slots (or tap a step, then tap a slot).</div>
+      <div className="grid grid-cols-2 gap-2">
+        {remaining.map(i => (
+          <button
+            key={i.id}
+            type="button"
+            data-testid={`sequence-item-${i.id}`}
+            aria-pressed={dragId === i.id}
+            draggable
+            onDragStart={() => setDragId(i.id)}
+            onDragEnd={() => setDragId(null)}
+            onClick={() => setDragId(prev => prev === i.id ? null : i.id)}
+            className={`cursor-grab active:cursor-grabbing rounded px-3 py-2 text-sm text-left border select-none ${dragId === i.id ? "border-[color:var(--color-glow)] bg-white/10" : "border-white/20 bg-black/40"}`}
+          >
+            {confuseLabel(i.label, confusionLevel)}
+          </button>
+        ))}
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          disabled={!done}
+          onClick={check}
+          className={`choice-btn rounded px-3 py-2 text-sm ${done ? "" : "opacity-40 cursor-not-allowed"}`}
+        >
+          {done ? "That's the order" : `fill ${spec.items.length - filledCount} more`}
+        </button>
+        {filledCount > 0 && (
+          <button onClick={() => setOrder(Array(spec.items.length).fill(null))} className="text-xs opacity-70 hover:opacity-100 underline underline-offset-2">
+            start over
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChecklistDrag({ spec, confusionLevel }: { spec: Extract<InteractionSpec, { kind: "checklist" }>; confusionLevel: number }) {
+  const [placement, setPlacement] = useState<Record<string, "yes" | "no" | null>>(
+    () => Object.fromEntries(spec.options.map(o => [o.id, null]))
+  );
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overBin, setOverBin] = useState<"yes" | "no" | null>(null);
+  const [wrong, setWrong] = useState(0);
+  const [shake, setShake] = useState(false);
+  const showHint = wrong >= 2;
+  const unplaced = spec.options.filter(o => placement[o.id] === null);
+  const allPlaced = unplaced.length === 0;
+  const place = (id: string, bin: "yes" | "no") => setPlacement(p => ({ ...p, [id]: bin }));
+  const finish = () => {
+    const picked = Object.entries(placement).filter(([, v]) => v === "yes").map(([k]) => k);
+    const wrongPicks = picked.filter(id => !spec.options.find(o => o.id === id)?.correct).length;
+    const missedCorrect = spec.options.filter(o => o.correct && placement[o.id] !== "yes").length;
+    const allCorrect = wrongPicks === 0 && missedCorrect === 0;
+    if (!allCorrect) {
+      spec.onMisstep?.();
+      setWrong(w => w + 1);
+      setShake(true); window.setTimeout(() => setShake(false), 380);
+      if (wrong + 1 >= 3) spec.onDone(picked, allCorrect, wrongPicks);
+      return;
+    }
+    spec.onDone(picked, true, 0);
+  };
+  const onExpire = () => {
+    const picked = Object.entries(placement).filter(([, v]) => v === "yes").map(([k]) => k);
+    const wrongPicks = picked.filter(id => !spec.options.find(o => o.id === id)?.correct).length;
+    spec.onMisstep?.();
+    spec.onDone(picked, wrongPicks === 0 && spec.options.filter(o => o.correct && placement[o.id] !== "yes").length === 0, wrongPicks);
+  };
+  const correctIds = spec.options.filter(o => o.correct).map(o => confuseLabel(o.label, confusionLevel));
+  return (
+    <div className={shake ? "animate-[wobble_0.4s_ease]" : ""}>
+      {spec.timeLimit && <TimerBar limitMs={spec.timeLimit} onExpire={onExpire} />}
+      {spec.preview && (
+        <div className="mb-3 rounded-lg border border-white/15 bg-gradient-to-b from-sky-100/10 to-sky-950/40 p-2">
+          <div className="text-[11px] uppercase tracking-wide opacity-70 mb-1">{spec.preview.title}</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {spec.preview.items.map((it, i) => (
+              <div key={i} className="rounded border border-white/15 bg-black/40 px-2 py-2 text-center">
+                <div className="text-2xl leading-none">{it.emoji}</div>
+                <div className="mt-1 text-[10px] font-serif opacity-80">{it.label}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-1 text-[10px] italic opacity-50">This is what you can see on the shelf.</div>
+        </div>
+      )}
+      <HintBanner show={showHint} text={`Only these belong in "It's there": ${correctIds.join(", ")}.`} />
+      <div className="mb-3 flex flex-wrap gap-2 min-h-[52px] rounded border border-white/10 bg-black/30 p-2">
+        {unplaced.length === 0 && <span className="italic text-xs opacity-50">all sorted — press "That's the list"</span>}
+        {unplaced.map(o => (
+          <button
+            key={o.id}
+            type="button"
+            data-testid={`check-item-${o.id}`}
+            aria-pressed={dragId === o.id}
+            draggable
+            onDragStart={() => setDragId(o.id)}
+            onDragEnd={() => setDragId(null)}
+            onClick={() => setDragId(prev => prev === o.id ? null : o.id)}
+            className={`cursor-grab active:cursor-grabbing rounded border px-2 py-1 text-xs font-serif select-none ${dragId === o.id ? "border-[color:var(--color-glow)] bg-white/10" : "border-[color:var(--color-glow)]/30 bg-black/40"}`}
+          >
+            {confuseLabel(o.label, confusionLevel)}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {(["yes", "no"] as const).map(bin => (
+          <div
+            key={bin}
+            data-testid={`check-bin-${bin}`}
+            role="button"
+            tabIndex={0}
+            aria-label={bin === "yes" ? "Place selected item in It's there" : "Place selected item in Not there"}
+            onDragOver={(e) => { e.preventDefault(); setOverBin(bin); }}
+            onDragLeave={() => setOverBin(b => b === bin ? null : b)}
+            onDrop={(e) => { e.preventDefault(); if (dragId) place(dragId, bin); setOverBin(null); setDragId(null); }}
+            onClick={() => { if (dragId) { place(dragId, bin); setDragId(null); } }}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === " ") && dragId) {
+                e.preventDefault();
+                place(dragId, bin);
+                setDragId(null);
+              }
+            }}
+            className={`min-h-[110px] rounded border-2 border-dashed p-2 ${overBin === bin ? "border-[color:var(--color-glow)] bg-white/5" : "border-white/15"}`}
+          >
+            <div className="text-[11px] uppercase tracking-wide opacity-70 mb-1">
+              {bin === "yes" ? "It's there" : "Not there"}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {spec.options.filter(o => placement[o.id] === bin).map(o => {
+                const isMisplaced = showHint && ((bin === "yes" && !o.correct) || (bin === "no" && o.correct));
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => setPlacement(p => ({ ...p, [o.id]: null }))}
+                    className={`rounded border px-2 py-1 text-xs font-serif ${isMisplaced ? "border-rose-400/70 text-rose-200" : "border-white/20"}`}
+                    title="click to move back"
+                  >
+                    {confuseLabel(o.label, confusionLevel)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          data-testid="check-submit"
+          data-remaining={unplaced.length}
+          disabled={!allPlaced}
+          onClick={finish}
+          className={`choice-btn rounded px-3 py-2 text-sm ${allPlaced ? "" : "opacity-40 cursor-not-allowed"}`}
+        >
+          That's the list
+        </button>
+        {showHint && <span className="text-[11px] italic opacity-70">Rose outlines mark misplaced items.</span>}
+      </div>
+    </div>
+  );
+}
+
+function ConfidenceDrag({ spec, confusionLevel }: { spec: Extract<InteractionSpec, { kind: "confidence" }>; confusionLevel: number }) {
+  const opts: { level: 1 | 2 | 3; label: string; sub: string }[] = [
+    { level: 1, label: "Blurred",     sub: "the day hasn't come into shape" },
+    { level: 2, label: "Uneven",      sub: "some things are here, some aren't" },
+    { level: 3, label: "Clear enough", sub: "not perfect, but enough to move" },
+  ];
+  const [dragging, setDragging] = useState(false);
+  const [over, setOver] = useState<1 | 2 | 3 | null>(null);
+  const drop = (level: 1 | 2 | 3) => spec.onPick(level, level !== spec.honestLevel);
+  return (
+    <div>
+      <div className="mb-4 flex items-center justify-center gap-3">
+        <div
+          draggable
+          onDragStart={() => setDragging(true)}
+          onDragEnd={() => setDragging(false)}
+          className={`cursor-grab active:cursor-grabbing h-10 w-10 rounded-full bg-[color:var(--color-glow)]/30 border-2 border-[color:var(--color-glow)] shadow-[0_0_18px_rgba(255,220,150,0.4)] ${dragging ? "opacity-60" : ""}`}
+          title="drag this onto a bar"
+        />
+        <div className="text-[11px] italic opacity-70">Drag this token onto the bar that feels honest.</div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {opts.map(o => (
+          <button
+            key={o.level}
+            onDragOver={(e) => { e.preventDefault(); setOver(o.level); }}
+            onDragLeave={() => setOver(x => x === o.level ? null : x)}
+            onDrop={(e) => { e.preventDefault(); setOver(null); drop(o.level); }}
+            onClick={() => drop(o.level)}
+            className={`choice-btn rounded px-3 py-2 text-left ${over === o.level ? "ring-2 ring-[color:var(--color-glow)]" : ""}`}
+          >
+            <div className="font-serif text-sm">{confuseLabel(o.label, confusionLevel)}</div>
+            <div className="text-[11px] opacity-60 italic">{o.sub}</div>
+          </button>
+        ))}
       </div>
     </div>
   );

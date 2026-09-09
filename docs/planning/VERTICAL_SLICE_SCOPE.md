@@ -2,20 +2,22 @@
 
 ## Core Scenes
 
-1. Bedroom / bedside
-2. Mirror or phone close-up
-3. Hallway / door
+1. Bedroom / orientation
+2. Hallway / navigation hub
+3. Kitchen / warm routine
+4. Bathroom / wash routine
+5. Hallway / Front Door threshold
 
-The kitchen, bathroom, living room, expanded checklist, and larger ending set are intentionally deprioritized until the first-person slice feels strong.
+The current route is the stable desktop base for a planned 20–30 minute demo. Future length should come from authored interactions and short transitions inside these rooms, not from importing another runtime or adding more rooms immediately.
 
 ## Required Interactions
 
 - Wake at bedside in a first-person view.
 - Inspect glasses, phone, note, or voice memo.
-- Turn to mirror or phone close-up.
-- Answer a confidence prompt.
+- Complete the phone close-up and make a message choice.
 - Move into hallway.
-- Inspect keys, appointment card, support note, and door.
+- Complete at least two Kitchen and two Bathroom interactions.
+- Return to the Hallway and use the Memory Book before the Front Door.
 - Use a support cue or phone support.
 - Leave, pause, or make the morning smaller.
 
@@ -27,10 +29,9 @@ The kitchen, bathroom, living room, expanded checklist, and larger ending set ar
 
 ## Intentionally Cut For Now
 
-- Five-room progression
-- Tea sequence
-- Medication sequence
-- Photo reconstruction chain
+- Additional rooms beyond the current apartment route
+- A second-morning puzzle layer
+- Timed or drag-only progression gates
 - Large dashboard layout
 - Six-plus endings
 - Heavy clinical/system explanation in README

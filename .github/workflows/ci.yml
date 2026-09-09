@@ -31,3 +31,12 @@ jobs:
 
       - name: Confirm static output
         run: test -f dist/index.html
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Scripted playthrough
+        run: npm run test:e2e
