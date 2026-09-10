@@ -25,6 +25,7 @@ Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
 - [ ] Route works: Bedroom -> Hallway -> Kitchen -> Hallway -> Bathroom -> Hallway.
 - [ ] At least two kitchen and two bathroom routines can be completed.
 - [ ] Memory Book opens with its button and with `M`, then closes with `Escape`.
+- [ ] Learn More is available only through its optional Memory Book tab.
 - [ ] Front Door recall and readiness checks can be completed.
 - [ ] Supported Departure, Smaller Morning, and Overloaded but Not Alone are each reachable from the final choice/state.
 - [ ] No console errors appear during the route.
@@ -48,6 +49,8 @@ Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
 ## Static deployment
 
 - [ ] `npm run preview` serves `/soft-recall-demo/` successfully.
+- [ ] A viewport below 900 x 600 shows the fullscreen/resize safeguard instead of overlapping game controls.
+- [ ] `npm run build:itch` creates a build whose asset paths are relative.
 - [ ] Network requests contain no server, auth, database, analytics, or audio services.
 - [ ] GitHub Pages workflow builds and uploads `dist`.
 - [ ] No audio API is initialized.

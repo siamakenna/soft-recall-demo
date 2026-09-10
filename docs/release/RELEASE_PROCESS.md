@@ -2,13 +2,16 @@
 
 Soft Recall Demo deploys as a static Vite React SPA through GitHub Pages.
 
+The separate browser package for itch.io is documented in [ITCH_RELEASE.md](ITCH_RELEASE.md).
+
 ## Before Merge
 
 1. Run `npm install`.
 2. Run `npm run build`.
 3. Run `npm run preview`.
-4. Complete the required PC playthrough QA route.
-5. Confirm `dist/index.html` exists.
+4. Run `npm run typecheck` and `npm run test:e2e`.
+5. Complete the required PC playthrough QA route.
+6. Confirm `dist/index.html` exists.
 
 ## Deployment
 

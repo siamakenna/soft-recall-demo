@@ -2,7 +2,16 @@
 
 Soft Recall Demo is a static Vite React single-page game for PC browsers. It is a first-person point-and-click visual novel demo about memory, routine, uncertainty, and care.
 
+![Soft Recall title screen](docs/media/soft-recall-banner.webp)
+
 The active build is desktop-first and deploys to GitHub Pages. It does not use a backend, auth, database, voiceover, music, or sound effects.
+
+## Play
+
+- [Play on itch.io](https://siamakenna.itch.io/soft-recall-demo)
+- [Play on GitHub Pages](https://siamakenna.github.io/soft-recall-demo/)
+
+For the current desktop release, use a browser window of at least 900 x 600 or launch fullscreen.
 
 ## Play Locally
 
@@ -37,10 +46,14 @@ The production build should create `dist/index.html`.
 - [Repository settings checklist](docs/process/REPO_SETTINGS_CHECKLIST.md)
 - [Playthrough QA](docs/qa/PLAYTHROUGH_QA.md)
 - [Release process](docs/release/RELEASE_PROCESS.md)
+- [itch.io release guide](docs/release/ITCH_RELEASE.md)
+- [Playtest guide](docs/qa/PLAYTEST_GUIDE.md)
 - [Agent guidance](docs/agents/AGENTS_OVERVIEW.md)
 - [Contributing](CONTRIBUTING.md)
 - [Support](SUPPORT.md)
 - [Security](SECURITY.md)
+- [Privacy](PRIVACY.md)
+- [Credits](CREDITS.md)
 - [Changelog](CHANGELOG.md)
 
 ## Required QA Route

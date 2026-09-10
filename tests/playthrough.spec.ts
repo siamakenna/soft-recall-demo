@@ -11,9 +11,11 @@ async function clickHotspot(page: Page, id: string) {
 async function solvePhoneWord(page: Page) {
   for (let position = 0; position < TARGET_WORD.length; position += 1) {
     const tiles = page.locator('[data-testid^="phone-tile-"]');
-    const letters = (await tiles.allTextContents()).map(letter => letter.trim());
+    const letters = (await tiles.allTextContents()).map((letter) => letter.trim());
     if (letters[position] === TARGET_WORD[position]) continue;
-    const swapPosition = letters.findIndex((letter, index) => index > position && letter === TARGET_WORD[position]);
+    const swapPosition = letters.findIndex(
+      (letter, index) => index > position && letter === TARGET_WORD[position],
+    );
     expect(swapPosition).toBeGreaterThan(position);
     const selected = tiles.nth(position);
     await selected.click({ force: true });
@@ -51,7 +53,9 @@ test.beforeEach(async ({ page }) => {
       sessionStorage.setItem("soft-recall.test-initialized", "1");
       sessionStorage.setItem("soft-recall.test-audio-count", "0");
     }
-    (window as Window & { __audioInitCount?: number }).__audioInitCount = Number(sessionStorage.getItem("soft-recall.test-audio-count") ?? 0);
+    (window as Window & { __audioInitCount?: number }).__audioInitCount = Number(
+      sessionStorage.getItem("soft-recall.test-audio-count") ?? 0,
+    );
     class AudioContextTrap {
       constructor() {
         const next = Number(sessionStorage.getItem("soft-recall.test-audio-count") ?? 0) + 1;
@@ -65,10 +69,10 @@ test.beforeEach(async ({ page }) => {
 
 test("completes the core route, reloads safely, and reaches an ending", async ({ page }) => {
   const consoleErrors: string[] = [];
-  page.on("console", message => {
+  page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
-  page.on("pageerror", error => consoleErrors.push(error.message));
+  page.on("pageerror", (error) => consoleErrors.push(error.message));
 
   await page.goto("./");
   await expect(page.getByRole("heading", { name: "Soft Recall" })).toBeVisible();
@@ -85,7 +89,9 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
 
   await page.getByTestId("doorway-hallway").click();
   await expect(page.getByTestId("game-screen")).toHaveAttribute("data-room", "hallway");
-  await expect(page.locator("[aria-hidden].pointer-events-none.absolute.inset-0.z-50")).toHaveCount(0);
+  await expect(page.locator("[aria-hidden].pointer-events-none.absolute.inset-0.z-50")).toHaveCount(
+    0,
+  );
   await clickHotspot(page, "coat");
 
   await page.getByTestId("doorway-kitchen").click();
@@ -122,36 +128,49 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
   await page.getByTestId("doorway-hallway").click();
   await expect(page.getByTestId("game-screen")).toHaveAttribute("data-room", "hallway");
 
-  await expect.poll(() => page.evaluate(() => {
-    const raw = localStorage.getItem("soft-recall.save.v5");
-    return raw ? JSON.parse(raw).currentRoom : null;
-  })).toBe("hallway");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const raw = localStorage.getItem("soft-recall.save.v5");
+        return raw ? JSON.parse(raw).currentRoom : null;
+      }),
+    )
+    .toBe("hallway");
   await page.reload();
   await page.getByTestId("continue-button").click();
   await expect(page.getByTestId("game-screen")).toHaveAttribute("data-room", "hallway");
 
   await page.keyboard.press("m");
   await expect(page.getByTestId("memory-book")).toBeVisible();
+  await page.getByTestId("memory-tab-learn-more").click();
+  await expect(page.getByTestId("research-notes")).toBeVisible();
+  await expect(page.getByText(/informational, not medical advice/i)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("memory-book")).toHaveCount(0);
 
   await clickHotspot(page, "frontdoor");
   const recallItems = page.locator('[data-testid^="check-item-"]');
-  const recallIds = await recallItems.evaluateAll(elements =>
-    elements.map(element => element.getAttribute("data-testid")?.replace("check-item-", "") ?? ""),
+  const recallIds = await recallItems.evaluateAll((elements) =>
+    elements.map(
+      (element) => element.getAttribute("data-testid")?.replace("check-item-", "") ?? "",
+    ),
   );
   await sortChecklist(
     page,
-    recallIds.filter(id => id.startsWith("k:")),
-    recallIds.filter(id => id.startsWith("d:")),
+    recallIds.filter((id) => id.startsWith("k:")),
+    recallIds.filter((id) => id.startsWith("d:")),
   );
 
   await expect(page.getByText("Readiness — what comes with you?")).toBeVisible();
-  const readinessIds = await page.locator('[data-testid^="check-item-"]').evaluateAll(elements =>
-    elements.map(element => element.getAttribute("data-testid")?.replace("check-item-", "") ?? ""),
-  );
-  const readinessYes = readinessIds.filter(id => ["phone", "kettle", "note"].includes(id));
-  const readinessNo = readinessIds.filter(id => !readinessYes.includes(id));
+  const readinessIds = await page
+    .locator('[data-testid^="check-item-"]')
+    .evaluateAll((elements) =>
+      elements.map(
+        (element) => element.getAttribute("data-testid")?.replace("check-item-", "") ?? "",
+      ),
+    );
+  const readinessYes = readinessIds.filter((id) => ["phone", "kettle", "note"].includes(id));
+  const readinessNo = readinessIds.filter((id) => !readinessYes.includes(id));
   await sortChecklist(page, readinessYes, readinessNo);
 
   await page.getByTestId("choice-smaller").click();
@@ -167,7 +186,9 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
   await page.reload();
   await page.getByTestId("continue-button").click();
   await expect(page.getByRole("heading", { name: "Smaller Morning" })).toBeVisible();
-  expect(await page.evaluate(() => (window as Window & { __audioInitCount?: number }).__audioInitCount)).toBe(0);
+  expect(
+    await page.evaluate(() => (window as Window & { __audioInitCount?: number }).__audioInitCount),
+  ).toBe(0);
   expect(consoleErrors).toEqual([]);
   expect(existsSync(resolve(process.cwd(), "dist/index.html"))).toBe(true);
 });
@@ -182,4 +203,15 @@ test("supports keyboard entry and Memory Book access", async ({ page }) => {
   await expect(page.getByTestId("memory-book")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("memory-book")).toHaveCount(0);
+});
+
+test("protects the game layout in an undersized desktop window", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 500 });
+  await page.goto("./");
+  await expect(page.getByTestId("desktop-viewport-guard")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Enter fullscreen" })).toBeVisible();
+
+  await page.setViewportSize({ width: 1000, height: 700 });
+  await expect(page.getByTestId("desktop-viewport-guard")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Soft Recall" })).toBeVisible();
 });

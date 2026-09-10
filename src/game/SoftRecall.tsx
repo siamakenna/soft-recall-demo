@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { visibleResearchLinks, type ResearchLink } from "@/data/researchLinks";
 import { ADJACENCY, ROOM_LABEL, SCENE_IMG, roomEnterLine } from "./data/rooms";
 import {
   BATH_MIN,
@@ -216,10 +217,10 @@ export default function SoftRecall() {
     } catch { /* ignore */ }
   }, []);
   useEffect(() => {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {}
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* Storage can be unavailable in privacy mode. */ }
   }, [settings]);
   useEffect(() => {
-    try { localStorage.setItem(HOTSPOT_OVERRIDES_KEY, JSON.stringify(hotspotOverrides)); } catch {}
+    try { localStorage.setItem(HOTSPOT_OVERRIDES_KEY, JSON.stringify(hotspotOverrides)); } catch { /* Storage can be unavailable in privacy mode. */ }
   }, [hotspotOverrides]);
   /* Debounced save — fixes stutter from writing on every state change */
   useEffect(() => {
@@ -246,10 +247,10 @@ export default function SoftRecall() {
           endingState: ending,
         });
         setHasSave(true);
-      } catch {}
+      } catch { /* Saving is best-effort when browser storage is unavailable. */ }
     }, 400);
     return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
-  }, [screen, room, visited, unlocked, frontDoorUnlocked, done, memory, wrongCount, clarity, dissonance, roomVisitOrder, confidenceChoices, supportCueUseCount, packed, ending]);
+  }, [screen, room, visited, unlocked, frontDoorUnlocked, done, interactionOrder, memory, wrongCount, clarity, dissonance, roomVisitOrder, confidenceChoices, supportCueUseCount, packed, ending]);
 
   const remember = useCallback((entry: MemoryEntry) => {
     setMemory((prev) => {
@@ -261,7 +262,6 @@ export default function SoftRecall() {
       const stamped: MemoryEntry = { ...entry, at: entry.at ?? Date.now(), room: entry.room ?? room };
       return [...prev, stamped];
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room]);
 
   const say = useCallback((speaker: string, text: string) => {
@@ -304,7 +304,7 @@ export default function SoftRecall() {
 
 
   /* ---------------------- start / load ---------------------------- */
-  const beginNew = () => {
+  const beginNew = useCallback(() => {
     const initial = createInitialGameSave();
     setRoom("bedroom");
     setVisited(new Set(["bedroom"]));
@@ -328,7 +328,7 @@ export default function SoftRecall() {
     setVnChoices([]);
     setTutorialActive(true);
     setScreen("game");
-  };
+  }, []);
   const continueSave = () => {
     try {
       const s = loadGameSave(localStorage);
@@ -355,13 +355,13 @@ export default function SoftRecall() {
       setScreen(s.endingState ? "ending" : "game");
     } catch { beginNew(); }
   };
-  const restartDemo = () => {
-    try { clearGameSave(localStorage); } catch {}
+  const restartDemo = useCallback(() => {
+    try { clearGameSave(localStorage); } catch { /* A new in-memory run can still begin. */ }
     setHasSave(false);
     beginNew();
-  };
+  }, [beginNew]);
   const finishOnboarding = () => {
-    try { localStorage.setItem(ONBOARD_KEY, "1"); } catch {}
+    try { localStorage.setItem(ONBOARD_KEY, "1"); } catch { /* Onboarding can repeat if storage is unavailable. */ }
     setOnboarded(true);
   };
 
@@ -1299,12 +1299,15 @@ export default function SoftRecall() {
       } else if (k === "enter" || k === " ") {
         e.preventDefault();
         if (focusIdx < hotspots.length) hotspots[focusIdx]?.onInspect();
-        else availableExits[focusIdx - hotspots.length] && gotoRoom(availableExits[focusIdx - hotspots.length]);
+        else {
+          const exit = availableExits[focusIdx - hotspots.length];
+          if (exit) gotoRoom(exit);
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, hotspots, availableExits, vnChoices, focusIdx, closeup, showHelp, showBook, showSettings, mini, interaction, gotoRoom]);
+  }, [screen, hotspots, availableExits, vnChoices, focusIdx, closeup, showHelp, showBook, showSettings, mini, interaction, gotoRoom, requestHint, restartDemo]);
 
   /* ---------------------- soft hint if stuck ---------------------- */
   useEffect(() => {
@@ -1346,7 +1349,7 @@ export default function SoftRecall() {
     setHotspotOverrides(prev => { const n = { ...prev }; delete n[sceneKey]; return n; });
   }, [sceneKey]);
   const copyOverrides = useCallback(() => {
-    try { navigator.clipboard.writeText(JSON.stringify(hotspotOverrides, null, 2)); } catch {}
+    try { navigator.clipboard.writeText(JSON.stringify(hotspotOverrides, null, 2)); } catch { /* Clipboard access is optional debug behavior. */ }
   }, [hotspotOverrides]);
 
   /* ================================================================ */
@@ -2023,7 +2026,8 @@ function MiniMap({ current, visited, unlocked, onJump }:{
 
 function MemoryBook({ memory, onClose }:{ memory: MemoryEntry[]; onClose: () => void; }) {
   const sections: MemoryEntry["section"][] = ["Fragments", "Messages", "Routines", "Reflections"];
-  const [filter, setFilter] = useState<"All" | MemoryEntry["section"]>("All");
+  const tabs = ["All", ...sections, "Learn More"] as const;
+  const [filter, setFilter] = useState<(typeof tabs)[number]>("All");
   const [search, setSearch] = useState("");
   const latestAt = useMemo(() => memory.reduce((m, e) => Math.max(m, e.at ?? 0), 0), [memory]);
   const bySection = (s: MemoryEntry["section"]) =>
@@ -2042,25 +2046,33 @@ function MemoryBook({ memory, onClose }:{ memory: MemoryEntry[]; onClose: () => 
     <Overlay onClose={onClose} title={`Memory Book · ${total}`} hint="M">
       <div data-testid="memory-book">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        {(["All", ...sections] as const).map(s => {
-          const count = s === "All" ? total : memory.filter(m => m.section === s).length;
+        {tabs.map(s => {
+          const count = s === "All"
+            ? total
+            : s === "Learn More"
+              ? visibleResearchLinks.length
+              : memory.filter(m => m.section === s).length;
           const active = filter === s;
           return (
             <button
               key={s}
               onClick={() => setFilter(s)}
+              data-testid={s === "Learn More" ? "memory-tab-learn-more" : undefined}
               className={`text-xs rounded-full px-3 py-1 border transition ${active ? "bg-[color:var(--color-glow)]/20 border-[color:var(--color-glow)] text-[color:var(--color-glow)]" : "border-white/20 opacity-70 hover:opacity-100"}`}
             >
               {s} <span className="opacity-60">{count}</span>
             </button>
           );
         })}
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="search entries…"
-          className="ml-auto text-xs bg-black/30 border border-white/15 rounded px-2 py-1 outline-none focus:border-[color:var(--color-glow)]"
-        />
+        {filter !== "Learn More" && (
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="search entries…"
+            aria-label="Search Memory Book entries"
+            className="ml-auto text-xs bg-black/30 border border-white/15 rounded px-2 py-1 outline-none focus:border-[color:var(--color-glow)]"
+          />
+        )}
       </div>
       {sections
         .filter(s => filter === "All" || filter === s)
@@ -2075,7 +2087,6 @@ function MemoryBook({ memory, onClose }:{ memory: MemoryEntry[]; onClose: () => 
               </div>
               <ul className="mt-1 space-y-3">
                 {items.map((m, i) => {
-                  const cites = findCitationsFor(`${m.title} ${m.body}`);
                   const isFresh = m.at != null && m.at === latestAt;
                   return (
                     <li
@@ -2091,24 +2102,6 @@ function MemoryBook({ memory, onClose }:{ memory: MemoryEntry[]; onClose: () => 
                         </span>
                       </div>
                       <div className="text-sm opacity-80 mt-0.5">{m.body}</div>
-                      {cites.length > 0 && (
-                        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]">
-                          <span className="opacity-50 italic">sources:</span>
-                          {cites.map(c => (
-                            <a
-                              key={c.url}
-                              href={c.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="underline decoration-dotted underline-offset-2 opacity-80 hover:opacity-100 hover:text-[color:var(--color-glow)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] rounded-sm px-1"
-                              aria-label={`${c.venue} — ${c.title} (opens in a new tab)`}
-                              title={c.title}
-                            >
-                              {c.venue}
-                            </a>
-                          ))}
-                        </div>
-                      )}
                     </li>
                   );
                 })}
@@ -2116,325 +2109,90 @@ function MemoryBook({ memory, onClose }:{ memory: MemoryEntry[]; onClose: () => 
             </div>
           );
         })}
-      {total === 0 && <p className="italic opacity-60">Empty for now. Inspect things to keep them.</p>}
-      {total > 0 && search.trim() !== "" && sections.every(s => bySection(s).length === 0) && (
+      {filter !== "Learn More" && total === 0 && <p className="italic opacity-60">Empty for now. Inspect things to keep them.</p>}
+      {filter !== "Learn More" && total > 0 && search.trim() !== "" && sections.every(s => bySection(s).length === 0) && (
         <p className="italic opacity-60 text-sm">Nothing matches "{search}".</p>
       )}
-      <ResearchSection />
+      {filter === "Learn More" && <ResearchSection />}
       </div>
     </Overlay>
   );
 }
 
-/* Best-effort keyword → citation lookup so memory entries can carry
-   inline source links to the research they reflect. */
-function findCitationsFor(text: string): ResearchEntry[] {
-  const t = text.toLowerCase();
-  const hits: ResearchEntry[] = [];
-  const push = (predicate: boolean, cat: ResearchCategory) => {
-    if (!predicate) return;
-    RESEARCH_ENTRIES.filter(e => e.category === cat).forEach(e => {
-      if (!hits.includes(e)) hits.push(e);
-    });
-  };
-  push(/glasses|blur|mirror|face|see|light|dark|contrast/.test(t), "Perception");
-  push(/morning|night|sleep|evening|sundown|dusk|circadian/.test(t), "Circadian");
-  push(/kettle|tea|toast|fridge|meds|medication|tooth|tap|brush/.test(t), "Daily routine");
-  push(/door|hallway|room|kitchen|bathroom|bedroom|way|lost/.test(t), "Orientation");
-  push(/ana|photo|note|letter|memory|remember|hand|writing/.test(t), "Reminiscence");
-  push(/breath|calm|panic|steady|slow/.test(t), "Regulation");
-  push(/young|concussion|thursday|word-finding|neurology|prior auth|screening|before|fluctuation|appointment|library book|journal/.test(t), "Young-onset");
-  return hits.slice(0, 3);
-}
-
-/* ---------------------- Research overlay ------------------------- *
- * Peer-reviewed publications (NIH / PubMed / PMC) that inform the
- * neurodegeneration-adjacent mechanics represented in Soft Recall.   */
-type ResearchCategory =
-  | "Perception"
-  | "Circadian"
-  | "Daily routine"
-  | "Orientation"
-  | "Reminiscence"
-  | "Regulation"
-  | "Young-onset";
-
-type ResearchEntry = {
-  category: ResearchCategory;
-  feature: string;      // in-game mechanic this study informed
-  title: string;
-  authors: string;
-  venue: string;        // journal, year
-  url: string;          // PubMed / PMC link
-  takeaway: string;     // one-line synthesis tying it to the game
-};
-
-const RESEARCH_ENTRIES: ResearchEntry[] = [
-  {
-    category: "Perception",
-    feature: "Fuzz, blur & fading contrast between tasks",
-    title: "Visual contrast sensitivity in AD, MCI, and older adults with cognitive complaints",
-    authors: "Risacher SL, et al.",
-    venue: "Neurobiology of Aging, 2013 (PMC3545045)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3545045/",
-    takeaway: "Loss of low-contrast vision is measurable in early Alzheimer's — the scene's soft haze mirrors that early perceptual thinning.",
-  },
-  {
-    category: "Perception",
-    feature: "Vision-first onboarding (glasses before anything else)",
-    title: "The Vision–Cognition Connection: Visual processing deficits as early indicators of Alzheimer's disease",
-    authors: "Alharbi M.",
-    venue: "Alzheimer's & Dementia, 2025 (PMC12738266)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12738266/",
-    takeaway: "Visual processing changes precede clinical dementia — restoring 'edges' first models how correcting sensory input steadies cognition.",
-  },
-  {
-    category: "Circadian",
-    feature: "Late-day dimming, warm→cool light, evening dread",
-    title: "Sundowning Syndrome in Dementia: Mechanisms, Diagnosis, and Treatment",
-    authors: "Reimus M, Siemiński M.",
-    venue: "Journal of Clinical Medicine, 2025 (PMC11856004)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11856004/",
-    takeaway: "Agitation and confusion rise as ambient light falls — the room's brightness curve reflects this circadian vulnerability.",
-  },
-  {
-    category: "Circadian",
-    feature: "Progressive brightness / clarity as tasks complete",
-    title: "Potential Pathways for Circadian Dysfunction and Sundowning in Alzheimer's Disease",
-    authors: "Canevelli M, Valletta M, et al.",
-    venue: "Frontiers in Neuroscience, 2020 (PMC7494756)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7494756/",
-    takeaway: "SCN circadian degeneration explains why steady light + routine anchors orientation — the game rewards routine with clarity.",
-  },
-  {
-    category: "Daily routine",
-    feature: "Kitchen & bathroom mini-tasks (kettle, tap, toothbrush)",
-    title: "A systematic review of psychometric properties of ADL questionnaires in older adults with neurocognitive disorders",
-    authors: "Provencher V, et al.",
-    venue: "BMC Geriatrics, 2025 (PMC11758263)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11758263/",
-    takeaway: "Activities of Daily Living (ADLs) are the clinical yardstick for decline — the small home tasks are the same domains clinicians score.",
-  },
-  {
-    category: "Daily routine",
-    feature: "Medication cabinet / meds hotspot",
-    title: "A systematic review of medication non-adherence in persons with dementia or cognitive impairment",
-    authors: "Smith D, Lovell J, et al.",
-    venue: "PLoS ONE, 2017 (PMC5293218)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5293218/",
-    takeaway: "Non-adherence is common and dangerous in cognitive impairment — the meds beat surfaces that risk without dramatizing it.",
-  },
-  {
-    category: "Reminiscence",
-    feature: "Memory Book (write-down of fragments & routines)",
-    title: "Reminiscence therapy on cognition, depression and QoL in Alzheimer's disease — systematic review of RCTs",
-    authors: "Cuevas PEG, et al.",
-    venue: "Healthcare, 2022 (PMID 36233620)",
-    url: "https://pubmed.ncbi.nlm.nih.gov/36233620/",
-    takeaway: "Structured reminiscence improves mood and cognition — the Memory Book is a play-form of that intervention.",
-  },
-  {
-    category: "Orientation",
-    feature: "Doorways, mini-map, disoriented exits",
-    title: "Spatial Disorientation in Alzheimer's Disease: The Missing Path from Virtual Reality to Real World",
-    authors: "Puthusseryppady V, et al.",
-    venue: "Frontiers in Aging Neuroscience, 2020 (PMC7652847)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7652847/",
-    takeaway: "Getting lost at home is an early Alzheimer's signature — locked/unlocked doorways externalise that shrinking mental map.",
-  },
-  {
-    category: "Orientation",
-    feature: "Dementia-friendly room design (contrast markers, plant cues)",
-    title: "Dementia-Friendly Design: Criteria and Typologies Supporting Wayfinding",
-    authors: "van Buuren LPG, Mohammadi M.",
-    venue: "HERD: Health Environments Research & Design, 2021 (PMC8725382)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8725382/",
-    takeaway: "Landmarks, contrast and consistent cues reduce wayfinding failure — the glowing markers borrow the same principle.",
-  },
-  {
-    category: "Regulation",
-    feature: "Hold-B breathing ritual to steady dissonance",
-    title: "Heart-focused breathing and perceptions of burden in Alzheimer's caregivers: RCT pilot",
-    authors: "May RW, et al.",
-    venue: "Complementary Therapies in Medicine, 2021 (PMID 33639543)",
-    url: "https://pubmed.ncbi.nlm.nih.gov/33639543/",
-    takeaway: "Paced breathing measurably lowers stress load in dementia contexts — the breathe ritual is a nod to that evidence base.",
-  },
-  /* ------------- Young-onset ----------------------------------------
-     Soft Recall centers a young protagonist. These sources ground the
-     game's premise that neurocognitive change is not only an elder's
-     experience — it also appears in adolescents and young adults. */
-  {
-    category: "Young-onset",
-    feature: "The protagonist herself — young adult experiencing cognitive change",
-    title: "Young-Onset Dementia: A Global Analysis of Prevalence",
-    authors: "Hendriks S, Peetoom K, Bakker C, et al.",
-    venue: "JAMA Neurology, 2021 (PMID 34424935)",
-    url: "https://pubmed.ncbi.nlm.nih.gov/34424935/",
-    takeaway: "About 3.9 million people under 65 live with dementia worldwide — the game refuses the idea that memory illness is only late-life.",
-  },
-  {
-    category: "Young-onset",
-    feature: "Word-finding pauses in kitchen & phone unlock",
-    title: "Frontotemporal dementia: latest evidence and clinical implications",
-    authors: "Bang J, Spina S, Miller BL.",
-    venue: "The Lancet, 2015 (PMC5325132)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5325132/",
-    takeaway: "FTD commonly begins in the 40s but is documented as early as the 20s — language and behavior shifts precede memory loss.",
-  },
-  {
-    category: "Young-onset",
-    feature: "Fluctuating clarity, dropped sequences, executive dials at the door",
-    title: "The Huntington's disease prodrome: cognitive and motor signs in gene carriers",
-    authors: "Paulsen JS, Long JD, et al. (PREDICT-HD)",
-    venue: "The Lancet Neurology, 2014 (PMC4187685)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC4187685/",
-    takeaway: "Subtle executive and motor changes appear 10–15 years before clinical Huntington's — the combo lock at the door mirrors that prodromal load.",
-  },
-  {
-    category: "Young-onset",
-    feature: "Working-memory pressure under the fridge & toast timers",
-    title: "Cognitive dysfunction in multiple sclerosis: a review of neuropsychological features",
-    authors: "Chiaravalloti ND, DeLuca J.",
-    venue: "The Lancet Neurology, 2008 (PMID 18970977)",
-    url: "https://pubmed.ncbi.nlm.nih.gov/18970977/",
-    takeaway: "MS cognitive symptoms affect ~40–65% of patients (peak diagnosis 20–40) — the short timers dramatize the fatigueable working memory MS clinicians describe.",
-  },
-  {
-    category: "Young-onset",
-    feature: "Sudden onset & the mirror moment (self-recognition drift)",
-    title: "Clinical experience and laboratory investigations in patients with anti-NMDAR encephalitis",
-    authors: "Dalmau J, Gleichman AJ, et al.",
-    venue: "The Lancet Neurology, 2011 (PMC3158385)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3158385/",
-    takeaway: "Anti-NMDA receptor encephalitis strikes a median age of ~21 with rapid cognitive & behavioral change — treatable, but often misread as psychiatric.",
-  },
-  {
-    category: "Young-onset",
-    feature: "Post-concussive cognitive fog · the college photo 'before the concussion, 19'",
-    title: "Clinicopathological Evaluation of CTE in Players of American Football",
-    authors: "Mez J, Daneshvar DH, et al.",
-    venue: "JAMA, 2017 (PMC5677819)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5677819/",
-    takeaway: "Repetitive head impact in adolescence and early adulthood is associated with later neurodegeneration — the framed photo carries that quiet weight.",
-  },
-  {
-    category: "Young-onset",
-    feature: "Fluctuating clarity between days · the mirror journal (Tue/Wed/Thu)",
-    title: "Posterior cortical atrophy: a rare presentation of Alzheimer's disease in younger patients",
-    authors: "Crutch SJ, Lehmann M, Schott JM, et al.",
-    venue: "The Lancet Neurology, 2012 (PMC3740271)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3740271/",
-    takeaway: "PCA is a young-onset visual-cognitive variant of Alzheimer's — day-to-day fluctuation and 'good day / bad day' patterns are core clinical features.",
-  },
-  {
-    category: "Young-onset",
-    feature: "Confidence picker outcomes · metacognition when nothing has been named yet",
-    title: "Functional cognitive disorder: differential diagnosis of common clinical presentations",
-    authors: "Ball HA, McWhirter L, Ballard C, et al.",
-    venue: "Brain, 2020 (PMC7783408)",
-    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7783408/",
-    takeaway: "Functional cognitive disorder is common in adults under 40 — self-reported failure often exceeds objective testing, and validation matters more than dismissal.",
-  },
-];
-
-function ResearchSection({ defaultOpen = false }: { defaultOpen?: boolean } = {}) {
-  const [open, setOpen] = useState(defaultOpen);
-  const [filter, setFilter] = useState<ResearchCategory | "All">("All");
-  const cats: (ResearchCategory | "All")[] = useMemo(() => {
-    const set = new Set<ResearchCategory>();
-    RESEARCH_ENTRIES.forEach(e => set.add(e.category));
+function ResearchSection() {
+  const [filter, setFilter] = useState<ResearchLink["category"] | "All">("All");
+  const cats: (ResearchLink["category"] | "All")[] = useMemo(() => {
+    const set = new Set<ResearchLink["category"]>();
+    visibleResearchLinks.forEach(e => set.add(e.category));
     return ["All", ...Array.from(set)];
   }, []);
   const visible = filter === "All"
-    ? RESEARCH_ENTRIES
-    : RESEARCH_ENTRIES.filter(e => e.category === filter);
+    ? visibleResearchLinks
+    : visibleResearchLinks.filter(e => e.category === filter);
 
   return (
-    <section className="mt-6 border-t border-white/10 pt-4" aria-labelledby="research-heading">
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        aria-expanded={open}
-        aria-controls="research-list"
-        className="w-full flex items-center justify-between text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] rounded"
+    <section className="mt-2" aria-labelledby="research-heading" data-testid="research-notes">
+      <h2 id="research-heading" className="font-hand text-xl text-[color:var(--color-glow)]">
+        Notes behind the story
+      </h2>
+      <p className="mt-1 text-sm opacity-80">
+        Optional reading on ideas that informed a few mechanics. These sources are informational,
+        not medical advice, diagnosis, screening, or treatment.
+      </p>
+
+      <div
+        role="group"
+        aria-label="Filter research by mechanic"
+        className="mt-3 flex flex-wrap gap-1.5"
       >
-        <span>
-          <span id="research-heading" className="font-hand text-lg opacity-80 block">
-            Research this leans on
-          </span>
-          <span className="text-xs opacity-60 italic">
-            Peer-reviewed sources (NIH / PubMed / PMC), each tied to a mechanic used in the game.
-          </span>
-        </span>
-        <span aria-hidden className="opacity-70 text-lg ml-2">{open ? "–" : "+"}</span>
-      </button>
+        {cats.map(c => {
+          const active = c === filter;
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setFilter(c)}
+              aria-pressed={active}
+              className={`px-2.5 py-1 rounded-full text-xs border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] ${
+                active
+                  ? "bg-[color:var(--color-ember)]/25 border-[color:var(--color-ember)]/70 text-[color:var(--color-glow)]"
+                  : "border-white/20 opacity-70 hover:opacity-100"
+              }`}
+            >
+              {c}
+            </button>
+          );
+        })}
+      </div>
 
-      {open && (
-        <>
-          <div
-            role="group"
-            aria-label="Filter research by mechanic"
-            className="mt-3 flex flex-wrap gap-1.5"
-          >
-            {cats.map(c => {
-              const active = c === filter;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setFilter(c)}
-                  aria-pressed={active}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] ${
-                    active
-                      ? "bg-[color:var(--color-ember)]/25 border-[color:var(--color-ember)]/70 text-[color:var(--color-glow)]"
-                      : "border-white/20 opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  {c}
-                </button>
-              );
-            })}
-          </div>
-
-          <ul id="research-list" className="mt-3 space-y-4" aria-live="polite">
-            {visible.map((e, i) => (
-              <li key={i} className="border-l-2 border-[color:var(--color-ember)]/50 pl-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-white/8 border border-white/15 opacity-80">
-                    {e.category}
-                  </span>
-                  <span className="font-hand text-[color:var(--color-glow)]/90 text-base">
-                    {e.feature}
-                  </span>
-                </div>
-                <div className="font-serif font-semibold leading-snug mt-0.5">
-                  <a
-                    href={e.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline decoration-dotted underline-offset-2 hover:text-[color:var(--color-glow)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] rounded-sm"
-                    aria-label={`${e.title} — opens in a new tab on PubMed`}
-                  >
-                    {e.title}
-                  </a>
-                </div>
-                <div className="text-xs opacity-70 italic">{e.authors} · {e.venue}</div>
-                <div className="text-sm opacity-90 mt-1">{e.takeaway}</div>
-              </li>
-            ))}
-            {visible.length === 0 && (
-              <li className="italic opacity-60 text-sm list-none">
-                No citations under this mechanic yet.
-              </li>
-            )}
-            <li className="text-[11px] opacity-60 italic pt-1 list-none">
-              Educational reference only — not medical advice. If a loved one is
-              showing signs of memory change, please talk to a qualified clinician.
-            </li>
-          </ul>
-        </>
-      )}
+      <ul id="research-list" className="mt-4 space-y-5" aria-live="polite">
+        {visible.map(e => (
+          <li key={e.id} className="border-l-2 border-[color:var(--color-ember)]/50 pl-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-white/8 border border-white/15 opacity-80">
+                {e.category}
+              </span>
+              <span className="font-hand text-[color:var(--color-glow)]/90 text-base">
+                {e.relatedMechanic}
+              </span>
+            </div>
+            <p className="mt-1 text-sm opacity-90">{e.plainLanguageRelevance}</p>
+            <a
+              href={e.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block font-serif font-semibold leading-snug underline decoration-dotted underline-offset-2 hover:text-[color:var(--color-glow)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-glow)] rounded-sm"
+              aria-label={`${e.title} - opens in a new tab`}
+            >
+              {e.title}
+            </a>
+            <div className="text-xs opacity-70 italic">
+              {e.authorsOrAgency} · {e.sourceName}, {e.year} · {e.sourceType}
+            </div>
+            <p className="mt-1 text-xs opacity-65">Boundary: {e.claimBoundary}</p>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -3105,9 +2863,8 @@ function SlideMini({
   onMisstep?: () => void;
 }) {
   // 4 quadrants labelled 0-3. Player must land each on its home slot.
-  const homes = [0, 1, 2, 3];
   const initial = useMemo(() => {
-    const arr = [...homes];
+    const arr = [0, 1, 2, 3];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
