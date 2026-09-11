@@ -26,6 +26,10 @@ Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
 - [ ] At least two kitchen and two bathroom routines can be completed.
 - [ ] Memory Book opens with its button and with `M`, then closes with `Escape`.
 - [ ] Learn More is available only through its optional Memory Book tab.
+- [ ] After the memory threshold, Front Door opens the Memory Book review instead of starting recall immediately.
+- [ ] The Memory Book HUD control shows a visible, keyboard-readable review-needed state after the memory threshold.
+- [ ] The review records `What did I notice?`, `What helped?`, and `What stayed uncertain?`.
+- [ ] The short `Learn More` context note must be read once; following external sources remains optional.
 - [ ] Front Door recall and readiness checks can be completed.
 - [ ] Supported Departure, Smaller Morning, and Overloaded but Not Alone are each reachable from the final choice/state.
 - [ ] No console errors appear during the route.
@@ -45,6 +49,16 @@ Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
 - [ ] Typing in the Memory Book search does not trigger global game shortcuts.
 - [ ] Reduced motion swaps rooms immediately and does not show transition animation.
 - [ ] Parallax changes background art only; hotspot target positions remain fixed.
+- [ ] `Look closer` / `+` zoom keeps the selected artwork and hotspot aligned; `Room view` / `0` resets the camera.
+- [ ] Opening a room detail starts its optional five-beat story, the two choices rejoin, and the final artifact appears in the Memory Book.
+- [ ] Leaving a partial room story and returning resumes at its saved beat without blocking Doorways.
+- [ ] Silent cutscenes start and finish automatically. Captions follow video time with no Continue buttons.
+- [ ] Pause/Play, Tab focus, and Escape/Skip work. Returning from a hidden browser tab does not skip unseen captions.
+- [ ] Reduced motion and a failed video load use still art with timed captions and reach the same destination.
+- [ ] Drag the note and keys into destinations. Dropping outside a destination cancels safely.
+- [ ] Drag toast steps into order and sort recall/readiness cards. Correct arrangements finish on the final drop.
+- [ ] Pour/lift/set down the tea with three drags; six alternating brush sweeps finish on mouse release.
+- [ ] Keyboard controls can complete the new routines. Closing a routine cannot activate the hotspot beneath it.
 
 ## Static deployment
 
@@ -54,3 +68,4 @@ Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
 - [ ] Network requests contain no server, auth, database, analytics, or audio services.
 - [ ] GitHub Pages workflow builds and uploads `dist`.
 - [ ] No audio API is initialized.
+- [ ] All six MP4s have a video stream and no audio stream; they load under both GitHub Pages and itch.io base paths.

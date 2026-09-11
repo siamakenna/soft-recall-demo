@@ -23,6 +23,8 @@ Title -> Begin -> Tutorial -> Bedroom -> glasses -> note -> phone choice -> Hall
 - [ ] Bathroom can be reached.
 - [ ] Bathroom can return to Hallway.
 - [ ] Memory Book opens and closes.
+- [ ] Before Front Door recall, complete the three Memory Book review prompts and read the short context note in Learn More.
+- [ ] External research links remain optional after the context note is read.
 - [ ] Front Door ending can be reached.
 - [ ] No audio plays.
 - [ ] No backend/auth/database calls are introduced.

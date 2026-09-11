@@ -84,6 +84,28 @@
   * { border-color: var(--color-border); }
 }
 
+.carry-drop[data-drop-active="true"] {
+  border-color: var(--color-glow);
+  background-color: color-mix(in srgb, var(--color-glow) 18%, transparent);
+  box-shadow: inset 0 0 0 1px var(--color-glow);
+}
+
+.pixel-paint-overlay {
+  pointer-events: none;
+  opacity: 0.12;
+  mix-blend-mode: soft-light;
+  background-image:
+    linear-gradient(rgba(255, 238, 190, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 238, 190, 0.12) 1px, transparent 1px);
+  background-size: 3px 3px;
+  mask-image: linear-gradient(180deg, black, transparent 92%);
+}
+
+@keyframes cinematic-breathe {
+  0%, 100% { transform: scale(1.04); }
+  50% { transform: scale(1.075); }
+}
+
 /* Painterly paper background — used for the app frame */
 @utility bg-paperfield {
   background-color: oklch(0.07 0.01 285);

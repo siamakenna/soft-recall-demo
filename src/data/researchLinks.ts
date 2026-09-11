@@ -23,6 +23,23 @@ export interface ResearchLink {
 
 export const researchLinks: ResearchLink[] = [
   {
+    id: "nia-dementia-symptoms-progression",
+    title: "What Is Dementia? Symptoms, Types, and Diagnosis",
+    authorsOrAgency: "National Institute on Aging",
+    year: 2022,
+    sourceName: "National Institute on Aging",
+    sourceType: "NIA",
+    url: "https://www.nia.nih.gov/health/alzheimers-and-dementia/what-dementia-symptoms-types-and-diagnosis",
+    relatedMechanic: "Memory Book review and noticing change over time",
+    category: "External memory support",
+    plainLanguageRelevance:
+      "This official overview explains that dementia can affect memory, thinking, language, navigation, and everyday tasks, and that symptoms and causes vary.",
+    claimBoundary:
+      "The game cannot infer neurodegeneration, progression, or a diagnosis from one memory, route, or difficult morning.",
+    visibleInGame: true,
+    verified: true,
+  },
+  {
     id: "nia-memory-forgetfulness",
     title: "Memory Problems, Forgetfulness, and Aging",
     authorsOrAgency: "National Institute on Aging",
