@@ -11,7 +11,7 @@ The game tracks:
 - Front Door availability and the resolved ending.
 - Optional room-story beat indexes, choice history, six viewed cutscene keys, and the final Memory Book review.
 
-The current key is `soft-recall.save.v5` with schema version `3`. The loader accepts the previous `soft-recall.save.v4` shape, fills missing fields conservatively, and rejects malformed values. Reloading an ending restores that ending instead of recalculating eligibility from partial state. Older saves begin with empty optional-story progress and an incomplete book review.
+The current key is `soft-recall.save.v5` with schema version `4`. The loader accepts the previous `soft-recall.save.v4` shape and earlier schemas, fills missing fields conservatively, and rejects malformed JSON. Reloading an ending restores that ending instead of recalculating eligibility from partial state. Older saves begin with empty optional-story progress and an incomplete book review. `frustrationBeatSeen` defaults to false on old saves and becomes true when the optional beat appears, so Continue cannot replay its counter changes.
 
 Cinematic playback time and active pointer gestures are transient. A viewed flag is
 stored only on completion or skip. Routine IDs, packing, and ending resolution use

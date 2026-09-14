@@ -31,4 +31,4 @@ The title screen and any Help/controls surface should explain the minimum needed
 - Choose from any visible choice buttons.
 - Use the Doorways strip to move between available rooms.
 - Open the Memory Book to review what has been noticed.
-- If the front door does not offer an ending yet, complete at least one kitchen routine and one bathroom routine.
+- If the front door does not offer an ending yet, complete at least two kitchen routines and two bathroom routines, collect eight Memory Book entries, and finish the book review. See [current game flow](../GAME_FLOW.md) for the final recall and readiness checks.

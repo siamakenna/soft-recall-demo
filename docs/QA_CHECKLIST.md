@@ -7,12 +7,24 @@ Use this checklist for gameplay, save-state, input, or deployment changes. The d
 ```bash
 npm ci
 npm run typecheck
+npm run lint
 npm run build
 test -f dist/index.html
 npm run test:e2e
 ```
 
 Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
+
+Optional cross-browser verification:
+
+```bash
+npx playwright install firefox webkit
+PLAYWRIGHT_CROSS_BROWSER=1 npm run test:e2e -- --project=firefox --project=webkit
+```
+
+The suite runs one worker to avoid competing browser engines distorting timed routines. On macOS WebKit, use Option+Tab when ordinary Tab skips buttons. Set `RELEASE_SCREENSHOT_DIR` to an absolute output directory to capture the core route and desktop framing checks. `PLAYWRIGHT_BASE_URL` can target a separately running production preview or deployed build.
+
+Release-specific results belong in [release notes](release/RELEASE_NOTES_0.3.0.md); the unchecked boxes below remain a reusable checklist, not a claim that every future build passed.
 
 ## Core playthrough
 
@@ -33,6 +45,11 @@ Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
 - [ ] Front Door recall and readiness checks can be completed.
 - [ ] Supported Departure, Smaller Morning, and Overloaded but Not Alone are each reachable from the final choice/state.
 - [ ] No console errors appear during the route.
+- [ ] After two wrong placements, the scene gains subtle silent haze and the unfinished hotspot markers remain aligned and usable.
+- [ ] The optional frustration beat offers both `Snap at the room` and `Set one thing down` responses, then returns control without blocking Doorways.
+- [ ] The eerie treatment stays readable and reversible with the `B` breathe ritual; no jump scare or audio cue is present.
+- [ ] Each frustration response persists across Continue without repeating or changing dissonance again.
+- [ ] Reduced motion stops animated haze and markers; Visual distortion at zero clears the haze and scene blur.
 
 ## Save and recovery
 
@@ -48,7 +65,7 @@ Start `npm run preview -- --host 127.0.0.1` separately when doing manual QA.
 - [ ] Arrow/WASD navigation can cycle VN choices, hotspots, and Doorways.
 - [ ] Typing in the Memory Book search does not trigger global game shortcuts.
 - [ ] Reduced motion swaps rooms immediately and does not show transition animation.
-- [ ] Parallax changes background art only; hotspot target positions remain fixed.
+- [ ] Camera movement keeps art and markers registered; atmosphere and hover effects never move hit targets independently.
 - [ ] `Look closer` / `+` zoom keeps the selected artwork and hotspot aligned; `Room view` / `0` resets the camera.
 - [ ] Opening a room detail starts its optional five-beat story, the two choices rejoin, and the final artifact appears in the Memory Book.
 - [ ] Leaving a partial room story and returning resumes at its saved beat without blocking Doorways.

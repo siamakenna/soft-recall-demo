@@ -37,12 +37,19 @@ jobs:
         run: test -f dist/index.html
 
       - name: Create upload ZIP
-        run: cd dist && zip -r ../soft-recall-demo-itch.zip .
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          ARCHIVE="soft-recall-demo-v${VERSION}-itch-$(date -u +%Y%m%d).zip"
+          (cd dist && zip -r "../$ARCHIVE" .)
+          unzip -t "$ARCHIVE"
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
           name: soft-recall-demo-itch
-          path: soft-recall-demo-itch.zip
+          path: |
+            soft-recall-demo-v*-itch-*.zip
+            soft-recall-demo-v*-itch-*.zip.sha256
           if-no-files-found: error
           retention-days: 30

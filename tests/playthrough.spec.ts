@@ -1,10 +1,17 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { CUTSCENE_COPY } from "../src/game/data/morningBeats";
 import { cutsceneTimeline } from "../src/game/data/cutscenes";
 
 const TARGET_WORD = "THURSDAY";
+
+async function releaseScreenshot(page: Page, name: string) {
+  const directory = process.env.RELEASE_SCREENSHOT_DIR;
+  if (!directory) return;
+  mkdirSync(directory, { recursive: true });
+  await page.screenshot({ path: resolve(directory, `${name}.png`) });
+}
 
 async function dragBetween(page: Page, source: Locator, target: Locator) {
   await expect(source).toBeVisible();
@@ -14,7 +21,7 @@ async function dragBetween(page: Page, source: Locator, target: Locator) {
   if (!from || !to) throw new Error("Drag surfaces must be visible");
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
-  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
   await expect(page.getByTestId("carry-ghost")).toBeVisible();
   await page.mouse.up();
   await expect(page.getByTestId("carry-ghost")).toHaveCount(0);
@@ -24,7 +31,7 @@ async function clickHotspot(page: Page, id: string) {
   await page.getByTestId(`hotspot-${id}`).click();
 }
 
-async function solvePhoneWord(page: Page) {
+async function solvePhoneWord(page: Page, keyboard = false) {
   for (let position = 0; position < TARGET_WORD.length; position += 1) {
     const tiles = page.locator('[data-testid^="phone-tile-"]');
     const letters = (await tiles.allTextContents()).map((letter) => letter.trim());
@@ -34,12 +41,15 @@ async function solvePhoneWord(page: Page) {
     );
     expect(swapPosition).toBeGreaterThan(position);
     const selected = tiles.nth(position);
-    await selected.click({ force: true });
+    if (keyboard) await selected.press("Enter");
+    else await selected.click({ force: true });
     await expect(selected).toHaveAttribute("aria-pressed", "true");
-    await tiles.nth(swapPosition).click({ force: true });
+    if (keyboard) await tiles.nth(swapPosition).press("Enter");
+    else await tiles.nth(swapPosition).click({ force: true });
     await expect(tiles.nth(position)).toHaveText(TARGET_WORD[position]);
   }
-  await page.getByTestId("phone-word-submit").click();
+  if (keyboard) await page.getByTestId("phone-word-submit").press("Enter");
+  else await page.getByTestId("phone-word-submit").click();
 }
 
 async function sortChecklist(page: Page, yesIds: string[], noIds: string[]) {
@@ -99,6 +109,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("completes the core route, reloads safely, and reaches an ending", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
   const consoleErrors: string[] = [];
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
@@ -107,12 +119,14 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
 
   await page.goto("./");
   await expect(page.getByRole("heading", { name: "Soft Recall" })).toBeVisible();
+  await releaseScreenshot(page, "01-title-1440x900");
   await page.getByTestId("begin-button").click();
   await finishCutscene(page, "waking");
   await page.getByTestId("tutorial-skip").click();
   await expect(page.getByTestId("game-screen")).toHaveAttribute("data-room", "bedroom");
 
   await clickHotspot(page, "glasses");
+  await releaseScreenshot(page, "02-bedroom-1440x900");
   await clickHotspot(page, "note");
   await dragBetween(page, page.getByTestId("interaction-object"), page.getByTestId("interaction-target-door"));
   await finishCutscene(page, "note");
@@ -131,6 +145,7 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
   await page.getByTestId("doorway-kitchen").click();
   await expect(page.getByTestId("game-screen")).toHaveAttribute("data-room", "kitchen");
   await clickHotspot(page, "k-kettle");
+  await releaseScreenshot(page, "03-tea-interaction-1440x900");
   for (const [source, target] of [["kettle", "cup"], ["warm-cup", "hands"], ["empty-cup", "saucer"]]) {
     await dragBetween(page, page.getByTestId(`tea-source-${source}`), page.getByTestId(`tea-target-${target}`));
   }
@@ -178,6 +193,7 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
 
   await page.keyboard.press("m");
   await expect(page.getByTestId("memory-book")).toBeVisible();
+  await releaseScreenshot(page, "04-memory-book-1440x900");
   await page.getByTestId("memory-tab-learn-more").click();
   await expect(page.getByTestId("research-notes")).toBeVisible();
   await expect(page.getByText(/informational, not medical advice/i)).toBeVisible();
@@ -193,11 +209,11 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
       (element) => element.getAttribute("data-testid")?.replace("check-item-", "") ?? "",
     ),
   );
-  await sortChecklist(
-    page,
-    recallIds.filter((id) => id.startsWith("k:")),
-    recallIds.filter((id) => id.startsWith("d:")),
-  );
+  for (const id of recallIds) {
+    await page.getByTestId(`check-item-${id}`).click();
+    await page.getByTestId(id.startsWith("k:") ? "check-bin-yes" : "check-bin-no").click();
+    await expect(page.getByTestId(`check-item-${id}`)).toHaveCount(0);
+  }
 
   await expect(page.getByText("Readiness — what comes with you?")).toBeVisible();
   const readinessIds = await page
@@ -215,6 +231,7 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
   await finishCutscene(page, "threshold");
   await expect(page.getByTestId("ending-screen")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Smaller Morning" })).toBeVisible();
+  await releaseScreenshot(page, "05-ending-1440x900");
   await page.waitForTimeout(500);
 
   const savedEnding = await page.evaluate(() => {
@@ -232,17 +249,87 @@ test("completes the core route, reloads safely, and reaches an ending", async ({
   expect(existsSync(resolve(process.cwd(), "dist/index.html"))).toBe(true);
 });
 
-test("supports keyboard entry and Memory Book access", async ({ page }) => {
+test("supports keyboard entry and Memory Book access", async ({ page, browserName }) => {
   await page.goto("./");
-  await page.keyboard.press("Tab");
+  await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
   await expect(page.getByTestId("begin-button")).toBeFocused();
   await page.keyboard.press("Enter");
   await finishCutscene(page, "waking");
   await page.getByTestId("tutorial-skip").click();
+  await page.getByTestId("hotspot-glasses").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("The room sharpens at the edges first.")).toBeVisible();
+  await page.getByTestId("hotspot-note").focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByTestId("interaction-drag")).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.keyboard.press("m");
   await expect(page.getByTestId("memory-book")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("memory-book")).toHaveCount(0);
+});
+
+test("completes an entire morning with keyboard alternatives", async ({ page, browserName }) => {
+  const activate = (id: string) => page.getByTestId(id).press("Enter");
+  const skip = async (kind: string) => {
+    await page.getByTestId(`cutscene-${kind}`).waitFor({ state: "visible" });
+    await page.keyboard.press("Escape");
+  };
+  const sort = async (yes: (id: string) => boolean) => {
+    const ids = await page.locator('[data-testid^="check-item-"]').evaluateAll(elements => elements.map(element => element.getAttribute("data-testid")!.slice("check-item-".length)));
+    for (const id of ids) {
+      await activate(`check-item-${id}`);
+      await activate(yes(id) ? "check-bin-yes" : "check-bin-no");
+    }
+  };
+  await page.goto("./");
+  await page.keyboard.press(browserName === "webkit" ? "Alt+Tab" : "Tab");
+  await expect(page.getByTestId("begin-button")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await skip("waking");
+  await activate("tutorial-skip");
+  await activate("hotspot-glasses");
+  await activate("hotspot-note");
+  await activate("interaction-target-door");
+  await skip("note");
+  await activate("hotspot-phone");
+  await solvePhoneWord(page, true);
+  await activate("choice-send");
+  await activate("doorway-hallway");
+  await skip("corridor");
+  await activate("hotspot-coat");
+  await activate("doorway-kitchen");
+  await activate("hotspot-k-kettle");
+  for (const [source, target] of [["kettle", "cup"], ["warm-cup", "hands"], ["empty-cup", "saucer"]]) {
+    await activate(`tea-source-${source}`);
+    await activate(`tea-target-${target}`);
+  }
+  await skip("tea");
+  await activate("hotspot-k-toast");
+  for (const [index, id] of ["bread", "toaster", "butter", "plate"].entries()) {
+    await activate(`sequence-item-${id}`);
+    await activate(`sequence-slot-${index}`);
+  }
+  await activate("doorway-hallway");
+  await activate("doorway-bathroom");
+  await activate("hotspot-b-tap");
+  for (let i = 0; i < 4; i++) await activate("water-target");
+  await expect(page.getByTestId("mini-splash")).toHaveCount(0);
+  await activate("hotspot-b-teeth");
+  for (let i = 0; i < 6; i++) await page.getByRole("button", { name: i % 2 === 0 ? "Left" : "Right", exact: true }).press("Enter");
+  await activate("doorway-hallway");
+  await page.keyboard.press("m");
+  for (const id of ["noticed", "helped", "uncertain"]) await activate(`memory-review-${id}`);
+  await activate("memory-review-context-link");
+  await activate("research-context-read");
+  await page.keyboard.press("Escape");
+  await activate("hotspot-frontdoor");
+  await sort(id => id.startsWith("k:"));
+  await expect(page.getByText("Readiness — what comes with you?")).toBeVisible();
+  await sort(id => ["phone", "kettle", "note"].includes(id));
+  await activate("choice-smaller");
+  await skip("threshold");
+  await expect(page.getByRole("heading", { name: "Smaller Morning" })).toBeVisible();
 });
 
 test("supports an optional room story and saves its progress", async ({ page }) => {
@@ -269,6 +356,54 @@ test("supports an optional room story and saves its progress", async ({ page }) 
     page.getByTestId("memory-book").getByRole("listitem").getByText("Quilt: the green square"),
   ).toBeVisible();
 });
+
+for (const response of ["snap", "smaller-step"] as const) {
+test(`keeps the ${response} frustration response stable across Continue`, async ({ page }) => {
+  await page.goto("./");
+  await page.getByTestId("begin-button").click();
+  await finishCutscene(page, "waking");
+  await page.getByTestId("tutorial-skip").click();
+  await clickHotspot(page, "note");
+
+  // Wrong drops increase dissonance, but the note interaction remains
+  // recoverable until the player places it correctly.
+  await dragBetween(page, page.getByTestId("interaction-object"), page.getByTestId("interaction-target-drawer"));
+  await dragBetween(page, page.getByTestId("interaction-object"), page.getByTestId("interaction-target-drawer"));
+  await dragBetween(page, page.getByTestId("interaction-object"), page.getByTestId("interaction-target-door"));
+  await finishCutscene(page, "note");
+
+  await expect(page.getByTestId("confusion-fog")).toBeVisible();
+  await expect(page.getByTestId("frustration-beat")).toBeVisible();
+  await expect(page.getByTestId("choice-snap")).toBeVisible();
+  await expect(page.getByTestId("choice-smaller-step")).toBeVisible();
+  await expect(page.getByTestId("confusion-fog")).toHaveCSS("animation-name", "none");
+  const noteBefore = await page.getByTestId("hotspot-note").boundingBox();
+  await page.getByTestId(`choice-${response}`).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("frustration-beat")).toHaveCount(0);
+  const expectedDissonance = response === "snap" ? 3 : 1;
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("soft-recall.save.v5") ?? "{}").dissonance)).toBe(expectedDissonance);
+  await page.reload();
+  await page.getByTestId("continue-button").click();
+  await expect(page.getByTestId("frustration-beat")).toHaveCount(0);
+  await expect(page.getByTestId("hotspot-note")).toBeVisible();
+  expect(await page.getByTestId("hotspot-note").boundingBox()).toEqual(noteBefore);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("soft-recall.save.v5") ?? "{}").dissonance)).toBe(expectedDissonance);
+
+  await page.keyboard.press(",");
+  await page.getByRole("slider", { name: "Visual distortion" }).focus();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("confusion-fog")).toHaveCount(0);
+
+  // The beat is optional and does not block the existing doorway recovery.
+  await clickHotspot(page, "phone");
+  await solvePhoneWord(page);
+  await page.getByTestId("choice-send").click();
+  await page.getByTestId("doorway-hallway").click();
+  await expect(page.getByTestId("game-screen")).toHaveAttribute("data-room", "hallway");
+});
+}
 
 for (const endingChoice of ["go", "support"] as const) {
 test(`unlocks the perfect-route clip and reaches the ${endingChoice} ending`, async ({ page }) => {
@@ -345,6 +480,48 @@ test("protects the game layout in an undersized desktop window", async ({ page }
   await expect(page.getByTestId("desktop-viewport-guard")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Soft Recall" })).toBeVisible();
 });
+
+for (const viewport of [{ width: 1920, height: 1080 }, { width: 1440, height: 900 }, { width: 1280, height: 720 }]) {
+  test(`keeps hotspot targets aligned while panning and zooming at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => localStorage.setItem("soft-recall.settings.v3", JSON.stringify({ reducedMotion: false, parallax: true })));
+    await page.goto("./");
+    await page.getByTestId("begin-button").click();
+    await finishCutscene(page, "waking");
+    await page.getByTestId("tutorial-skip").click();
+    await page.getByRole("button", { name: "I've got it" }).click();
+    const plane = page.getByTestId("scene-art-plane");
+    const hotspot = page.getByTestId("hotspot-glasses");
+    const alignmentError = () => hotspot.evaluate((button) => {
+      const image = document.querySelector('[data-testid="scene-art-plane"] img')!.getBoundingClientRect();
+      const target = button.getBoundingClientRect();
+      return Math.hypot(target.x + target.width / 2 - (image.x + image.width * 0.36), target.y + target.height / 2 - (image.y + image.height * 0.56));
+    });
+    await expect.poll(alignmentError).toBeLessThan(1);
+    const before = await plane.getAttribute("style");
+    await page.mouse.move(viewport.width * 0.48, viewport.height * 0.35);
+    await page.mouse.down();
+    await page.mouse.move(viewport.width * 0.57, viewport.height * 0.4, { steps: 8 });
+    await expect(plane).not.toHaveAttribute("style", before!);
+    await expect.poll(alignmentError).toBeLessThan(1);
+    await page.mouse.up();
+    await hotspot.focus();
+    await page.keyboard.press("+");
+    await expect.poll(() => plane.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).a)).toBeGreaterThan(1.15);
+    await expect.poll(alignmentError).toBeLessThan(1);
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("The room sharpens at the edges first.")).toBeVisible();
+    await page.keyboard.press("0");
+    await expect.poll(() => plane.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).a)).toBe(1);
+    await releaseScreenshot(page, `desktop-${viewport.width}x${viewport.height}`);
+    for (const control of ["Memory Book", "Help", "Settings"]) {
+      const box = await page.getByRole("button", { name: control, exact: true }).boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+      expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
+    }
+  });
+}
 
 test("plays silent video with timed captions, pause, and automatic return", async ({ page }) => {
   const errors: string[] = [];

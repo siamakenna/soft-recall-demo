@@ -23,6 +23,12 @@ For a concrete story-free QA route, collect glasses, note, phone lock word, phon
 
 The apartment stays small, but the route is not fixed. The phone has three responses, the kitchen can be completed with any two of three tasks, the bathroom with any two of four tasks, and Kitchen/Bathroom can be visited in either order with Hallway as the return point. Optional object stories add four five-beat threads, and the final choice leads to one of three endings. A player who revisits every room can therefore build a different morning without creating a separate quest tree.
 
+### Eerie Escalation
+
+Missteps now change the atmosphere without changing the map or moving any input target. After repeated wrong placements, a broad haze gathers over the scene, the edges cool and soften, unfinished hotspots lose a little certainty, and the room's header shifts from `the morning feels blurred` to `the room won't hold still`. The haze is silent, reversible through the existing breathe ritual, and never obscures the Doorways strip.
+
+Once per run, when the player has accumulated at least two missteps and is between interactions, a short optional frustration beat appears in the VN box. The player can snap at the room or set one thing down and start smaller. Both choices return control immediately; the first deepens dissonance and the second eases it. This is a fictional subjective response, not a symptom checklist or a universal claim about neurodegeneration.
+
 The Front Door recall check adapts to attention already spent: a shorter run presents one plausible decoy, while a run with 12 or more memories presents two. The normal route remains recoverable after a mistake. A bonus `clear-morning` beat appears only when every core room task is complete with zero missteps; it adds a longer reflection and never gates an ending.
 
 Room light also changes with progress. Bedroom, Hallway, Kitchen, and Bathroom retain different warm/cool washes, while the apartment gradually lifts as rooms are visited and tasks are completed. These changes are visual state only; they do not move hotspot coordinates or alter the route rules.

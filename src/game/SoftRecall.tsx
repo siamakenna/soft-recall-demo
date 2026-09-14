@@ -239,6 +239,7 @@ export default function SoftRecall() {
   /* New: clarity/dissonance, onboarding, hint cooldown, breathe ritual, parallax, hover thought */
   const [clarity, setClarity] = useState(0);
   const [dissonance, setDissonance] = useState(0);
+  const [frustrationBeatSeen, setFrustrationBeatSeen] = useState(false);
   const [onboarded, setOnboarded] = useState(true);
   const [hintCooldown, setHintCooldown] = useState(0);
   const [breathing, setBreathing] = useState<null | "in" | "out">(null);
@@ -261,7 +262,7 @@ export default function SoftRecall() {
   useEffect(() => {
     try {
       const s = localStorage.getItem(SETTINGS_KEY);
-      if (s) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(s) });
+      setSettings({ ...DEFAULT_SETTINGS, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches, ...(s ? JSON.parse(s) : {}) });
       setHasSave(hasGameSave(localStorage));
       const o = localStorage.getItem(HOTSPOT_OVERRIDES_KEY);
       if (o) setHotspotOverrides(JSON.parse(o));
@@ -301,12 +302,13 @@ export default function SoftRecall() {
           storyChoices,
           viewedCutscenes: [...viewedCutscenes],
           memoryBookReview,
+          frustrationBeatSeen,
         });
         setHasSave(true);
       } catch { /* Saving is best-effort when browser storage is unavailable. */ }
     }, 400);
     return () => { if (saveTimer.current) window.clearTimeout(saveTimer.current); };
-  }, [screen, room, visited, unlocked, frontDoorUnlocked, done, interactionOrder, memory, wrongCount, clarity, dissonance, roomVisitOrder, confidenceChoices, supportCueUseCount, packed, ending, storyProgress, storyChoices, viewedCutscenes, memoryBookReview]);
+  }, [screen, room, visited, unlocked, frontDoorUnlocked, done, interactionOrder, memory, wrongCount, clarity, dissonance, roomVisitOrder, confidenceChoices, supportCueUseCount, packed, ending, storyProgress, storyChoices, viewedCutscenes, memoryBookReview, frustrationBeatSeen]);
 
   const remember = useCallback((entry: MemoryEntry) => {
     setMemory((prev) => {
@@ -337,6 +339,67 @@ export default function SoftRecall() {
     setDissonance(d => d + 1);
     if (line) setVnLine(line);
   }, []);
+
+  /* Offer this between interactions once per saved morning. */
+  useEffect(() => {
+    if (
+      screen !== "game" ||
+      wrongCount < 2 ||
+      frustrationBeatSeen ||
+      !onboarded ||
+      closeup ||
+      breathing ||
+      transition ||
+      showBook ||
+      showHelp ||
+      showSettings ||
+      mini ||
+      interaction ||
+      activeCutscene ||
+      activeStory ||
+      vnChoices.length > 0
+    ) return;
+
+    setFrustrationBeatSeen(true);
+    setVnLine({ speaker: "The room", text: "The same edge keeps slipping away. Heat arrives before the reason for it." });
+    setVnChoices([
+      {
+        id: "snap",
+        label: 'Snap at the room: "Stop moving."',
+        tone: "neutral",
+        onPick: () => {
+          setDissonance(d => d + 1);
+          say("You", "The words strike the room. Nothing answers, but the echo feels close.");
+        },
+      },
+      {
+        id: "smaller-step",
+        label: "Set one thing down. Start with that.",
+        tone: "kind",
+        onPick: () => {
+          setDissonance(d => Math.max(0, d - 1));
+          say("You", "One object. One place. The room gives you that much.");
+        },
+      },
+    ]);
+  }, [
+    screen,
+    wrongCount,
+    frustrationBeatSeen,
+    onboarded,
+    closeup,
+    breathing,
+    transition,
+    showBook,
+    showHelp,
+    showSettings,
+    mini,
+    interaction,
+    activeCutscene,
+    activeStory,
+    vnChoices.length,
+    say,
+  ]);
 
   const gotoRoom = useCallback((r: RoomId) => {
     setCloseup(null);
@@ -377,6 +440,7 @@ export default function SoftRecall() {
     setWrongCount(0);
     setClarity(0);
     setDissonance(0);
+    setFrustrationBeatSeen(false);
     setInteraction(null);
     setInteractionOrder([]);
     setConfidenceChoices([]);
@@ -411,6 +475,7 @@ export default function SoftRecall() {
       setWrongCount(s.wrongCount);
       setClarity(s.clarity);
       setDissonance(s.dissonance);
+      setFrustrationBeatSeen(s.frustrationBeatSeen);
       setInteractionOrder(s.interactionOrder);
       setConfidenceChoices(s.confidenceChoices);
       setSupportCueUseCount(s.supportCueUseCount);
@@ -1295,7 +1360,7 @@ export default function SoftRecall() {
 
   /* ---------------------- keyboard controls ----------------------- */
   const [focusIdx, setFocusIdx] = useState(0);
-  useEffect(() => { setFocusIdx(0); }, [room, closeup]);
+  useEffect(() => { setFocusIdx(0); }, [room, closeup, vnChoices]);
 
   const zoomToFocusedTarget = useCallback(() => {
     const target = hotspots[focusIdx];
@@ -1378,9 +1443,12 @@ export default function SoftRecall() {
   /* Parallax — track mouse over the scene, rAF-throttled. Hold + drag to actively pan. */
   useEffect(() => {
     if (!settings.parallax || settings.reducedMotion || screen !== "game") return;
-    const el = sceneRef.current;
+    if (showBook || showHelp || showSettings || mini || interaction || activeCutscene || activeStory || !onboarded) return;
+    const el = sceneRef.current?.closest<HTMLElement>('[data-testid="game-screen"]');
     if (!el) return;
+    let settleTimer: number | undefined;
     const onMove = (e: MouseEvent) => {
+      if (!dragPanRef.current.active && e.target !== el) return;
       const r = el.getBoundingClientRect();
       parallaxRef.current = {
         x: ((e.clientX - r.left) / r.width - 0.5) * 2,
@@ -1402,16 +1470,14 @@ export default function SoftRecall() {
       }
     };
     const onDown = (e: MouseEvent) => {
-      // Only left-button drag on the scene backdrop (not on markers/UI)
-      if (e.button !== 0) return;
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest("[data-hotspot], [data-ui]")) return;
+      if (e.button !== 0 || e.target !== el) return;
+      window.clearTimeout(settleTimer);
       dragPanRef.current = {
         active: true,
         startX: e.clientX,
         startY: e.clientY,
-        baseX: dragPan.x,
-        baseY: dragPan.y,
+        baseX: 0,
+        baseY: 0,
       };
       el.style.cursor = "grabbing";
     };
@@ -1421,7 +1487,7 @@ export default function SoftRecall() {
       el.style.cursor = "";
       // Ease back toward center so the room settles
       setDragPan(p => ({ x: p.x * 0.4, y: p.y * 0.4 }));
-      window.setTimeout(() => setDragPan({ x: 0, y: 0 }), 260);
+      settleTimer = window.setTimeout(() => setDragPan({ x: 0, y: 0 }), 260);
     };
     el.addEventListener("mousemove", onMove);
     el.addEventListener("mousedown", onDown);
@@ -1430,10 +1496,13 @@ export default function SoftRecall() {
       el.removeEventListener("mousemove", onMove);
       el.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
+      window.clearTimeout(settleTimer);
+      dragPanRef.current.active = false;
+      el.style.cursor = "";
       if (rafParallax.current) cancelAnimationFrame(rafParallax.current);
       rafParallax.current = null;
     };
-  }, [settings.parallax, settings.reducedMotion, screen, room, closeup, dragPan.x, dragPan.y]);
+  }, [settings.parallax, settings.reducedMotion, screen, room, closeup, showBook, showHelp, showSettings, mini, interaction, activeCutscene, activeStory, onboarded]);
 
   useEffect(() => {
 
@@ -1442,11 +1511,10 @@ export default function SoftRecall() {
 
     const onKey = (e: KeyboardEvent) => {
       if (activeCutscene || activeStory) return;
-      if (isEditableTarget(e.target)) return;
       const k = e.key.toLowerCase();
       const target = e.target instanceof Element ? e.target : null;
       if ((k === "enter" || k === " ") && target?.closest("button, a, [role=button]")) return;
-      if (k === "escape" || k === "backspace") {
+      if (k === "escape" || (k === "backspace" && !isEditableTarget(e.target))) {
         if (mini) { mini.onCancel?.(); return; }
         if (interaction) { interaction.onCancel?.(); return; }
         if (showHelp) { setShowHelp(false); return; }
@@ -1455,6 +1523,7 @@ export default function SoftRecall() {
         if (closeup) { setCloseup(null); setVnChoices([]); return; }
         return;
       }
+      if (isEditableTarget(e.target)) return;
       if (k === "h") { setShowHelp(v => !v); return; }
       if (k === "m") { setShowBook(v => !v); return; }
       if (k === ",") { setShowSettings(v => !v); return; }
@@ -1577,9 +1646,8 @@ export default function SoftRecall() {
   const progress = Math.min(1, done.size / TOTAL_TASKS);
   const rawBlur = Math.min(6, wrongCount * 1.3);
   const rawDesat = Math.max(0.55, 1 - wrongCount * 0.09);
-  /* Baseline 0.6px blur simulates slightly-below-average acuity (~20/40) even
-     at full progress — the world never becomes hyper-sharp. */
-  const blurPx = 0.6 + Math.max(0, rawBlur * (1 - progress * 0.75));
+  const distortion = Number.isFinite(settings.fuzzCap) ? Math.max(0, Math.min(1, settings.fuzzCap)) : 1;
+  const blurPx = (0.6 + Math.max(0, rawBlur * (1 - progress * 0.75))) * distortion;
   const desat  = Math.min(1.1, rawDesat + progress * 0.4);
   const warmth = progress; // 0 → 1 warm color wash near the end
   const dawnProgress = Math.min(1, ((visited.size - 1) / 3) * 0.55 + progress * 0.45);
@@ -1587,24 +1655,41 @@ export default function SoftRecall() {
   const memoryBookNeedsReview = memory.length >= 8 && !isMemoryBookReviewComplete(memoryBookReview);
 
   /* Distortion driven by dissonance — chromatic aberration + subtle screen tear */
-  const aber = Math.min(0.7, dissonance * 0.15);
-  const tear = Math.min(0.55, Math.max(0, dissonance - 2) * 0.2);
+  const aber = Math.min(0.7, dissonance * 0.15) * distortion;
+  const tear = settings.reducedMotion ? 0 : Math.min(0.55, Math.max(0, dissonance - 2) * 0.2) * distortion;
+  const fogLevel = Math.min(0.48, wrongCount * 0.055 + Math.max(0, dissonance - 1) * 0.035) * distortion;
+  const uncannyLevel = Math.min(0.34, Math.max(0, dissonance - 1) * 0.055) * distortion;
+  const atmosphereLine = wrongCount >= 3
+    ? "the room won't hold still"
+    : wrongCount > 0
+      ? "the morning feels blurred"
+      : null;
 
   const px = settings.parallax && !settings.reducedMotion ? parallax : { x: 0, y: 0 };
   const cameraX = (-(px.x * 1.2) + dragPan.x + (50 - cameraFocus.x) * (sceneZoom - 1)).toFixed(2);
   const cameraY = (-(px.y * 0.8) + dragPan.y + (50 - cameraFocus.y) * (sceneZoom - 1)).toFixed(2);
+  // All current paintings are 1376 x 768. Match object-cover's full image
+  // bounds so hotspot percentages stay relative to the painting after cropping.
+  const cameraStyle = {
+    width: "max(100vw, calc(100vh * 1376 / 768))",
+    height: "max(100vh, calc(100vw * 768 / 1376))",
+    left: "50%",
+    top: "50%",
+    transform: `translate(-50%, -50%) translate(${cameraX}%, ${cameraY}%) scale(${sceneZoom})`,
+    transition: dragPanRef.current.active ? "none" : "transform 380ms ease-out",
+  };
 
   return (
-    <div data-testid="game-screen" data-room={room} className={`fixed inset-0 bg-black text-foreground select-none overflow-hidden cursor-open ${settings.dyslexiaFont ? "dyslexia-font" : ""}`}>
+    <div data-testid="game-screen" data-room={room} data-reduced-motion={settings.reducedMotion} className={`fixed inset-0 bg-black text-foreground select-none overflow-hidden cursor-open ${settings.dyslexiaFont ? "dyslexia-font" : ""}`}>
       {/* The art and its hotspots share this camera plane. Any zoom therefore
           moves the visible object and its target together. */}
       <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
         <div
           ref={sceneRef}
-          className="absolute inset-0 origin-center"
+          data-testid="scene-art-plane"
+          className="absolute origin-center"
           style={{
-            transform: `translate(${cameraX}%, ${cameraY}%) scale(${sceneZoom})`,
-            transition: dragPanRef.current.active ? "none" : "transform 380ms ease-out",
+            ...cameraStyle,
             willChange: "transform",
           }}
         >
@@ -1662,6 +1747,21 @@ export default function SoftRecall() {
             transition: "opacity 1200ms ease-out",
           }}
         />
+        {fogLevel > 0 && (
+          <div
+            data-testid="confusion-fog"
+            className={`confusion-fog pointer-events-none absolute -inset-[10%] ${settings.reducedMotion ? "confusion-fog-still" : ""}`}
+            style={{ opacity: fogLevel }}
+            aria-hidden
+          />
+        )}
+        {uncannyLevel > 0 && (
+          <div
+            className="uncanny-veil pointer-events-none absolute inset-0"
+            style={{ opacity: uncannyLevel }}
+            aria-hidden
+          />
+        )}
         {/* Dust motes drifting through the room */}
         {!settings.reducedMotion && !closeup && <div className="dust-motes" />}
         {/* Kettle steam plume */}
@@ -1707,11 +1807,9 @@ export default function SoftRecall() {
       {/* Marker layer floats above the lower dialogue controls, but uses the
           exact same camera transform as the art plane. */}
       <div
-        className="pointer-events-none absolute inset-0 z-30 origin-center"
-        style={{
-          transform: `translate(${cameraX}%, ${cameraY}%) scale(${sceneZoom})`,
-          transition: dragPanRef.current.active ? "none" : "transform 380ms ease-out",
-        }}
+        data-testid="scene-hotspot-plane"
+        className="pointer-events-none absolute z-30 origin-center"
+        style={cameraStyle}
       >
         <div className="pointer-events-none absolute inset-0">
           {hotspots.map((h, i) => {
@@ -1723,6 +1821,7 @@ export default function SoftRecall() {
                 scale={settings.markerScale}
                 focused={focusIdx === i}
                 done={isDone}
+                uncertain={dissonance >= 2 && !isDone && distortion > 0}
                 pulse={pulseId === h.id || (hintPulse && (h.id === nextTaskId || h.id === "phone"))}
                 debug={settings.debugHotspots}
                 onInspect={h.onInspect}
@@ -1764,7 +1863,7 @@ export default function SoftRecall() {
       <div className="absolute top-0 inset-x-0 z-40 flex items-center justify-between px-4 py-2 bg-black/50 backdrop-blur-sm border-b border-white/10">
         <div className="font-serif text-sm opacity-80">
           Soft Recall · <span className="opacity-70">{ROOM_LABEL[room]}</span>
-          {wrongCount > 0 && <span className="ml-3 text-[11px] text-rose-300/80 italic">the morning feels blurred</span>}
+          {atmosphereLine && <span className="ml-3 text-[11px] text-rose-300/80 italic">{atmosphereLine}</span>}
         </div>
         <div className="flex flex-wrap justify-end gap-2 text-xs">
           <button
@@ -1865,7 +1964,11 @@ export default function SoftRecall() {
           )}
 
           {/* VN panel */}
-          <div className="vn-panel rounded-md px-4 py-3 min-h-[110px]" style={{ fontSize: `${settings.subtitleScale}em` }}>
+          <div
+            className="vn-panel rounded-md px-4 py-3 min-h-[110px]"
+            data-testid={vnChoices.some(c => c.id === "snap") ? "frustration-beat" : undefined}
+            style={{ fontSize: `${settings.subtitleScale}em` }}
+          >
             {vnLine ? (
               <div>
                 <div className="font-hand text-[color:var(--color-glow)] text-lg leading-none">{vnLine.speaker}</div>
@@ -2168,11 +2271,12 @@ function TopBtn({ onClick, label, hint, testId, attention }:{ onClick: () => voi
    still works as a fallback so the interaction feels tactile without being
    punishing. The hit target is a tight circle in the visual center. */
 const HOLD_MS = 260;
-const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, done, pulse, debug, onInspect, onFocus, onDebugMouseDown, onHoverThought, onLeaveThought }:{
+const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, done, uncertain, pulse, debug, onInspect, onFocus, onDebugMouseDown, onHoverThought, onLeaveThought }:{
   hotspot: Hotspot;
   scale: number;
   focused: boolean;
   done: boolean;
+  uncertain: boolean;
   pulse: boolean;
   debug: boolean;
   onInspect: () => void;
@@ -2231,7 +2335,7 @@ const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, don
       {/* decorative glow — no pointer events, so the player must aim at center */}
       <span
         aria-hidden
-        className={`pointer-events-none absolute inset-0 rounded-full marker-glow ${pulse ? "animate-[pulse-soft_1.4s_ease-in-out_infinite]" : ""} ${done ? "opacity-40" : "opacity-100"}`}
+        className={`pointer-events-none absolute inset-0 rounded-full marker-glow ${pulse ? "animate-[pulse-soft_1.4s_ease-in-out_infinite]" : ""} ${uncertain ? "marker-uncertain" : ""} ${done ? "opacity-40" : "opacity-100"}`}
         style={{
           background: pulse
             ? "radial-gradient(circle, rgba(255,230,170,0.55), rgba(0,0,0,0) 70%)"
@@ -2259,6 +2363,7 @@ const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, don
         onPointerDown={debug ? undefined : startHold}
         onPointerUp={debug ? undefined : endHold}
         onPointerCancel={debug ? undefined : cancelHold}
+        onClick={(event) => { if (!debug && event.detail === 0) onInspect(); }}
         onMouseDown={debug ? onDebugMouseDown : undefined}
         onFocus={onFocus}
         aria-label={hotspot.label}
@@ -2266,7 +2371,6 @@ const HotspotMarker = memo(function HotspotMarker({ hotspot, scale, focused, don
         style={{
           width: hit, height: hit,
           background: debug ? "rgba(16,185,129,0.35)" : "transparent",
-          transform: "translate(-50%, -50%)",
         }}
       >
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[color:var(--color-glow)] text-sm font-serif drop-shadow">
@@ -2644,8 +2748,8 @@ function SettingsOverlay({ settings, onChange, onClose, onRestart }:{
         <input type="range" min={0} max={1} step={0.05} value={settings.grain} onChange={(e) => onChange({ ...settings, grain: parseFloat(e.target.value) })} className="w-full" />
       </div>
       <div className="mt-3 text-sm">
-        <div>Text softness cap: {Math.round(settings.fuzzCap * 100)}%</div>
-        <input type="range" min={0} max={1} step={0.05} value={settings.fuzzCap} onChange={(e) => onChange({ ...settings, fuzzCap: parseFloat(e.target.value) })} className="w-full" />
+        <div>Visual distortion: {Math.round(settings.fuzzCap * 100)}%</div>
+        <input aria-label="Visual distortion" type="range" min={0} max={1} step={0.05} value={settings.fuzzCap} onChange={(e) => onChange({ ...settings, fuzzCap: parseFloat(e.target.value) })} className="w-full" />
       </div>
       <div className="mt-3 text-sm">
         <div>Marker scale: {Math.round(settings.markerScale * 100)}%</div>
@@ -3717,24 +3821,18 @@ function ChecklistDrag({ spec, confusionLevel }: { spec: Extract<InteractionSpec
         {(["yes", "no"] as const).map(bin => (
           <div
             key={bin}
-            data-testid={`check-bin-${bin}`}
-            role="button"
-            tabIndex={0}
-            aria-label={bin === "yes" ? "Place selected item in It's there" : "Place selected item in Not there"}
             {...carry.targetProps(bin)}
-            onClick={() => { if (dragId) { place(dragId, bin); setDragId(null); } }}
-            onKeyDown={(e) => {
-              if ((e.key === "Enter" || e.key === " ") && dragId) {
-                e.preventDefault();
-                place(dragId, bin);
-                setDragId(null);
-              }
-            }}
             className="carry-drop min-h-[110px] rounded border-2 border-dashed border-white/15 p-2"
           >
-            <div className="text-[11px] uppercase tracking-wide opacity-70 mb-1">
+            <button
+              type="button"
+              data-testid={`check-bin-${bin}`}
+              aria-label={bin === "yes" ? "Place selected item in It's there" : "Place selected item in Not there"}
+              onClick={() => { if (dragId) { place(dragId, bin); setDragId(null); } }}
+              className="mb-1 min-h-8 w-full rounded text-left text-[11px] uppercase tracking-wide opacity-70 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--color-glow)]"
+            >
               {bin === "yes" ? "It's there" : "Not there"}
-            </div>
+            </button>
             <div className="flex flex-wrap gap-1">
               {spec.options.filter(o => placement[o.id] === bin).map(o => {
                 const isMisplaced = showHint && ((bin === "yes" && !o.correct) || (bin === "no" && o.correct));

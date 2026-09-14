@@ -46,9 +46,10 @@ export interface GameSave {
   storyChoices: Record<string, string[]>;
   viewedCutscenes: string[];
   memoryBookReview: MemoryBookReview;
+  frustrationBeatSeen: boolean;
 }
 
-export const GAME_SAVE_VERSION = 3 as const;
+export const GAME_SAVE_VERSION = 4 as const;
 export const GAME_SAVE_KEY = "soft-recall.save.v5";
 export const LEGACY_GAME_SAVE_KEYS = ["soft-recall.save.v4"] as const;
 
@@ -162,6 +163,7 @@ export function createInitialGameSave(): GameSave {
     storyChoices: {},
     viewedCutscenes: [],
     memoryBookReview: { noticed: false, helped: false, uncertain: false, contextRead: false },
+    frustrationBeatSeen: false,
   };
 }
 
@@ -197,6 +199,7 @@ export function parseGameSave(raw: string): GameSave | null {
       storyChoices: storyChoices(parsed.storyChoices),
       viewedCutscenes: stringArray(parsed.viewedCutscenes),
       memoryBookReview: memoryBookReview(parsed.memoryBookReview),
+      frustrationBeatSeen: parsed.frustrationBeatSeen === true,
     };
 
     if (!save.visitedRooms.includes(save.currentRoom)) save.visitedRooms.push(save.currentRoom);

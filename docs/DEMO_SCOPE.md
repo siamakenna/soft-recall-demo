@@ -16,6 +16,7 @@ The project remains a static, desktop-first React/Vite point-and-click visual no
 - Pointer-carried note and key placement, sequence and recall sorting, three tea gestures, and six brushing sweeps. Correct arrangements resolve without another confirmation. Keyboard alternatives remain available.
 - Adaptive Front Door recall: longer exploratory runs face a second plausible decoy, while a no-misstep run completing every core room task earns the optional `clear-morning` beat.
 - State-driven room light: room-specific dawn washes and a gradual brightness lift respond to visited rooms and completed tasks without changing hotspot geometry.
+- Bounded eerie escalation: repeated missteps add silent haze, cooler peripheral edges, less certain unfinished markers, and one optional frustration choice beat. Doorways, keyboard access, and recovery remain available.
 - A required final Memory Book review after the existing memory threshold: three player-held observations plus one short context note in `Learn More`. External research links remain optional and never interrupt the room scenes.
 
 The writing stays in first-person, close to early-morning light, fabric, glaze, and familiar objects. It makes no clinical claims and includes no research citations, diagnosis, treatment guidance, or medication instructions. The new choices are not tests of whether the player feels correctly.
@@ -41,3 +42,5 @@ All six cutscenes are silent, automatically played, and skippable. Watching them
 Type safety, content shape, IDs, word counts, build compatibility, story entry/exit, save/restart behavior, and cutscene controls are covered by the integrated implementation and browser smoke route. The target duration still needs playtest observation with fresh desktop players.
 
 The desired full exploratory experience remains **20-30 minutes**; a fast story-free route remains available. Follow `docs/qa/PLAYTHROUGH_QA.md` and the additional checks in `GAME_FLOW.md` before release. Browser cinematics use the current scene artwork, so a future Blender pass can supply authored camera renders without changing the story state contract.
+
+The darker atmosphere is intentionally bounded for this demo. There are no jump scares, audio cues, forced failure states, clinical symptom labels, or inaccessible fog overlays. A future pass may deepen the room-specific visual language after playtest feedback, but it should preserve readable exits and a dependable route to an ending.

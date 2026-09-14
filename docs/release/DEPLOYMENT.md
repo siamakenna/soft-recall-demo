@@ -6,7 +6,7 @@ or audio services.
 
 ## Local Development
 
-Use Node 22 or newer:
+Use Node 24, matching `.nvmrc` and GitHub Actions:
 
 ```sh
 node -v
@@ -15,7 +15,7 @@ npm run dev
 ```
 
 Vite will print the local URL. In development, the app renders the current
-React React game directly from `src/main.tsx` and `src/game/SoftRecall.tsx`.
+React game directly from `src/main.tsx` and `src/game/SoftRecall.tsx`.
 
 ## Build
 
@@ -32,8 +32,8 @@ The production build is written to `dist/`. A successful build includes
 npm run preview
 ```
 
-This serves the static `dist/` output with Vite Preview. No server runtime is
-started.
+This serves static `dist/` files with a local HTTP preview server. The deployed
+game needs no application server.
 
 ## GitHub Pages
 
@@ -43,7 +43,7 @@ The Vite base path is configured in `vite.config.ts` as:
 base: "/soft-recall-demo/",
 ```
 
-The workflow at `.github/workflows/deploy.yml` uses Node 22, runs `npm ci`,
+The workflow at `.github/workflows/deploy.yml` uses Node 24, runs `npm ci`,
 builds the static site, uploads `dist/`, and deploys it to GitHub Pages.
 
 In GitHub, set Pages to use GitHub Actions as the source. Pushing to
