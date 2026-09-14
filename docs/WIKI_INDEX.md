@@ -14,3 +14,10 @@
 - [Research and Clinical Boundaries](wiki/Research-and-Clinical-Boundaries.md): non-diagnostic framing and future source standards.
 - [Roadmap](wiki/Roadmap.md): current, next, later, deferred, and future possibilities.
 - [Known Issues](wiki/Known-Issues.md): current risks and areas that require QA before changing.
+
+## Release References
+
+- [itch.io release guide](release/ITCH_RELEASE.md)
+- [Release process](release/RELEASE_PROCESS.md)
+- [Playtest guide](qa/PLAYTEST_GUIDE.md)
+- [Research source log](research/SOURCE_LOG.md)

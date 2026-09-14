@@ -18,6 +18,13 @@ export interface PackedItems {
   phone: boolean;
 }
 
+export interface MemoryBookReview {
+  noticed: boolean;
+  helped: boolean;
+  uncertain: boolean;
+  contextRead: boolean;
+}
+
 export interface GameSave {
   schemaVersion: typeof GAME_SAVE_VERSION;
   currentRoom: RoomId;
@@ -35,9 +42,14 @@ export interface GameSave {
   clarity: number;
   dissonance: number;
   endingState: EndingId | null;
+  storyProgress: Partial<Record<RoomId, number>>;
+  storyChoices: Record<string, string[]>;
+  viewedCutscenes: string[];
+  memoryBookReview: MemoryBookReview;
+  frustrationBeatSeen: boolean;
 }
 
-export const GAME_SAVE_VERSION = 1 as const;
+export const GAME_SAVE_VERSION = 4 as const;
 export const GAME_SAVE_KEY = "soft-recall.save.v5";
 export const LEGACY_GAME_SAVE_KEYS = ["soft-recall.save.v4"] as const;
 
@@ -85,6 +97,28 @@ const memoryArray = (value: unknown): MemoryEntry[] => {
   });
 };
 
+const storyProgress = (value: unknown): Partial<Record<RoomId, number>> => {
+  if (!isRecord(value)) return {};
+  return ROOMS.reduce<Partial<Record<RoomId, number>>>((result, room) => {
+    const progress = value[room];
+    if (typeof progress === "number" && Number.isInteger(progress) && progress >= 0) {
+      result[room] = progress;
+    }
+    return result;
+  }, {});
+};
+
+const storyChoices = (value: unknown): Record<string, string[]> => {
+  if (!isRecord(value)) return {};
+  return Object.entries(value).reduce<Record<string, string[]>>((result, [key, choices]) => {
+    if (Array.isArray(choices)) {
+      const validChoices = choices.filter((choice): choice is string => typeof choice === "string");
+      if (validChoices.length > 0) result[key] = validChoices;
+    }
+    return result;
+  }, {});
+};
+
 const packedItems = (value: unknown): PackedItems => {
   const packed = isRecord(value) ? value : {};
   return {
@@ -93,6 +127,19 @@ const packedItems = (value: unknown): PackedItems => {
     phone: packed.phone === true,
   };
 };
+
+const memoryBookReview = (value: unknown): MemoryBookReview => {
+  const review = isRecord(value) ? value : {};
+  return {
+    noticed: review.noticed === true,
+    helped: review.helped === true,
+    uncertain: review.uncertain === true,
+    contextRead: review.contextRead === true,
+  };
+};
+
+export const isMemoryBookReviewComplete = (review: MemoryBookReview): boolean =>
+  review.noticed && review.helped && review.uncertain && review.contextRead;
 
 export function createInitialGameSave(): GameSave {
   return {
@@ -112,6 +159,11 @@ export function createInitialGameSave(): GameSave {
     clarity: 0,
     dissonance: 0,
     endingState: null,
+    storyProgress: {},
+    storyChoices: {},
+    viewedCutscenes: [],
+    memoryBookReview: { noticed: false, helped: false, uncertain: false, contextRead: false },
+    frustrationBeatSeen: false,
   };
 }
 
@@ -143,6 +195,11 @@ export function parseGameSave(raw: string): GameSave | null {
       clarity: finiteNumber(parsed.clarity),
       dissonance: Math.max(0, finiteNumber(parsed.dissonance)),
       endingState: isEnding(parsed.endingState) ? parsed.endingState : null,
+      storyProgress: storyProgress(parsed.storyProgress),
+      storyChoices: storyChoices(parsed.storyChoices),
+      viewedCutscenes: stringArray(parsed.viewedCutscenes),
+      memoryBookReview: memoryBookReview(parsed.memoryBookReview),
+      frustrationBeatSeen: parsed.frustrationBeatSeen === true,
     };
 
     if (!save.visitedRooms.includes(save.currentRoom)) save.visitedRooms.push(save.currentRoom);

@@ -1,8 +1,8 @@
-import bedroomImg from "@/assets/scene-bedroom.jpg";
-import phoneImg from "@/assets/scene-phone.jpg";
-import hallwayImg from "@/assets/scene-hallway.jpg";
-import kitchenImg from "@/assets/scene-kitchen.jpg";
-import bathroomImg from "@/assets/scene-bathroom.jpg";
+import bedroomImg from "@/assets/scene-bedroom.webp";
+import phoneImg from "@/assets/scene-phone.webp";
+import hallwayImg from "@/assets/scene-hallway.webp";
+import kitchenImg from "@/assets/scene-kitchen.webp";
+import bathroomImg from "@/assets/scene-bathroom.webp";
 import type { RoomId, SceneId } from "../state";
 
 export const SCENE_IMG: Record<SceneId, string> = {

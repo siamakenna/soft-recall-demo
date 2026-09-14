@@ -1,0 +1,83 @@
+{
+  "method": "Local FFmpeg camera crops from existing project paintings; no new source artwork or audio.",
+  "clips": [
+    {
+      "kind": "waking",
+      "source": "src/assets/scene-bedroom.webp",
+      "sourceSha256": "e2c49d11987fb15cbcc9d84452fc07095c372c7fdb4f7bc9b5d77f9ab6a632b5",
+      "file": "waking.mp4",
+      "sha256": "58a4ea27333f9deb249a24c8692f8c1d70a1eb33e7c8129ef1061b501daf190c",
+      "bytes": 2862679,
+      "duration": 50.76923076923077,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "audio": false
+    },
+    {
+      "kind": "note",
+      "source": "src/assets/scene-bedroom.webp",
+      "sourceSha256": "e2c49d11987fb15cbcc9d84452fc07095c372c7fdb4f7bc9b5d77f9ab6a632b5",
+      "file": "note.mp4",
+      "sha256": "418e763b97654567e147be0c5f58f61b9e40bb5ee25abad457b819ee5f9bea73",
+      "bytes": 2412734,
+      "duration": 51.92307692307692,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "audio": false
+    },
+    {
+      "kind": "corridor",
+      "source": "src/assets/scene-hallway.webp",
+      "sourceSha256": "66ba3606f1df9ec515f990956c4ce37bc010c404f4c52208a8733930799dd6cf",
+      "file": "corridor.mp4",
+      "sha256": "6b126a524d86b3e95d43206e0896cdacda0b4e137fe536c0117b17398464034d",
+      "bytes": 2414921,
+      "duration": 46.15384615384615,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "audio": false
+    },
+    {
+      "kind": "tea",
+      "source": "src/assets/scene-kitchen.webp",
+      "sourceSha256": "05e4d57bc70dfacdbbbda80e41d5fa55f02b822834c15664e7ca185f81a9e5fb",
+      "file": "tea.mp4",
+      "sha256": "c3a7f1ad894e1854b02b867655da76c629720d616e763fadf7275897d9952bb9",
+      "bytes": 2461602,
+      "duration": 47.69230769230769,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "audio": false
+    },
+    {
+      "kind": "threshold",
+      "source": "src/assets/scene-hallway.webp",
+      "sourceSha256": "66ba3606f1df9ec515f990956c4ce37bc010c404f4c52208a8733930799dd6cf",
+      "file": "threshold.mp4",
+      "sha256": "e738f127dde721c551580899b7fc262633a994d735618868b2c73c49f715bd3d",
+      "bytes": 2413981,
+      "duration": 52.692307692307686,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "audio": false
+    },
+    {
+      "kind": "clear-morning",
+      "source": "src/assets/scene-hallway.webp",
+      "sourceSha256": "66ba3606f1df9ec515f990956c4ce37bc010c404f4c52208a8733930799dd6cf",
+      "file": "clear-morning.mp4",
+      "sha256": "aad713e490851fa8b9a4234ca16272784db8a13c1933abc113a1e34f2f4e7866",
+      "bytes": 2342137,
+      "duration": 43.84615384615384,
+      "width": 1280,
+      "height": 720,
+      "fps": 24,
+      "audio": false
+    }
+  ]
+}

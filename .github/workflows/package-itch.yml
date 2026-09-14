@@ -1,0 +1,55 @@
+name: Package itch.io Build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build browser upload
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build itch.io package
+        run: npm run build:itch
+
+      - name: Confirm static output
+        run: test -f dist/index.html
+
+      - name: Create upload ZIP
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          ARCHIVE="soft-recall-demo-v${VERSION}-itch-$(date -u +%Y%m%d).zip"
+          (cd dist && zip -r "../$ARCHIVE" .)
+          unzip -t "$ARCHIVE"
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: soft-recall-demo-itch
+          path: |
+            soft-recall-demo-v*-itch-*.zip
+            soft-recall-demo-v*-itch-*.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
